@@ -17,6 +17,12 @@
  * 4. Worker'ın verdiği URL'yi script.js dosyasındaki ASSISTANT_ENDPOINT
  *    değişkeninde tutun (zaten veraliq-agent.veraliq-com.workers.dev
  *    olarak ayarlı).
+ * 5. (Opsiyonel — canlı "Olivia" avatarı için) Anam.ai'den alınan API
+ *    anahtarını da sır olarak tanımlayın:
+ *      wrangler secret put ANAM_API_KEY
+ *    Bu tanımlı olmadan site normal çalışmaya devam eder — sadece
+ *    Olivia'nın canlı videosu yerine mevcut CSS avatar + tarayıcı
+ *    sesi (TTS) fallback'ı kullanılır. Bkz. aşağıda bölüm 8.
  *
  * MİMARİ NOTU (Ağustos 2026 — realtime agent altyapısına ilk adım):
  * Bu dosya bilinçli olarak TEK dosyada tutuluyor (Cloudflare Worker'ın
@@ -350,7 +356,90 @@ async function runAgentTurn(env, contents) {
 }
 
 // ============================================================
-// 7) HTTP HANDLER
+// 8) ANAM.AI "OLIVIA" — OTURUM TOKEN'I DEĞİŞİMİ
+// Sitede canlı bir Anam.ai avatarı ("Olivia") göstermek için tarayıcının
+// kısa ömürlü bir sessionToken'a ihtiyacı var. Bu token SADECE burada,
+// sunucu tarafında ANAM_API_KEY (secret) kullanılarak üretilebilir —
+// ham API anahtarı tarayıcıya asla gönderilmez.
+//
+// MİMARİ: "CUSTOMER_CLIENT_V1" modu — Anam'ın kendi LLM'i DEVRE DIŞI;
+// konuşma metnini biz (yukarıdaki Gemini tabanlı Agent Engine, tool
+// çağırma dahil) üretiyoruz, Anam sadece o metni Olivia'nın sesi +
+// dudak senkronlu videosuyla söylüyor. script.js bu token'ı alıp
+// @anam-ai/js-sdk ile videoya bağlanıyor, sonra her yanıt için
+// anamClient.talk(metin) çağırıyor.
+//
+// DOĞRULANMADI (gerçek ANAM_API_KEY ile test edilmeli):
+// - "Olivia" kimliği (9ae72476-...) burada personaId olarak deneniyor.
+//   Anam bu personaId üzerinde llmId override'ını reddederse,
+//   env.ANAM_OLIVIA_MODE = 'avatar' set edilerek aynı ID'nin avatarId
+//   olarak (ayrı bir voiceId ile) kullanılmasına geçilebilir.
+// - Türkçe ses için voiceId belirtilmedi (Anam varsayılanı kullanılıyor)
+//   — gerekirse ANAM_VOICE_ID secret/env değişkeni eklenip Anam'ın Voice
+//   Gallery'sinden seçilen bir Türkçe voiceId burada kullanılabilir.
+// ============================================================
+const ANAM_OLIVIA_ID = '9ae72476-5233-481d-a836-1c0b433b4fd1';
+
+async function handleAnamSession(env, corsHeaders) {
+  if (!env.ANAM_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: 'ANAM_API_KEY tanımlı değil. `wrangler secret put ANAM_API_KEY` çalıştırın.' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const oliviaId = env.ANAM_OLIVIA_ID || ANAM_OLIVIA_ID;
+  const useAsAvatarId = env.ANAM_OLIVIA_MODE === 'avatar';
+
+  const personaConfig = useAsAvatarId
+    ? {
+        name: 'Olivia',
+        avatarId: oliviaId,
+        avatarModel: 'cara-4',
+        voiceId: env.ANAM_VOICE_ID || undefined,
+        llmId: 'CUSTOMER_CLIENT_V1',
+        languageCode: 'tr',
+        systemPrompt: SYSTEM_PROMPT,
+      }
+    : {
+        name: 'Olivia',
+        personaId: oliviaId,
+        llmId: 'CUSTOMER_CLIENT_V1',
+        languageCode: 'tr',
+      };
+
+  let anamRes;
+  try {
+    anamRes = await fetch('https://api.anam.ai/v1/auth/session-token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.ANAM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ personaConfig }),
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Anam isteği başarısız', detail: String(err) }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const data = await anamRes.json().catch(() => ({}));
+  if (!anamRes.ok) {
+    return new Response(
+      JSON.stringify({ error: 'Anam session-token isteği reddedildi', status: anamRes.status, detail: data }),
+      { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return new Response(JSON.stringify({ sessionToken: data.sessionToken }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// ============================================================
+// 9) HTTP HANDLER
 // ============================================================
 export default {
   async fetch(request, env) {
@@ -366,6 +455,19 @@ export default {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers: corsHeaders });
     }
+
+    const url = new URL(request.url);
+    if (url.pathname === '/anam-session') {
+      try {
+        return await handleAnamSession(env, corsHeaders);
+      } catch (err) {
+        return new Response(JSON.stringify({ error: 'Sunucu hatası', detail: String(err) }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (!env.GEMINI_API_KEY) {
       return new Response(
         JSON.stringify({ error: 'GEMINI_API_KEY tanımlı değil. `wrangler secret put GEMINI_API_KEY` çalıştırın.' }),
