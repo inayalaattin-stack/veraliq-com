@@ -93,19 +93,81 @@
     .nav-toggle{display:block;}
   }
 
-  /* HERO — one-screen product experience */
-  .hero{
-    position:relative;
-    padding:132px 0 56px;
-    min-height:100vh;
+  /* HERO — full-bleed visual presence, not a chat page */
+  .hero-visual{
+    position:relative;min-height:100vh;padding:0;
     display:flex;align-items:center;
     border-bottom:1px solid var(--line);
+    overflow:hidden;background:var(--ink);
   }
-  .hero-grid{
-    display:grid;grid-template-columns:0.86fr 1fr 0.72fr;gap:32px;align-items:center;
-    width:100%;
+  .cap-strip{padding:40px 0;}
+  .cap-strip .cap-head{margin-bottom:16px;text-align:center;}
+  .cap-list-row{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px 30px;}
+  .cap-list-row li::before{margin-top:0;}
+  .hv-media{position:absolute;inset:0;z-index:0;}
+  .hv-glow{
+    position:absolute;top:8%;right:-6%;width:60%;height:84%;
+    background:radial-gradient(circle, rgba(62,123,250,0.28), rgba(201,162,75,0.10) 55%, transparent 72%);
+    filter:blur(10px);
   }
-  @media(max-width:1100px){.hero-grid{grid-template-columns:1fr;gap:48px;}}
+  .hv-figure{
+    position:absolute;right:6%;bottom:0;width:min(46vw,560px);height:92%;
+    animation:hv-breathe 6.5s ease-in-out infinite, hv-sway 11s ease-in-out infinite;
+    transform-origin:50% 100%;
+  }
+  @keyframes hv-breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.015);}}
+  @keyframes hv-sway{0%,100%{rotate:-0.6deg;}50%{rotate:0.6deg;}}
+  .hv-shoulders{
+    position:absolute;left:50%;bottom:0;width:98%;height:52%;
+    transform:translateX(-50%);
+    background:linear-gradient(160deg,#8a6a4f 0%,#6d5138 60%,#4f3a28 100%);
+    border-radius:46% 46% 0 0/32% 32% 0 0;
+    box-shadow:inset 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .hv-neck{
+    position:absolute;left:50%;bottom:44%;width:15%;height:16%;
+    transform:translateX(-50%);
+    background:linear-gradient(180deg,#d9a687,#c8946f);
+    border-radius:40% 40% 20% 20%;
+  }
+  .hv-hair{
+    position:absolute;left:50%;bottom:48%;width:44%;height:46%;
+    transform:translateX(-50%);
+    background:linear-gradient(160deg,#2b2320,#181211 70%);
+    border-radius:50% 50% 42% 42%;
+  }
+  .hv-face{
+    position:absolute;left:50%;bottom:52%;width:30%;height:34%;
+    transform:translateX(-50%);
+    background:linear-gradient(165deg,#e7bb9a,#d7a37e);
+    border-radius:46% 46% 40% 40%/54% 54% 40% 40%;
+  }
+  .hv-eye{
+    position:absolute;top:46%;width:9%;height:6%;border-radius:50%;
+    background:#241a15;animation:hv-blink 5.2s ease-in-out infinite;
+  }
+  .hv-eye-l{left:22%;} .hv-eye-r{right:22%;animation-delay:.08s;}
+  @keyframes hv-blink{0%,92%,100%{transform:scaleY(1);}96%{transform:scaleY(0.12);}}
+  .hv-brow{position:absolute;top:38%;width:11%;height:2.4%;border-radius:4px;background:#3a2b22;}
+  .hv-brow-l{left:20%;rotate:-4deg;} .hv-brow-r{right:20%;rotate:4deg;}
+  .hv-mouth{
+    position:absolute;left:50%;bottom:20%;width:16%;height:3.6%;
+    transform:translateX(-50%);border-radius:0 0 10px 10px/0 0 6px 6px;
+    background:#a15a4e;opacity:0.85;
+  }
+  .hv-scrim{
+    position:absolute;inset:0;z-index:1;
+    background:linear-gradient(90deg, var(--ink) 0%, rgba(10,15,28,0.86) 34%, rgba(10,15,28,0.35) 58%, rgba(10,15,28,0.05) 72%);
+  }
+  .hv-copy{position:relative;z-index:2;padding:132px 0 56px;max-width:620px;}
+  .hero-visual h1{font-size:clamp(32px,4vw,50px);line-height:1.08;margin-bottom:20px;}
+  .hero-visual h1 span{color:var(--blue);}
+  .hv-copy p.lede{font-size:16px;line-height:1.6;color:var(--text-dim);max-width:460px;margin-bottom:28px;}
+  @media(max-width:900px){
+    .hv-figure{width:70vw;right:2%;opacity:0.35;}
+    .hv-scrim{background:linear-gradient(180deg, rgba(10,15,28,0.55) 0%, var(--ink) 78%);}
+    .hv-copy{max-width:100%;}
+  }
 
   .eyebrow{
     font-family:'IBM Plex Mono',monospace;
@@ -370,20 +432,40 @@
   }
 
   /* Sticky re-engage pill (appears after hero scrolled past) */
-  #reengagePill{
+  .agent-launcher{
     position:fixed;bottom:22px;right:22px;z-index:150;
     display:none;align-items:center;gap:10px;
     background:var(--panel);border:1px solid var(--line);border-radius:30px;
     padding:10px 18px 10px 10px;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,0.4);
     transition:transform .2s;
   }
-  #reengagePill:hover{transform:translateY(-2px);}
-  #reengagePill.show{display:flex;}
-  #reengagePill .mini-avatar{
-    width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--gold));
-    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0;
+  .agent-launcher:hover{transform:translateY(-2px);}
+  .agent-launcher.show{display:flex;}
+  .agent-launcher span{font-size:13px;font-family:'IBM Plex Mono',monospace;}
+  .al-face{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;position:relative;
+    background:linear-gradient(150deg,#e7bb9a,#c8946f);
   }
-  #reengagePill span{font-size:13px;font-family:'IBM Plex Mono',monospace;}
+  .al-eye{position:absolute;top:44%;width:14%;height:14%;border-radius:50%;background:#241a15;animation:hv-blink 5.2s ease-in-out infinite;}
+  .al-eye:first-child{left:28%;} .al-eye:last-child{right:28%;animation-delay:.08s;}
+
+  .agent-panel{
+    display:none;flex-direction:column;
+    position:fixed;bottom:24px;right:24px;z-index:300;
+    width:380px;max-width:92vw;max-height:80vh;
+    background:linear-gradient(180deg, var(--panel) 0%, var(--ink-2) 100%);
+    border:1px solid var(--line);border-radius:16px;
+    padding:18px 20px 18px;box-shadow:0 30px 80px rgba(0,0,0,0.5);
+    overflow:hidden;
+  }
+  .agent-panel.open{display:flex;}
+  .agent-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .agent-panel-close{background:transparent;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:4px;line-height:1;}
+  .agent-panel-close:hover{color:var(--text);}
+  @media(max-width:480px){
+    .agent-panel{left:12px;right:12px;bottom:12px;width:auto;max-width:none;}
+    .agent-launcher{right:12px;bottom:12px;}
+  }
 </style>
 </head>
 <body>
@@ -399,75 +481,57 @@
       <a href="#trust">Güvenlik</a>
       <a href="#faq">SSS</a>
       <a href="#contact">İletişim</a>
-      <a href="#agentCard" class="nav-cta">CANLI AGENT'I DENE</a>
+      <a href="#" class="nav-cta js-open-agent">CANLI AGENT'I DENE</a>
     </div>
     <button class="nav-toggle" id="navToggle">☰</button>
   </nav>
 </header>
 
-<section class="hero">
-  <div class="wrap hero-grid">
-
-    <!-- SOL: marka mesajı -->
-    <div>
-      <div class="eyebrow">AI DIGITAL WORKFORCE PLATFORM</div>
-      <h1>Her şirketin <span>kendi AI satış ekibi.</span></h1>
-      <p class="lede">İsimlendirilmiş, şirketinize özel ve gerçek zamanlı konuşabilen dijital çalışanlar müşterilerinizi karşılar, ihtiyaçlarını anlar, ürünlerinizi ve portföylerinizi sunar, randevu oluşturur ve satış sürecinizi 7/24 destekler.</p>
-      <div class="btn-row">
-        <a href="#agentCard" class="btn btn-primary">Canlı Agent'ı Dene →</a>
-        <a href="#contact" class="btn btn-ghost">Demo Talep Et</a>
+<section class="hero-visual" id="heroVisual">
+  <div class="hv-media" aria-hidden="true">
+    <div class="hv-glow"></div>
+    <div class="hv-figure">
+      <div class="hv-hair"></div>
+      <div class="hv-shoulders"></div>
+      <div class="hv-neck"></div>
+      <div class="hv-face">
+        <div class="hv-brow hv-brow-l"></div>
+        <div class="hv-brow hv-brow-r"></div>
+        <div class="hv-eye hv-eye-l"></div>
+        <div class="hv-eye hv-eye-r"></div>
+        <div class="hv-mouth"></div>
       </div>
-      <div class="hero-footnote">WEB · ŞİRKET SİTESİ · PORTAL · MOBİL</div>
     </div>
-
-    <!-- ORTA: canlı Agent — ana ürün -->
-    <div class="agent-card" id="agentCard">
-      <div class="agent-live-tag"><span class="agent-live-dot"></span>CANLI AGENT</div>
-      <div class="agent-avatar-wrap">
-        <div class="agent-avatar-ring">
-          <div id="assistAvatar">EK</div>
-        </div>
-      </div>
-      <div class="agent-identity">
-        <h3>Elif Kaya</h3>
-        <div class="role">AI Dijital Satış Agent'ı</div>
-        <div class="company mono">ANTALYA PROJELERİ</div>
-      </div>
-      <div class="agent-stats-row mono">
-        <span>3 Görüşme</span><span>·</span><span>2 Follow-up</span><span>·</span><span>1 Randevu</span>
-      </div>
-      <div class="agent-stats-note mono">(örnek veri — canlı demo sırasında oluşur)</div>
-      <div class="agent-status-line mono" id="agentStatus">hazır — sizi dinliyor</div>
-      <div class="agent-caption" id="assistCaption">
-        <div class="cap-bot" id="assistCaptionText">Merhaba, ben Elif 👋 VERALIQ tarafından desteklenen AI dijital satış agent'ıyım. Size uygun projeyi birlikte bulabiliriz — yatırım için mi, oturum için mi araştırıyorsunuz?</div>
-      </div>
-      <div class="agent-cards" id="assistCards"></div>
-      <div class="agent-input-row">
-        <input type="text" id="assistInput" placeholder="Yazın ya da mikrofona basıp konuşun...">
-        <button id="assistMic" class="agent-icon-btn" title="Konuşarak sor" aria-label="Konuşarak sor">🎤</button>
-        <button id="voiceToggle" class="agent-icon-btn on" title="Sesli yanıtı aç/kapat" aria-label="Sesli yanıtı aç/kapat">🔊</button>
-        <button id="assistSend" class="agent-send-btn">Gönder</button>
-      </div>
-      <div class="agent-disclosure">Elif, VERALIQ altyapısıyla çalışan bir AI Agent'tır.</div>
+  </div>
+  <div class="hv-scrim"></div>
+  <div class="wrap hv-copy">
+    <div class="eyebrow">AI DIGITAL WORKFORCE PLATFORM</div>
+    <h1>Her şirketin <span>kendi AI satış ekibi.</span></h1>
+    <p class="lede">İsimlendirilmiş, şirketinize özel ve gerçek zamanlı konuşabilen dijital çalışanlar müşterilerinizi karşılar, ihtiyaçlarını anlar, ürünlerinizi ve portföylerinizi sunar, randevu oluşturur ve satış sürecinizi 7/24 destekler.</p>
+    <div class="btn-row">
+      <a href="#" class="btn btn-primary js-open-agent">Canlı Agent'ı Dene →</a>
+      <a href="#contact" class="btn btn-ghost">Demo Talep Et</a>
     </div>
+    <div class="hero-footnote">WEB · ŞİRKET SİTESİ · PORTAL · MOBİL</div>
+  </div>
+</section>
 
-    <!-- SAĞ: neler yapabilir -->
-    <div>
-      <div class="cap-head mono">NELER YAPABİLİR?</div>
-      <ul class="cap-list">
-        <li>Müşteriyi karşılar</li>
-        <li>İhtiyaç analizi yapar</li>
-        <li>Portföy önerir</li>
-        <li>Proje anlatır</li>
-        <li>Soruları yanıtlar</li>
-        <li>Fiyat ve ödeme planlarını açıklar</li>
-        <li>Alternatif sunar</li>
-        <li>Lead bilgisi toplar</li>
-        <li>Follow-up başlatır</li>
-        <li>Satış ekibine aktarır</li>
-      </ul>
-    </div>
-
+<!-- NELER YAPABİLİR — hero'dan ayrı, kısa yatay şerit -->
+<section id="capabilities" class="cap-strip">
+  <div class="wrap">
+    <div class="cap-head mono">AGENT NELER YAPABİLİR?</div>
+    <ul class="cap-list cap-list-row">
+      <li>Müşteriyi karşılar</li>
+      <li>İhtiyaç analizi yapar</li>
+      <li>Portföy önerir</li>
+      <li>Proje anlatır</li>
+      <li>Soruları yanıtlar</li>
+      <li>Fiyat ve ödeme planlarını açıklar</li>
+      <li>Alternatif sunar</li>
+      <li>Lead bilgisi toplar</li>
+      <li>Follow-up başlatır</li>
+      <li>Satış ekibine aktarır</li>
+    </ul>
   </div>
 </section>
 
@@ -744,7 +808,7 @@
         <p style="max-width:280px;font-size:14px;color:var(--text-dim);margin-top:8px;">Antalya, Türkiye</p>
       </div>
       <div class="footer-links mono">
-        <a href="#agentCard">AI Agent</a>
+        <a href="#" class="js-open-agent">AI Agent</a>
         <a href="#workforce">AI Workforce</a>
         <a href="#channels">Entegrasyonlar</a>
         <a href="#compare">Çözümler</a>
@@ -761,9 +825,28 @@
   </div>
 </footer>
 
-<div id="reengagePill">
-  <div class="mini-avatar">EK</div>
-  <span>Elif ile Konuş</span>
+<div id="agentLauncher" class="agent-launcher">
+  <div class="al-face"><div class="al-eye"></div><div class="al-eye"></div></div>
+  <span>Görüşmeyi Başlat</span>
+</div>
+
+<div id="agentPanel" class="agent-panel">
+  <div class="agent-panel-head">
+    <div class="agent-live-tag"><span class="agent-live-dot"></span>CANLI AGENT</div>
+    <button type="button" id="agentPanelClose" class="agent-panel-close" aria-label="Kapat">✕</button>
+  </div>
+  <div class="agent-status-line mono" id="agentStatus">hazır — sizi dinliyor</div>
+  <div class="agent-caption" id="assistCaption">
+    <div class="cap-bot" id="assistCaptionText">Merhaba, ben Elif 👋 VERALIQ tarafından desteklenen AI dijital satış agent'ıyım. Size uygun projeyi birlikte bulabiliriz — yatırım için mi, oturum için mi araştırıyorsunuz?</div>
+  </div>
+  <div class="agent-cards" id="assistCards"></div>
+  <div class="agent-input-row">
+    <input type="text" id="assistInput" placeholder="Yazın ya da mikrofona basıp konuşun...">
+    <button id="assistMic" class="agent-icon-btn" title="Konuşarak sor" aria-label="Konuşarak sor">🎤</button>
+    <button id="voiceToggle" class="agent-icon-btn on" title="Sesli yanıtı aç/kapat" aria-label="Sesli yanıtı aç/kapat">🔊</button>
+    <button id="assistSend" class="agent-send-btn">Gönder</button>
+  </div>
+  <div class="agent-disclosure">VERALIQ altyapısıyla çalışan bir AI Agent'tır.</div>
 </div>
 
 <script src="script.js"></script>

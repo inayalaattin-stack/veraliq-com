@@ -205,11 +205,10 @@
     conversationHistory.push({ role: 'model', text: greeting });
     setTimeout(function () { speakReply(greeting); }, 500);
   }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(greetOnLoad, 600);
-  } else {
-    window.addEventListener('DOMContentLoaded', function () { setTimeout(greetOnLoad, 600); });
-  }
+  // Greeting no longer autoplays on page load — the hero is a visual,
+  // not a chat surface. It fires the first time the Agent panel opens
+  // (see openAgentPanel below), matching a "not a chatbot" first
+  // impression while still greeting immediately once invited in.
 
   // ---- Voice output toggle (free: Web Speech API) ----
   if (voiceToggle) {
@@ -370,20 +369,52 @@
     });
   }
 
-  // ---- Re-engage pill: shows once the hero agent card scrolls out of
-  // view, scrolls back to it (and focuses input) on click. ----
-  var pill = document.getElementById('reengagePill');
-  var agentCard = document.getElementById('agentCard');
-  if (pill && agentCard && 'IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        pill.classList.toggle('show', !entry.isIntersecting);
-      });
-    }, { threshold: 0.1 });
-    io.observe(agentCard);
-    pill.addEventListener('click', function () {
-      agentCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(function () { input && input.focus(); }, 500);
-    });
+  // ---- Agent launcher + panel: the hero is a full-bleed visual, not a
+  // chat surface. A small "Görüşmeyi Başlat" pill appears bottom-right
+  // once the hero scrolls out of view (mirrors the reference layout);
+  // clicking it — or any "Canlı Agent'ı Dene" link on the page — opens
+  // a compact floating panel containing the actual live conversation
+  // (caption, voice, mic, tool-driven cards). Closing it returns to the
+  // pill, so the site never looks like a chatbot until invited. ----
+  var launcher = document.getElementById('agentLauncher');
+  var heroVisual = document.getElementById('heroVisual');
+  var panel = document.getElementById('agentPanel');
+  var panelClose = document.getElementById('agentPanelClose');
+  var heroIntersecting = true;
+
+  function updateLauncherVisibility() {
+    if (!launcher) return;
+    var panelOpen = panel && panel.classList.contains('open');
+    launcher.classList.toggle('show', !heroIntersecting && !panelOpen);
   }
+
+  if (heroVisual && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { heroIntersecting = entry.isIntersecting; });
+      updateLauncherVisibility();
+    }, { threshold: 0.15 });
+    io.observe(heroVisual);
+  }
+
+  function openAgentPanel() {
+    if (!panel) return;
+    panel.classList.add('open');
+    updateLauncherVisibility();
+    greetOnLoad();
+    setTimeout(function () { input && input.focus(); }, 350);
+  }
+  function closeAgentPanel() {
+    if (!panel) return;
+    panel.classList.remove('open');
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    updateLauncherVisibility();
+  }
+  if (launcher) launcher.addEventListener('click', openAgentPanel);
+  if (panelClose) panelClose.addEventListener('click', closeAgentPanel);
+  document.querySelectorAll('.js-open-agent').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      openAgentPanel();
+    });
+  });
 })();
