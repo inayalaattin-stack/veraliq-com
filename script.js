@@ -388,10 +388,15 @@
     launcher.classList.toggle('show', !heroIntersecting && !panelOpen);
   }
 
+  console.log('[VQ] heroVisual found:', !!heroVisual, 'launcher found:', !!launcher, 'IO supported:', ('IntersectionObserver' in window));
   if (heroVisual && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) { heroIntersecting = entry.isIntersecting; });
+      entries.forEach(function (entry) {
+        heroIntersecting = entry.isIntersecting;
+        console.log('[VQ] hero intersecting:', entry.isIntersecting, 'ratio:', entry.intersectionRatio);
+      });
       updateLauncherVisibility();
+      console.log('[VQ] launcher classes after update:', launcher && launcher.className);
     }, { threshold: 0.15 });
     io.observe(heroVisual);
   }
