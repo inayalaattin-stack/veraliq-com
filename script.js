@@ -27,15 +27,15 @@
   // Full conversational translation requires a real backend model call —
   // see README.md "Extending the assistant".) ----
   var GREETINGS = {
-    tr: "Merhaba 👋 Ben Veraliq'in yapay zeka destekli asistanıyım. Size nasıl yardımcı olabilirim?",
-    en: "Hi 👋 I'm Veraliq's AI assistant. How can I help you today?",
-    de: "Hallo 👋 Ich bin der KI-Assistent von Veraliq. Wie kann ich Ihnen helfen?",
-    fr: "Bonjour 👋 Je suis l'assistant IA de Veraliq. Comment puis-je vous aider ?",
-    es: "Hola 👋 Soy el asistente de IA de Veraliq. ¿En qué puedo ayudarte?",
-    ar: "مرحبًا 👋 أنا مساعد فيراليك الذكي. كيف يمكنني مساعدتك؟",
-    ru: "Здравствуйте 👋 Я ИИ-ассистент Veraliq. Чем могу помочь?",
-    zh: "您好 👋 我是 Veraliq 的人工智能助手，有什么可以帮您？",
-    ja: "こんにちは👋 Veraliqのアシスタント（AI）です。ご用件をお聞かせください。"
+    tr: "Merhaba, ben Elif 👋 VERALIQ tarafından desteklenen AI dijital satış agent'ıyım. Size uygun projeyi birlikte bulabiliriz — yatırım için mi, oturum için mi araştırıyorsunuz?",
+    en: "Hi, I'm Elif 👋 an AI digital sales agent powered by VERALIQ. I can help you find the right project — are you looking to invest, or to live in it?",
+    de: "Hallo, ich bin Elif 👋 ein KI-gestützter digitaler Vertriebsmitarbeiter von VERALIQ. Suchen Sie eine Kapitalanlage oder eine Wohnung zum Selbstbezug?",
+    fr: "Bonjour, je suis Elif 👋 une agente commerciale numérique IA propulsée par VERALIQ. Cherchez-vous à investir ou à habiter ?",
+    es: "Hola, soy Elif 👋 una agente de ventas digital con IA de VERALIQ. ¿Busca invertir o para vivir?",
+    ar: "مرحبًا، أنا إيليف 👋 وكيلة مبيعات رقمية مدعومة بالذكاء الاصطناعي من VERALIQ. هل تبحث عن استثمار أم للسكن؟",
+    ru: "Здравствуйте, я Элиф 👋 ИИ-агент по продажам от VERALIQ. Вас интересует инвестиция или собственное жильё?",
+    zh: "您好，我是艾莉芙 👋 VERALIQ 的人工智能数字销售顾问。您是想投资还是自住？",
+    ja: "こんにちは、エリフです 👋 VERALIQのAIデジタル営業エージェントです。投資目的ですか、それともご自宅用ですか？"
   };
 
   function detectLangCode() {
@@ -47,35 +47,56 @@
   var detectedLang = detectLangCode();
   document.documentElement.lang = detectedLang;
 
-  // ---- AI Assistant widget: connected to a real LLM backend ----
-  // Set this to your deployed Cloudflare Worker URL (see worker/README
-  // for deployment steps). Until you deploy it, the widget falls back
-  // to a clearly-labeled offline message instead of pretending to be smart.
+  // ---- Live AI Agent card (hero) — the main product experience.
+  // No chat-bubble list: a single live caption area shows the latest
+  // exchange, like subtitles, so it reads as a live conversation rather
+  // than a chatbot transcript. ----
   var ASSISTANT_ENDPOINT = 'https://veraliq-agent.veraliq-com.workers.dev';
 
-  var launcher = document.getElementById('veraliq-assist-launcher');
-  var panel = document.getElementById('veraliq-assist-panel');
-  var body = document.getElementById('assistBody');
   var input = document.getElementById('assistInput');
   var send = document.getElementById('assistSend');
   var micBtn = document.getElementById('assistMic');
   var voiceToggle = document.getElementById('voiceToggle');
   var avatar = document.getElementById('assistAvatar');
+  var captionBox = document.getElementById('assistCaption');
+  var statusLine = document.getElementById('agentStatus');
   var conversationHistory = [];
   var voiceOn = true;
+  var greeted = false;
 
-  function addMsg(text, who) {
+  function setCaption(text, who) {
+    if (!captionBox) return;
+    captionBox.innerHTML = '';
+    if (who === 'user') {
+      var uLabel = document.createElement('div');
+      uLabel.className = 'cap-user mono';
+      uLabel.textContent = 'SİZ';
+      captionBox.appendChild(uLabel);
+    }
     var div = document.createElement('div');
-    div.className = 'assist-msg ' + who;
+    div.className = who === 'user' ? 'cap-user' : 'cap-bot';
     div.textContent = text;
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
+    captionBox.appendChild(div);
   }
 
-  if (launcher && panel) {
-    launcher.addEventListener('click', function () {
-      panel.classList.toggle('open');
-    });
+  function setStatus(text) {
+    if (statusLine) statusLine.textContent = text;
+  }
+
+  // Greet on load, once, without requiring a click — matches the brief's
+  // "agent activates the instant a visitor lands" requirement.
+  function greetOnLoad() {
+    if (greeted) return;
+    greeted = true;
+    var greeting = GREETINGS[detectedLang] || GREETINGS.tr;
+    setCaption(greeting, 'bot');
+    conversationHistory.push({ role: 'model', text: greeting });
+    setTimeout(function () { speakReply(greeting); }, 500);
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(greetOnLoad, 600);
+  } else {
+    window.addEventListener('DOMContentLoaded', function () { setTimeout(greetOnLoad, 600); });
   }
 
   // ---- Voice output toggle (free: Web Speech API) ----
@@ -91,12 +112,14 @@
 
   function speakReply(text) {
     if (!voiceOn || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'tr-TR';
-    utter.onstart = function () { avatar.classList.add('speaking'); };
-    utter.onend = function () { avatar.classList.remove('speaking'); };
-    window.speechSynthesis.speak(utter);
+    try {
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'tr-TR';
+      utter.onstart = function () { avatar && avatar.classList.add('speaking'); setStatus('konuşuyor…'); };
+      utter.onend = function () { avatar && avatar.classList.remove('speaking'); setStatus('hazır — sizi dinliyor'); };
+      window.speechSynthesis.speak(utter);
+    } catch (e) { /* autoplay/voice restrictions — fail silently, caption text still shown */ }
   }
 
   // ---- Voice input (free: Web Speech API) ----
@@ -108,11 +131,12 @@
       recognition.interimResults = false;
       recognition.onstart = function () {
         micBtn.classList.add('recording');
-        avatar.classList.add('listening');
+        avatar && avatar.classList.add('listening');
+        setStatus('dinliyor…');
       };
       recognition.onend = function () {
         micBtn.classList.remove('recording');
-        avatar.classList.remove('listening');
+        avatar && avatar.classList.remove('listening');
       };
       recognition.onresult = function (event) {
         var text = event.results[0][0].transcript;
@@ -121,14 +145,27 @@
       };
       recognition.onerror = function () {
         micBtn.classList.remove('recording');
-        avatar.classList.remove('listening');
+        avatar && avatar.classList.remove('listening');
+        setStatus('hazır — sizi dinliyor');
       };
-      micBtn.addEventListener('click', function () { recognition.start(); });
+      micBtn.addEventListener('click', function () {
+        // Barge-in: if Elif is currently speaking, stop her so the user
+        // can interrupt naturally instead of waiting her out.
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        recognition.start();
+      });
     } else {
       micBtn.addEventListener('click', function () {
-        addMsg('Bu tarayıcı sesli girişi desteklemiyor. Chrome veya Edge deneyin, ya da yazarak sorun.', 'bot');
+        setCaption('Bu tarayıcı sesli girişi desteklemiyor. Chrome veya Edge deneyin, ya da yazarak sorun.', 'bot');
       });
     }
+  }
+
+  // Typing also counts as a natural interrupt of any ongoing speech.
+  if (input) {
+    input.addEventListener('keydown', function () {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
   }
 
   // ---- Real backend call ----
@@ -143,29 +180,20 @@
       var data = await res.json();
       return data.reply || 'Şu anda yanıt üretemedim, lütfen tekrar deneyin.';
     } catch (err) {
-      // Honest fallback: don't fake intelligence if the backend isn't
-      // deployed yet or is unreachable.
-      return 'Şu anda canlı asistan bağlantısı kurulamadı (backend henüz devrede olmayabilir). Lütfen info@veraliq.com adresine yazın, size dönelim.';
+      return 'Şu anda canlı Agent bağlantısı kurulamadı (backend geçici olarak devrede olmayabilir). Lütfen info@veraliq.com adresine yazın, size dönelim.';
     }
   }
 
   function handleSend() {
     var text = input.value.trim();
     if (!text) return;
-    addMsg(text, 'user');
+    setCaption(text, 'user');
     conversationHistory.push({ role: 'user', text: text });
     input.value = '';
-    var thinking = document.createElement('div');
-    thinking.className = 'assist-msg bot';
-    thinking.textContent = '…';
-    thinking.id = 'thinkingMsg';
-    body.appendChild(thinking);
-    body.scrollTop = body.scrollHeight;
+    setStatus('düşünüyor…');
 
     getAssistantReply(text).then(function (reply) {
-      var t = document.getElementById('thinkingMsg');
-      if (t) t.remove();
-      addMsg(reply, 'bot');
+      setCaption(reply, 'bot');
       conversationHistory.push({ role: 'model', text: reply });
       speakReply(reply);
     });
@@ -175,6 +203,57 @@
     send.addEventListener('click', handleSend);
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') handleSend();
+    });
+  }
+
+  // ---- FAQ accordion ----
+  document.querySelectorAll('.faq-item').forEach(function (item) {
+    var q = item.querySelector('.faq-q');
+    if (!q) return;
+    q.addEventListener('click', function () {
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function (el) { el.classList.remove('open'); });
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // ---- Demo form: honest fallback — opens a prefilled email, since no
+  // backend CRM endpoint is wired up yet. ----
+  var demoForm = document.getElementById('demoForm');
+  if (demoForm) {
+    demoForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = new FormData(demoForm);
+      var subject = encodeURIComponent('Veraliq Demo Talebi — ' + (data.get('company') || ''));
+      var bodyLines = [
+        'Ad Soyad: ' + (data.get('name') || ''),
+        'Şirket: ' + (data.get('company') || ''),
+        'Telefon: ' + (data.get('phone') || ''),
+        'E-posta: ' + (data.get('email') || ''),
+        'Şirket Türü: ' + (data.get('type') || ''),
+        'Aylık Lead/Satış Hacmi: ' + (data.get('volume') || '')
+      ];
+      var body = encodeURIComponent(bodyLines.join('\n'));
+      window.location.href = 'mailto:info@veraliq.com?subject=' + subject + '&body=' + body;
+      var status = document.getElementById('formStatus');
+      if (status) status.classList.add('show');
+    });
+  }
+
+  // ---- Re-engage pill: shows once the hero agent card scrolls out of
+  // view, scrolls back to it (and focuses input) on click. ----
+  var pill = document.getElementById('reengagePill');
+  var agentCard = document.getElementById('agentCard');
+  if (pill && agentCard && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        pill.classList.toggle('show', !entry.isIntersecting);
+      });
+    }, { threshold: 0.1 });
+    io.observe(agentCard);
+    pill.addEventListener('click', function () {
+      agentCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function () { input && input.focus(); }, 500);
     });
   }
 })();
