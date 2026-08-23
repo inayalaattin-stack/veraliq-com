@@ -388,17 +388,24 @@
     launcher.classList.toggle('show', !heroIntersecting && !panelOpen);
   }
 
-  console.log('[VQ] heroVisual found:', !!heroVisual, 'launcher found:', !!launcher, 'IO supported:', ('IntersectionObserver' in window));
-  if (heroVisual && 'IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        heroIntersecting = entry.isIntersecting;
-        console.log('[VQ] hero intersecting:', entry.isIntersecting, 'ratio:', entry.intersectionRatio);
-      });
-      updateLauncherVisibility();
-      console.log('[VQ] launcher classes after update:', launcher && launcher.className);
-    }, { threshold: 0.15 });
-    io.observe(heroVisual);
+  // Plain scroll-position check (rAF-throttled) rather than
+  // IntersectionObserver — simpler to reason about and avoids
+  // observer-timing edge cases across browsers/embedded contexts.
+  function checkHeroVisibility() {
+    if (!heroVisual) return;
+    var rect = heroVisual.getBoundingClientRect();
+    heroIntersecting = rect.bottom > 80;
+    updateLauncherVisibility();
+  }
+  if (heroVisual) {
+    var heroScrollTicking = false;
+    window.addEventListener('scroll', function () {
+      if (heroScrollTicking) return;
+      heroScrollTicking = true;
+      window.requestAnimationFrame(function () { checkHeroVisibility(); heroScrollTicking = false; });
+    }, { passive: true });
+    window.addEventListener('resize', checkHeroVisibility);
+    checkHeroVisibility();
   }
 
   function openAgentPanel() {
