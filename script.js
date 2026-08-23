@@ -51,7 +51,7 @@
   // Set this to your deployed Cloudflare Worker URL (see worker/README
   // for deployment steps). Until you deploy it, the widget falls back
   // to a clearly-labeled offline message instead of pretending to be smart.
-  var ASSISTANT_ENDPOINT = 'https://veraliq-agent.YOUR-SUBDOMAIN.workers.dev';
+  var ASSISTANT_ENDPOINT = 'https://veraliq-agent.veraliq-com.workers.dev';
 
   var launcher = document.getElementById('veraliq-assist-launcher');
   var panel = document.getElementById('veraliq-assist-panel');
