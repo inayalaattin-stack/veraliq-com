@@ -7,6 +7,13 @@
 
 (function () {
   'use strict';
+  try {
+  __VQ_BODY__();
+  } catch (e) {
+    try { sessionStorage.setItem('__vqError', (e && e.message) + ' | ' + (e && e.stack)); } catch (e2) {}
+    document.title = 'VQ-ERR: ' + (e && e.message);
+  }
+  function __VQ_BODY__() {
 
   // ---- Mobile nav toggle ----
   var navToggle = document.getElementById('navToggle');
@@ -429,4 +436,5 @@
       openAgentPanel();
     });
   });
+  } // end __VQ_BODY__
 })();
