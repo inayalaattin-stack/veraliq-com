@@ -395,18 +395,25 @@
     launcher.classList.toggle('show', !heroIntersecting && !panelOpen);
   }
 
-  // Plain scroll-position check (rAF-throttled) rather than
-  // IntersectionObserver — simpler to reason about and avoids
-  // observer-timing edge cases across browsers/embedded contexts.
+  // Plain scroll-position check rather than IntersectionObserver —
+  // simpler to reason about and avoids observer-timing edge cases.
+  window.__vqCallCount = 0;
   function checkHeroVisibility() {
-    if (!heroVisual) return;
-    var rect = heroVisual.getBoundingClientRect();
-    heroIntersecting = rect.bottom > 80;
-    updateLauncherVisibility();
+    window.__vqCallCount++;
+    try {
+      if (!heroVisual) { window.__vqLastErr = 'no heroVisual'; return; }
+      var rect = heroVisual.getBoundingClientRect();
+      heroIntersecting = rect.bottom > 80;
+      updateLauncherVisibility();
+      window.__vqLastErr = 'ok bottom=' + rect.bottom + ' intersecting=' + heroIntersecting;
+    } catch (e) {
+      window.__vqLastErr = 'THROW: ' + e.message;
+    }
   }
   if (heroVisual) {
     var heroScrollTicking = false;
     window.addEventListener('scroll', function () {
+      window.__vqScrollEvents = (window.__vqScrollEvents || 0) + 1;
       if (heroScrollTicking) return;
       heroScrollTicking = true;
       setTimeout(function () { checkHeroVisibility(); heroScrollTicking = false; }, 80);
