@@ -7,13 +7,6 @@
 
 (function () {
   'use strict';
-  try {
-  __VQ_BODY__();
-  } catch (e) {
-    try { sessionStorage.setItem('__vqError', (e && e.message) + ' | ' + (e && e.stack)); } catch (e2) {}
-    document.title = 'VQ-ERR: ' + (e && e.message);
-  }
-  function __VQ_BODY__() {
 
   // ---- Mobile nav toggle ----
   var navToggle = document.getElementById('navToggle');
@@ -397,36 +390,21 @@
 
   // Plain scroll-position check rather than IntersectionObserver —
   // simpler to reason about and avoids observer-timing edge cases.
-  function vqDebug(msg) {
-    try {
-      var n = parseInt(sessionStorage.getItem('__vqCallCount') || '0', 10) + 1;
-      sessionStorage.setItem('__vqCallCount', String(n));
-      sessionStorage.setItem('__vqLastErr', msg);
-    } catch (e) { /* ignore */ }
-  }
   function checkHeroVisibility() {
-    try {
-      if (!heroVisual) { vqDebug('no heroVisual'); return; }
-      var rect = heroVisual.getBoundingClientRect();
-      heroIntersecting = rect.bottom > 80;
-      updateLauncherVisibility();
-      vqDebug('ok bottom=' + rect.bottom + ' intersecting=' + heroIntersecting + ' launcherClass=' + (launcher && launcher.className));
-    } catch (e) {
-      vqDebug('THROW: ' + e.message);
-    }
+    if (!heroVisual) return;
+    var rect = heroVisual.getBoundingClientRect();
+    heroIntersecting = rect.bottom > 80;
+    updateLauncherVisibility();
   }
   if (heroVisual) {
     var heroScrollTicking = false;
     window.addEventListener('scroll', function () {
-      vqDebug('scroll event fired');
       if (heroScrollTicking) return;
       heroScrollTicking = true;
       setTimeout(function () { checkHeroVisibility(); heroScrollTicking = false; }, 80);
     }, { passive: true });
     window.addEventListener('resize', checkHeroVisibility);
     checkHeroVisibility();
-  } else {
-    vqDebug('heroVisual not found at setup time');
   }
 
   function openAgentPanel() {
@@ -450,5 +428,4 @@
       openAgentPanel();
     });
   });
-  } // end __VQ_BODY__
 })();
