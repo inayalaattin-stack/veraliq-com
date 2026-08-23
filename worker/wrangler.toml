@@ -1,7 +1,0 @@
-name = "veraliq-agent"
-main = "worker.js"
-compatibility_date = "2026-08-01"
-
-# Ücretsiz katman: günde 100.000 istek, worker başına.
-# Trafiğiniz bunu aşarsa Cloudflare Workers Paid plana ($5/ay) geçmeniz
-# gerekir — bu noktaya gelmek iyi bir sorun olur (yüksek trafik demektir).
