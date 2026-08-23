@@ -397,29 +397,36 @@
 
   // Plain scroll-position check rather than IntersectionObserver —
   // simpler to reason about and avoids observer-timing edge cases.
-  window.__vqCallCount = 0;
-  function checkHeroVisibility() {
-    window.__vqCallCount++;
+  function vqDebug(msg) {
     try {
-      if (!heroVisual) { window.__vqLastErr = 'no heroVisual'; return; }
+      var n = parseInt(sessionStorage.getItem('__vqCallCount') || '0', 10) + 1;
+      sessionStorage.setItem('__vqCallCount', String(n));
+      sessionStorage.setItem('__vqLastErr', msg);
+    } catch (e) { /* ignore */ }
+  }
+  function checkHeroVisibility() {
+    try {
+      if (!heroVisual) { vqDebug('no heroVisual'); return; }
       var rect = heroVisual.getBoundingClientRect();
       heroIntersecting = rect.bottom > 80;
       updateLauncherVisibility();
-      window.__vqLastErr = 'ok bottom=' + rect.bottom + ' intersecting=' + heroIntersecting;
+      vqDebug('ok bottom=' + rect.bottom + ' intersecting=' + heroIntersecting + ' launcherClass=' + (launcher && launcher.className));
     } catch (e) {
-      window.__vqLastErr = 'THROW: ' + e.message;
+      vqDebug('THROW: ' + e.message);
     }
   }
   if (heroVisual) {
     var heroScrollTicking = false;
     window.addEventListener('scroll', function () {
-      window.__vqScrollEvents = (window.__vqScrollEvents || 0) + 1;
+      vqDebug('scroll event fired');
       if (heroScrollTicking) return;
       heroScrollTicking = true;
       setTimeout(function () { checkHeroVisibility(); heroScrollTicking = false; }, 80);
     }, { passive: true });
     window.addEventListener('resize', checkHeroVisibility);
     checkHeroVisibility();
+  } else {
+    vqDebug('heroVisual not found at setup time');
   }
 
   function openAgentPanel() {
