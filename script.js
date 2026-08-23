@@ -89,6 +89,8 @@
   var voiceOn = true;
   var greeted = false;
   var leadAlreadySent = false;
+  var anamClient = null;
+  var anamReady = false; // false | 'connecting' | true
 
   function setCaption(text, who) {
     if (!captionBox) return;
@@ -221,8 +223,71 @@
     voiceToggle.classList.add('on');
   }
 
+  // ---- Anam.ai "Olivia" canlı avatar (opsiyonel katman) ----
+  // Panel açıldığında (kullanıcı tıklaması sayesinde autoplay/ses izni
+  // olan bir bağlamda) lazy olarak bağlanır; panel kapanınca bağlantı
+  // kesilir — ücretsiz/limitli dakika kotasını ziyaretçi panel'i hiç
+  // açmasa bile tüketmemek için. Konuşma metni HALA bizim Gemini tabanlı
+  // Agent Engine'imizden geliyor (worker.js — search_portfolio/
+  // create_lead dahil); Anam sadece o metni Olivia'nın sesi + dudak
+  // senkronuyla söylüyor ("CUSTOMER_CLIENT_V1" modu, bkz. worker.js
+  // handleAnamSession). ANAM_API_KEY henüz sunucuda tanımlı değilse ya
+  // da bağlantı başarısız olursa /anam-session hata döner ve bu kod
+  // sessizce vazgeçer — panel mevcut CSS avatar + tarayıcı TTS
+  // (speechSynthesis) fallback'ıyla sorunsuz çalışmaya devam eder.
+  //
+  // DOĞRULANMADI (gerçek ANAM_API_KEY ile canlı test gerekiyor):
+  // - unpkg.com üzerinden yüklenen SDK sürümü/yolu (bkz. ANAM_SDK_URL)
+  // - Anam'ın gerçek zamanlı akış için kullandığı ağ adresleri
+  //   (_headers CSP'sindeki connect-src *.anam.ai geniş tutuldu — canlı
+  //   testte Network sekmesinden doğrulanıp daraltılabilir)
+  var ANAM_SDK_URL = 'https://unpkg.com/@anam-ai/js-sdk@4.25.0/dist/module/index.js';
+
+  async function connectAnam() {
+    if (anamClient || anamReady === 'connecting') return;
+    var video = document.getElementById('anamVideo');
+    var wrap = document.getElementById('agentAvatarWrap');
+    if (!video) return;
+    anamReady = 'connecting';
+    try {
+      var res = await fetch(ASSISTANT_ENDPOINT + '/anam-session', { method: 'POST' });
+      if (!res.ok) throw new Error('anam-session ' + res.status);
+      var data = await res.json();
+      if (!data.sessionToken) throw new Error('sessionToken alınamadı');
+
+      var sdk = await import(/* webpackIgnore: true */ ANAM_SDK_URL);
+      anamClient = sdk.createClient(data.sessionToken);
+      await anamClient.streamToVideoElement('anamVideo');
+      if (wrap) wrap.classList.add('live');
+      anamReady = true;
+    } catch (e) {
+      // Sessiz vazgeçiş — CSS avatar + tarayıcı TTS zaten fallback.
+      anamClient = null;
+      anamReady = false;
+    }
+  }
+
+  function disconnectAnam() {
+    if (anamClient) {
+      try { anamClient.stopStreaming(); } catch (e) { /* ignore */ }
+    }
+    anamClient = null;
+    anamReady = false;
+    var wrap = document.getElementById('agentAvatarWrap');
+    if (wrap) wrap.classList.remove('live');
+  }
+
   function speakReply(text) {
-    if (!voiceOn || !('speechSynthesis' in window)) return;
+    if (!voiceOn) return;
+    if (anamReady === true && anamClient) {
+      try {
+        anamClient.talk(text);
+        avatar && avatar.classList.add('speaking');
+        setStatus('konuşuyor…');
+        return;
+      } catch (e) { /* Anam talk başarısız — tarayıcı TTS'e düş */ }
+    }
+    if (!('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance(text);
@@ -412,12 +477,14 @@
     panel.classList.add('open');
     updateLauncherVisibility();
     greetOnLoad();
+    connectAnam();
     setTimeout(function () { input && input.focus(); }, 350);
   }
   function closeAgentPanel() {
     if (!panel) return;
     panel.classList.remove('open');
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    disconnectAnam();
     updateLauncherVisibility();
   }
   if (launcher) launcher.addEventListener('click', openAgentPanel);
