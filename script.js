@@ -402,7 +402,7 @@
     window.addEventListener('scroll', function () {
       if (heroScrollTicking) return;
       heroScrollTicking = true;
-      window.requestAnimationFrame(function () { checkHeroVisibility(); heroScrollTicking = false; });
+      setTimeout(function () { checkHeroVisibility(); heroScrollTicking = false; }, 80);
     }, { passive: true });
     window.addEventListener('resize', checkHeroVisibility);
     checkHeroVisibility();
