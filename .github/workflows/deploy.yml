@@ -1,0 +1,64 @@
+# .github/workflows/deploy.yml
+#
+# Realistic scope: deploys the static site, runs a nightly dependency/
+# vulnerability scan, and triggers the backup script on a schedule.
+# This does NOT rewrite your source code or auto-commit "improvements" —
+# an automated process that edits and ships its own code unsupervised
+# is a real security risk (a bug or compromised dependency could push
+# broken or malicious code straight to production). Code changes should
+# go through pull requests and review like any other change.
+
+name: veraliq-ci
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 1 * * *'   # 01:00 UTC daily — dependency/security scan
+    - cron: '0 */6 * * *' # every 6 hours — backup job
+
+jobs:
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: veraliq-com
+          directory: .
+
+  security-scan:
+    if: github.event.schedule == '0 1 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true
+      - name: OWASP dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'veraliq'
+          path: '.'
+          format: 'HTML'
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: reports/
+
+  backup:
+    if: github.event.schedule == '0 */6 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run 3-2-1 backup
+        env:
+          SOURCE_DIR: ./data
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: bash backup-template.sh

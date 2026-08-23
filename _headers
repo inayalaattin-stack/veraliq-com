@@ -1,0 +1,12 @@
+# Cloudflare Pages / Netlify-style _headers file.
+# Applies real, standard security headers to every response.
+# Adjust CSP `connect-src` / `script-src` to match any third-party
+# services you actually add (analytics, fonts, your /api/assistant host).
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'

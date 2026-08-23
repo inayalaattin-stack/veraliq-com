@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veraliq — İnşaat ve Gayrimenkul için AI Satış Ajanları</title>
+<meta name="description" content="Veraliq; müteahhitler ve gayrimenkul şirketleri için WhatsApp üzerinden uçtan uca satış yürüten, kendi proje verinizle eğitilen yapay zeka satış ajanları sunar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0F1C;
+    --ink-2:#0F1830;
+    --panel:#121D3A;
+    --line: rgba(197,207,232,0.12);
+    --text:#EDF1FA;
+    --text-dim:#8B93A7;
+    --blue:#3E7BFA;
+    --blue-dim:#1E3A70;
+    --gold:#C9A24B;
+    --green:#3DD68C;
+    --radius: 4px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk',sans-serif;
+    letter-spacing:-0.02em;
+    font-weight:600;
+    margin:0;
+  }
+  .mono{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.02em;
+  }
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
+  @media(max-width:640px){.wrap{padding:0 20px;}}
+
+  /* NAV */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    backdrop-filter:blur(12px);
+    background:rgba(10,15,28,0.72);
+    border-bottom:1px solid var(--line);
+  }
+  nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;max-width:1200px;margin:0 auto;
+  }
+  .logo{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:20px;letter-spacing:-0.01em;
+    display:flex;align-items:center;gap:8px;
+  }
+  .logo-mark{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--blue);
+    box-shadow:0 0 0 3px var(--blue-dim);
+  }
+  .nav-links{display:flex;gap:36px;align-items:center;}
+  .nav-links a{
+    font-size:14px;color:var(--text-dim);
+    transition:color .2s;
+  }
+  .nav-links a:hover{color:var(--text);}
+  .nav-cta{
+    padding:10px 20px;border:1px solid var(--line);
+    border-radius:var(--radius);font-size:13px;
+    font-family:'IBM Plex Mono',monospace;
+    transition:all .2s;
+  }
+  .nav-cta:hover{border-color:var(--blue);background:rgba(62,123,250,0.08);}
+  .nav-toggle{display:none;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;}
+  @media(max-width:860px){
+    .nav-links{
+      position:fixed;top:64px;left:0;right:0;bottom:0;
+      background:var(--ink);flex-direction:column;justify-content:flex-start;
+      padding:40px 32px;gap:24px;transform:translateX(100%);
+      transition:transform .3s ease;
+    }
+    .nav-links.open{transform:translateX(0);}
+    .nav-toggle{display:block;}
+  }
+
+  /* HERO */
+  .hero{
+    position:relative;
+    padding:180px 0 120px;
+    min-height:100vh;
+    display:flex;align-items:center;
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:64px;align-items:center;
+    position:relative;z-index:2;width:100%;
+  }
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;}}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;color:var(--blue);
+    letter-spacing:0.12em;text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;margin-bottom:24px;
+  }
+  .eyebrow::before{content:'';width:24px;height:1px;background:var(--blue);}
+  .hero h1{
+    font-size:clamp(38px,5.5vw,68px);
+    line-height:1.04;margin-bottom:28px;
+  }
+  .hero h1 span{color:var(--blue);}
+  .hero p.lede{
+    font-size:18px;line-height:1.6;color:var(--text-dim);
+    max-width:520px;margin-bottom:36px;
+  }
+  .btn-row{display:flex;gap:16px;flex-wrap:wrap;}
+  .btn{
+    padding:14px 28px;border-radius:var(--radius);
+    font-size:14px;font-weight:500;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:all .2s;cursor:pointer;border:none;font-family:'Inter',sans-serif;
+  }
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#5a90ff;transform:translateY(-1px);}
+  .btn-ghost{border:1px solid var(--line);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--text-dim);}
+
+  /* Network visualization */
+  .net-vis{
+    position:relative;height:460px;
+  }
+  .net-vis svg{width:100%;height:100%;}
+  .net-node{fill:var(--blue);}
+  .net-node.gold{fill:var(--gold);}
+  .net-line{stroke:var(--blue);stroke-width:1;opacity:0.25;}
+  .net-pulse{
+    fill:none;stroke:var(--blue);stroke-width:1.5;
+    animation:pulse-ring 3s ease-out infinite;
+  }
+  @keyframes pulse-ring{
+    0%{r:6;opacity:0.8;}
+    100%{r:40;opacity:0;}
+  }
+  .net-label{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    fill:var(--text-dim);letter-spacing:0.05em;
+  }
+
+  /* Section shared */
+  section{padding:120px 0;border-bottom:1px solid var(--line);}
+  .section-head{max-width:640px;margin-bottom:64px;}
+  .section-head .eyebrow{margin-bottom:16px;}
+  .section-head h2{font-size:clamp(28px,3.5vw,42px);line-height:1.15;}
+  .section-head p{color:var(--text-dim);font-size:16px;margin-top:16px;line-height:1.6;}
+
+  /* Stats bar */
+  .stats-bar{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .stat{
+    padding:36px 32px;border-right:1px solid var(--line);
+  }
+  .stat:last-child{border-right:none;}
+  @media(max-width:760px){
+    .stats-bar{grid-template-columns:repeat(2,1fr);}
+    .stat:nth-child(2){border-right:none;}
+  }
+  .stat-num{
+    font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:600;
+    color:var(--blue);
+  }
+  .stat-label{
+    font-size:13px;color:var(--text-dim);margin-top:6px;
+  }
+
+  /* Services grid */
+  .services{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);
+  }
+  @media(max-width:900px){.services{grid-template-columns:1fr;}}
+  .service{
+    background:var(--ink);padding:40px 32px;
+    transition:background .2s;
+  }
+  .service:hover{background:var(--panel);}
+  .service .idx{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);
+  }
+  .service h3{font-size:20px;margin:20px 0 12px;}
+  .service p{font-size:14px;color:var(--text-dim);line-height:1.6;}
+
+  /* Global presence */
+  .presence-list{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px;
+  }
+  @media(max-width:860px){.presence-list{grid-template-columns:repeat(2,1fr);}}
+  .presence-item{
+    border:1px solid var(--line);padding:24px;border-radius:var(--radius);
+  }
+  .presence-item .region{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);
+    display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  }
+  .region::before{content:'●';font-size:8px;}
+  .presence-item h4{font-size:16px;font-family:'Space Grotesk',sans-serif;margin-bottom:4px;}
+  .presence-item span{font-size:13px;color:var(--text-dim);}
+
+  /* Trust / security */
+  .trust-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:48px;}
+  @media(max-width:760px){.trust-grid{grid-template-columns:1fr;}}
+  .trust-item{background:var(--ink);padding:28px 32px;display:flex;gap:20px;align-items:flex-start;}
+  .trust-icon{
+    width:36px;height:36px;flex-shrink:0;border-radius:var(--radius);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--blue);
+  }
+  .trust-item h4{font-size:15px;margin-bottom:6px;}
+  .trust-item p{font-size:13px;color:var(--text-dim);line-height:1.5;}
+
+  /* CTA */
+  .cta-section{
+    text-align:center;padding:140px 0;
+    background:radial-gradient(ellipse at center, var(--ink-2) 0%, var(--ink) 70%);
+  }
+  .cta-section h2{font-size:clamp(30px,4vw,46px);max-width:640px;margin:0 auto 20px;}
+  .cta-section p{color:var(--text-dim);margin-bottom:36px;}
+
+  /* Footer */
+  footer{padding:64px 0 32px;}
+  .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+  @media(max-width:760px){.footer-grid{grid-template-columns:1fr 1fr;}}
+  .footer-col h5{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);
+    text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;
+  }
+  .footer-col a, .footer-col p{
+    display:block;font-size:14px;color:var(--text-dim);margin-bottom:10px;
+    transition:color .2s;
+  }
+  .footer-col a:hover{color:var(--text);}
+  .footer-bottom{
+    border-top:1px solid var(--line);padding-top:24px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    font-size:13px;color:var(--text-dim);
+  }
+
+  /* Chat widget */
+  #veraliq-assist-launcher{
+    position:fixed;bottom:24px;right:24px;z-index:200;
+    width:60px;height:60px;border-radius:50%;
+    background:var(--blue);border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 24px rgba(62,123,250,0.4);
+    transition:transform .2s;
+  }
+  #veraliq-assist-launcher:hover{transform:scale(1.06);}
+  #veraliq-assist-panel{
+    position:fixed;bottom:96px;right:24px;z-index:200;
+    width:360px;max-width:calc(100vw - 32px);height:480px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    display:none;flex-direction:column;overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,0.5);
+  }
+  #veraliq-assist-panel.open{display:flex;}
+  .assist-head{
+    padding:16px 20px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px;
+  }
+  .assist-avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,var(--blue),var(--gold));
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+    transition:box-shadow .3s ease;
+  }
+  .assist-avatar.listening{box-shadow:0 0 0 6px rgba(62,123,250,0.25);}
+  .assist-avatar.speaking{box-shadow:0 0 0 6px rgba(61,214,140,0.25);animation:av-pulse 0.8s ease-in-out infinite;}
+  @keyframes av-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  .assist-icon-btn{
+    background:transparent;border:1px solid var(--line);color:var(--text);
+    width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:15px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .assist-icon-btn.on{border-color:var(--blue);background:rgba(62,123,250,0.12);}
+  .assist-icon-btn.recording{border-color:var(--red, #E5484D);background:rgba(229,72,77,0.12);}
+  .assist-head-text h4{font-size:14px;margin:0;}
+  .assist-head-text span{
+    font-size:11px;color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .assist-body{flex:1;overflow-y:auto;padding:16px 20px;font-size:14px;line-height:1.5;}
+  .assist-msg{margin-bottom:14px;max-width:85%;}
+  .assist-msg.bot{color:var(--text);}
+  .assist-msg.user{margin-left:auto;text-align:right;color:var(--blue);}
+  .assist-disclosure{
+    font-size:11px;color:var(--text-dim);text-align:center;
+    padding:8px;border-top:1px solid var(--line);font-family:'IBM Plex Mono',monospace;
+  }
+  .assist-input-row{
+    display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);
+  }
+  .assist-input-row input{
+    flex:1;background:var(--ink);border:1px solid var(--line);color:var(--text);
+    padding:10px 12px;border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;
+  }
+  .assist-input-row button{
+    background:var(--blue);border:none;color:#fff;padding:0 16px;border-radius:6px;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo"><span class="logo-mark"></span>VERALIQ</div>
+    <div class="nav-links" id="navLinks">
+      <a href="#how">Nasıl Çalışır</a>
+      <a href="#services">Özellikler</a>
+      <a href="#integration">Entegrasyon</a>
+      <a href="#trust">Güvenlik &amp; Onay</a>
+      <a href="#contact">İletişim</a>
+      <a href="#contact" class="nav-cta">DEMO TALEP ET</a>
+    </div>
+    <button class="nav-toggle" id="navToggle">☰</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">İNŞAAT &amp; GAYRİMENKUL İÇİN AI SATIŞ AJANLARI</div>
+      <h1>Sizin sitenize entegre olan,<br><span>kendi projenizle</span> eğitilmiş ajan.</h1>
+      <p class="lede">Veraliq bir ajan geliştirir, siz kendi web sitenize entegre edersiniz. Ajan; projenizin verisiyle ziyaretçilerinizle WhatsApp ve web üzerinden konuşur, broşür gönderir, takip eder — kapora ve sözleşme adımında yetkilinizin onayını alarak satışı güvenle kapatır. (Şu an sağ altta gördüğünüz asistan, bu teknolojinin bizim iş modelimizi anlatan versiyonu — aynı altyapıyı kendi sitenizde de kullanacaksınız.)</p>
+      <div class="btn-row">
+        <a href="#contact" class="btn btn-primary">Demo Talep Et →</a>
+        <a href="#services" class="btn btn-ghost">Çözümleri İncele</a>
+      </div>
+    </div>
+    <div class="net-vis">
+      <svg viewBox="0 0 400 460" fill="none">
+        <!-- connecting lines -->
+        <line class="net-line" x1="80" y1="80" x2="200" y2="200"/>
+        <line class="net-line" x1="200" y1="200" x2="330" y2="110"/>
+        <line class="net-line" x1="200" y1="200" x2="110" y2="330"/>
+        <line class="net-line" x1="200" y1="200" x2="320" y2="340"/>
+        <line class="net-line" x1="80" y1="80" x2="110" y2="330"/>
+        <line class="net-line" x1="330" y1="110" x2="320" y2="340"/>
+        <!-- nodes -->
+        <g>
+          <circle class="net-pulse" cx="200" cy="200" r="6"/>
+          <circle class="net-node gold" cx="200" cy="200" r="6"/>
+        </g>
+        <circle class="net-node" cx="80" cy="80" r="4"/>
+        <circle class="net-node" cx="330" cy="110" r="4"/>
+        <circle class="net-node" cx="110" cy="330" r="4"/>
+        <circle class="net-node" cx="320" cy="340" r="4"/>
+        <text class="net-label" x="200" y="185" text-anchor="middle">AJAN</text>
+        <text class="net-label" x="80" y="66" text-anchor="middle">WHATSAPP</text>
+        <text class="net-label" x="330" y="96" text-anchor="middle">CRM</text>
+        <text class="net-label" x="110" y="352" text-anchor="middle">ONAY</text>
+        <text class="net-label" x="320" y="362" text-anchor="middle">ÖDEME</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar wrap" style="max-width:1200px;margin:0 auto;padding:0;">
+  <div class="stat"><div class="stat-num">7/24</div><div class="stat-label mono">Kesintisiz WhatsApp yanıtı</div></div>
+  <div class="stat"><div class="stat-num">1</div><div class="stat-label mono">Onay adımı — her ödemede zorunlu</div></div>
+  <div class="stat"><div class="stat-num">100%</div><div class="stat-label mono">Şirkete özel proje/fiyat verisi</div></div>
+  <div class="stat"><div class="stat-num">0</div><div class="stat-label mono">Canlı temsilci ihtiyacı*</div></div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">SÜREÇ</div>
+      <h2>Müşteri mesaj atar, ajan satışı yönetir.</h2>
+      <p>Aşağıdaki her adım, projeniz için yüklediğiniz gerçek veriyle çalışır — ajan hiçbir zaman uydurma bilgi paylaşmaz.</p>
+    </div>
+    <div class="services">
+      <div class="service"><div class="idx mono">01</div><h3>Karşılama &amp; İhtiyaç Tespiti</h3><p>Müşteri WhatsApp'tan yazar; ajan ilgilendiği proje, daire tipi ve bütçeyi öğrenir.</p></div>
+      <div class="service"><div class="idx mono">02</div><h3>Tanıtım &amp; Broşür</h3><p>İlgili projenin güncel broşür, görsel ve fiyat bilgisini anında paylaşır.</p></div>
+      <div class="service"><div class="idx mono">03</div><h3>Soru-Cevap</h3><p>Stok, ödeme planı, teslim tarihi gibi soruları canlı verinizden yanıtlar.</p></div>
+      <div class="service"><div class="idx mono">04</div><h3>Takip (Follow-up)</h3><p>Karar vermeyen müşteriyi nazikçe hatırlatır; özel günlerini not alır.</p></div>
+      <div class="service"><div class="idx mono">05</div><h3>Yetkili Onayı</h3><p>Kapora veya özel teklif aşamasında yetkilinize anlık onay isteği gönderir.</p></div>
+      <div class="service"><div class="idx mono">06</div><h3>Ödeme &amp; Sözleşme</h3><p>Onay sonrası güvenli ödeme linki üretir, sözleşme taslağını e-imzaya yönlendirir.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">ÖZELLİKLER</div>
+      <h2>Tek platformda satış operasyonu.</h2>
+      <p>Her özellik bağımsız çalışacak şekilde tasarlanmıştır; ihtiyacınıza göre tek başına ya da birlikte devreye alınabilir.</p>
+    </div>
+  </div>
+  <div class="services">
+    <div class="service">
+      <div class="idx mono">01</div>
+      <h3>Şirkete Özel Eğitilmiş Ajan</h3>
+      <p>Ajan yalnızca sizin projeleriniz, fiyatlarınız ve broşürlerinizle konuşur — başka şirketin verisiyle karışmaz.</p>
+    </div>
+    <div class="service">
+      <div class="idx mono">02</div>
+      <h3>Resmi WhatsApp Business Entegrasyonu</h3>
+      <p>Meta'nın resmi WhatsApp Business API'si üzerinden çalışır; numaranız ban riskine girmez.</p>
+    </div>
+    <div class="service">
+      <div class="idx mono">03</div>
+      <h3>Müşteri Hafızası</h3>
+      <p>İlgi alanı, bütçe, geçmiş konuşmalar ve özel günler kaydedilir; ajan her seferinde sıfırdan başlamaz.</p>
+    </div>
+    <div class="service">
+      <div class="idx mono">04</div>
+      <h3>Zorunlu Onay Kapısı</h3>
+      <p>Kapora talebi, indirim veya sözleşme gönderimi öncesi yetkilinizin onayı olmadan hiçbir finansal adım atılmaz.</p>
+    </div>
+    <div class="service">
+      <div class="idx mono">05</div>
+      <h3>CRM/XRM Entegrasyonu</h3>
+      <p>Kendi CRM'inizi bağlayın veya Veraliq'in dahili CRM'ini kullanın — tüm konuşmalar ve fırsatlar tek yerde.</p>
+    </div>
+    <div class="service">
+      <div class="idx mono">06</div>
+      <h3>Admin, Portal &amp; Mobil</h3>
+      <p>Şirketiniz için portal ekranı, satış ekibiniz için mobil onay uygulaması, bizim için merkezi yönetim paneli.</p>
+    </div>
+  </div>
+</section>
+
+<section id="presence">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">KİMLER İÇİN</div>
+      <h2>Öncelikle inşaat ve gayrimenkul sektörü için kuruldu.</h2>
+      <p>Yüksek bilet değerli, çok sayıda tekrarlayan soru içeren satış süreçleri olan sektörlerde en çok fark yaratır.</p>
+    </div>
+    <div class="presence-list">
+      <div class="presence-item">
+        <div class="region">ÖNCELİK</div>
+        <h4>Müteahhitler</h4>
+        <span>Proje bazlı toplu daire satışı</span>
+      </div>
+      <div class="presence-item">
+        <div class="region">ÖNCELİK</div>
+        <h4>Gayrimenkul Şirketleri</h4>
+        <span>Çoklu portföy, çoklu danışman</span>
+      </div>
+      <div class="presence-item">
+        <div class="region">YAKINDA</div>
+        <h4>Araç Galerileri</h4>
+        <span>Faz 4 kapsamında değerlendiriliyor</span>
+      </div>
+      <div class="presence-item">
+        <div class="region">YAKINDA</div>
+        <h4>Diğer Yüksek Bilet Perakende</h4>
+        <span>Talebe göre değerlendirilecek</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="trust">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">GÜVENLİK &amp; ONAY</div>
+      <h2>Parayla ilgili hiçbir adım tek başına atılmaz.</h2>
+      <p>Ajan hız kazandırır, ama kontrol her zaman sizin yetkilinizde kalır.</p>
+    </div>
+    <div class="trust-grid">
+      <div class="trust-item"><div class="trust-icon mono">ON</div><div><h4>Zorunlu Yetkili Onayı</h4><p>Kapora talebi, indirim veya sözleşme gönderimi öncesi ajan otomatik olarak yetkilinizden onay ister.</p></div></div>
+      <div class="trust-item"><div class="trust-icon mono">LNK</div><div><h4>Ham IBAN Paylaşılmaz</h4><p>Ödeme, süreli ve tutarı sabit bir ödeme linki üzerinden alınır — yanlış hesaba yönlendirme riski ortadan kalkar.</p></div></div>
+      <div class="trust-item"><div class="trust-icon mono">TEN</div><div><h4>Şirketler Arası Veri İzolasyonu</h4><p>Her şirketin proje ve müşteri verisi ayrı tutulur; ajan yalnızca kendi şirketinizin verisiyle konuşur.</p></div></div>
+      <div class="trust-item"><div class="trust-icon mono">WBA</div><div><h4>Resmi WhatsApp API</h4><p>Meta'nın resmi Business API'si kullanılır; gayriresmi otomasyon yöntemleri numaranızı risk altına sokmaz.</p></div></div>
+      <div class="trust-item"><div class="trust-icon mono">LOG</div><div><h4>Denetlenebilir Onay Kaydı</h4><p>Her onay, ödeme ve sözleşme adımı zaman damgalı olarak kaydedilir — kim ne zaman onayladı görünür.</p></div></div>
+      <div class="trust-item"><div class="trust-icon mono">KVKK</div><div><h4>KVKK Uyumlu Veri Yönetimi</h4><p>Müşteri verisi açık rıza ile toplanır; saklama ve silme talepleri için hazır süreç.</p></div></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:20px;">* Platform, tapu devri ve nihai sözleşmenin hukuki geçerliliği gibi resmi süreçleri değil, satış öncesi ve ön ödeme sürecini otomatikleştirir.</p>
+  </div>
+</section>
+
+<section id="integration">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">ENTEGRASYON</div>
+      <h2>Kendi sitenize tek satır kodla ekleyin.</h2>
+      <p>Kurulumdan sonra size özel bir şirket kimliği (company-id) verilir. Ajan, portaldan yüklediğiniz proje ve fiyat verinizle otomatik olarak çalışmaya başlar.</p>
+    </div>
+    <div class="trust-grid" style="grid-template-columns:1fr;">
+      <div class="trust-item" style="display:block;">
+        <h4 style="margin-bottom:12px;">Sitenizin &lt;/body&gt; etiketinden hemen önce:</h4>
+        <pre class="mono" style="background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:20px;font-size:13px;line-height:1.7;overflow-x:auto;color:var(--text-dim);white-space:pre-wrap;">&lt;script
+  src="https://cdn.veraliq.com/widget.js"
+  data-company-id="YOUR_COMPANY_ID"
+  data-lang="auto"
+  async&gt;
+&lt;/script&gt;</pre>
+        <p style="margin-top:16px;">Bu kadar. Widget yüklendiğinde ziyaretçinin tarayıcı diline göre otomatik konuşur, konuşma geçmişini ve müşteri bilgisini sizin portalınıza ve bağladığınız CRM/XRM'e yazar. Tasarım, renk ve konum sizin portal ayarlarınızdan özelleştirilebilir.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="contact" style="border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center;">İLETİŞİME GEÇİN</div>
+    <h2>Projenizle konuşan bir ajanı görün.</h2>
+    <p>Kendi proje verinizle çalışan bir demo ajan kurup canlı gösterelim.</p>
+    <div class="btn-row" style="justify-content:center;">
+      <a href="mailto:info@veraliq.com" class="btn btn-primary">info@veraliq.com</a>
+      <a href="#" class="btn btn-ghost" onclick="document.getElementById('veraliq-assist-launcher').click();return false;">Asistanla Konuş</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="logo" style="margin-bottom:16px;"><span class="logo-mark"></span>VERALIQ</div>
+        <p style="max-width:280px;">İnşaat ve gayrimenkul şirketleri için WhatsApp üzerinden satış yürüten yapay zeka ajanı platformu.</p>
+      </div>
+      <div class="footer-col">
+        <h5>ÖZELLİKLER</h5>
+        <a href="#how">Nasıl Çalışır</a>
+        <a href="#services">Tüm Özellikler</a>
+        <a href="#trust">Güvenlik &amp; Onay</a>
+      </div>
+      <div class="footer-col">
+        <h5>ŞİRKET</h5>
+        <a href="#presence">Kimler İçin</a>
+        <a href="#contact">İletişim</a>
+      </div>
+      <div class="footer-col">
+        <h5>YASAL</h5>
+        <a href="/privacy.html">Gizlilik Politikası</a>
+        <a href="/kvkk.html">KVKK Aydınlatma Metni</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Veraliq. Tüm hakları saklıdır.</span>
+      <span class="mono">[Şirket unvanı ve MERSİS/ticaret sicil no — düzenleyin]</span>
+    </div>
+  </div>
+</footer>
+
+<!-- AI Assistant Widget: clearly disclosed as an AI, not a human -->
+<button id="veraliq-assist-launcher" aria-label="AI asistanı aç">💬</button>
+<div id="veraliq-assist-panel">
+  <div class="assist-head">
+    <div class="assist-avatar" id="assistAvatar">V</div>
+    <div class="assist-head-text">
+      <h4>Veraliq Satış Ajanı</h4>
+      <span class="mono">YAPAY ZEKA · İŞ ORTAKLIĞI</span>
+    </div>
+    <button id="voiceToggle" class="assist-icon-btn" title="Sesli yanıtı aç/kapat" aria-label="Sesli yanıtı aç/kapat">🔊</button>
+  </div>
+  <div class="assist-body" id="assistBody">
+    <div class="assist-msg bot">Merhaba 👋 Ben Veraliq'in yapay zeka satış ajanıyım — az önce okuduğunuz teknolojinin ta kendisiyim. Şirketinizin sitesine nasıl entegre olduğumuzu, iş modelimizi veya fiyatlandırmayı anlatabilirim. Hangi tür şirketsiniz?</div>
+  </div>
+  <div class="assist-disclosure">Bu bir yapay zeka asistanıdır, insan temsilci değildir.</div>
+  <div class="assist-input-row">
+    <input type="text" id="assistInput" placeholder="Mesajınızı yazın veya mikrofona basın...">
+    <button id="assistMic" class="assist-icon-btn" title="Konuşarak sor" aria-label="Konuşarak sor">🎤</button>
+    <button id="assistSend">Gönder</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
