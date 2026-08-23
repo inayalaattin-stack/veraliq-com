@@ -9,7 +9,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' https://unpkg.com; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://unpkg.com https://*.anam.ai wss://*.anam.ai; img-src 'self' data:; frame-src https://www.openstreetmap.org; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com blob:; worker-src 'self' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://unpkg.com https://*.anam.ai wss://*.anam.ai; img-src 'self' data: https://*.anam.ai; media-src 'self' blob: https://*.anam.ai; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
 
 # script.js changes frequently during active development; avoid the platform's
 # default long asset cache (previously 4h) causing stale JS on live visits.
