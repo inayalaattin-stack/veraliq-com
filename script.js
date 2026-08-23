@@ -47,6 +47,30 @@
   var detectedLang = detectLangCode();
   document.documentElement.lang = detectedLang;
 
+  // ---- Visitor identity + sales-stage memory (client-side MVP) ----
+  // No server-side DB is wired up yet, so cross-visit continuity lives in
+  // localStorage: a stable visitorId and the last known sales stage are
+  // sent to the backend with every message so replies can stay consistent
+  // in tone even across a page reload. Upgrading this to durable
+  // server-side memory (Cloudflare KV/D1) is a tracked next step.
+  function getVisitorId() {
+    try {
+      var id = localStorage.getItem('veraliq_visitor_id');
+      if (!id) {
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'v-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+        localStorage.setItem('veraliq_visitor_id', id);
+      }
+      return id;
+    } catch (e) { return 'v-nostore'; }
+  }
+  function getStage() {
+    try { return localStorage.getItem('veraliq_stage') || 'DISCOVERY'; } catch (e) { return 'DISCOVERY'; }
+  }
+  function setStage(stage) {
+    try { if (stage) localStorage.setItem('veraliq_stage', stage); } catch (e) { /* ignore */ }
+  }
+  var visitorId = getVisitorId();
+
   // ---- Live AI Agent card (hero) — the main product experience.
   // No chat-bubble list: a single live caption area shows the latest
   // exchange, like subtitles, so it reads as a live conversation rather
@@ -59,10 +83,12 @@
   var voiceToggle = document.getElementById('voiceToggle');
   var avatar = document.getElementById('assistAvatar');
   var captionBox = document.getElementById('assistCaption');
+  var cardsBox = document.getElementById('assistCards');
   var statusLine = document.getElementById('agentStatus');
   var conversationHistory = [];
   var voiceOn = true;
   var greeted = false;
+  var leadAlreadySent = false;
 
   function setCaption(text, who) {
     if (!captionBox) return;
@@ -81,6 +107,92 @@
 
   function setStatus(text) {
     if (statusLine) statusLine.textContent = text;
+  }
+
+  function fmtTRY(n) {
+    try { return Number(n).toLocaleString('tr-TR') + ' TL'; } catch (e) { return n + ' TL'; }
+  }
+
+  // ---- Tool-driven UI cards (project cards + a small map) ----
+  // Rendered below the live caption when the backend's Agent Engine calls
+  // search_portfolio / create_lead. All data here is explicitly DEMO data
+  // (see worker.js) — never presented as a real listing.
+  function renderCards(cards) {
+    if (!cardsBox) return;
+    cardsBox.innerHTML = '';
+    if (!cards || !cards.length) { cardsBox.classList.remove('show'); return; }
+
+    cards.forEach(function (c) {
+      if (c.type === 'project') {
+        var card = document.createElement('div');
+        card.className = 'agent-mini-card';
+        var demoTag = c.demo ? '<span class="agent-mini-demo">DEMO</span>' : '';
+        var seaText = (typeof c.distance_to_sea_m === 'number')
+          ? (c.distance_to_sea_m <= 1000 ? 'Denize ' + c.distance_to_sea_m + ' m' : 'Denize ~' + Math.round(c.distance_to_sea_m / 1000) + ' km')
+          : '';
+        card.innerHTML =
+          '<div class="agent-mini-head">' + demoTag + '<strong>' + c.name + '</strong></div>' +
+          '<div class="agent-mini-loc mono">' + c.location + (seaText ? ' · ' + seaText : '') + '</div>' +
+          '<div class="agent-mini-price">' + fmtTRY(c.price_from_try) + '\'den başlayan</div>' +
+          '<div class="agent-mini-rooms mono">' + (c.room_types || []).join(' · ') + '</div>' +
+          (c.features && c.features.length ? '<div class="agent-mini-feat">' + c.features.slice(0, 3).join(' · ') + '</div>' : '');
+        cardsBox.appendChild(card);
+      } else if (c.type === 'map' && typeof c.lat === 'number' && typeof c.lon === 'number') {
+        var d = 0.06;
+        var bbox = (c.lon - d) + ',' + (c.lat - d) + ',' + (c.lon + d) + ',' + (c.lat + d);
+        var mapWrap = document.createElement('div');
+        mapWrap.className = 'agent-mini-map';
+        mapWrap.innerHTML =
+          '<div class="agent-mini-map-label mono">' + (c.label || 'Konum') + ' — gösterge amaçlı</div>' +
+          '<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&marker=' + c.lat + ',' + c.lon + '&layer=mapnik" title="' + (c.label || 'Konum') + '"></iframe>';
+        cardsBox.appendChild(mapWrap);
+      } else if (c.type === 'lead_confirmed' && c.lead) {
+        var lc = document.createElement('div');
+        lc.className = 'agent-mini-card agent-mini-lead';
+        lc.innerHTML = '<div class="agent-mini-head"><strong>Talebiniz alındı ✓</strong></div>' +
+          '<div class="agent-mini-loc mono">Ekibimiz en kısa sürede ' + (c.lead.name || 'sizinle') + ' ile iletişime geçecek.</div>';
+        cardsBox.appendChild(lc);
+        sendLeadNotification(c.lead);
+      }
+    });
+    cardsBox.classList.add('show');
+  }
+
+  // Reuses the existing mailto fallback (no CRM endpoint wired up yet) so
+  // a lead captured mid-conversation reaches the same inbox as the demo
+  // form, instead of silently vanishing.
+  function sendLeadNotification(lead) {
+    if (leadAlreadySent) return;
+    leadAlreadySent = true;
+    try {
+      var subject = encodeURIComponent('Veraliq Canlı Agent Lead — ' + (lead.name || ''));
+      var bodyLines = [
+        'Kaynak: ' + (lead.source || 'veraliq.com canlı Agent'),
+        'Ad Soyad: ' + (lead.name || ''),
+        'Telefon/E-posta: ' + (lead.phone || ''),
+        'Şirket: ' + (lead.company || ''),
+        'İlgi/Not: ' + (lead.interest || ''),
+        'Zaman: ' + (lead.created_at || new Date().toISOString())
+      ];
+      var body = encodeURIComponent(bodyLines.join('\n'));
+      var mailLink = document.createElement('a');
+      mailLink.href = 'mailto:info@veraliq.com?subject=' + subject + '&body=' + body;
+      mailLink.target = '_blank';
+      mailLink.rel = 'noopener';
+      mailLink.style.display = 'none';
+      document.body.appendChild(mailLink);
+      // Not auto-clicked: opening a mail client without a direct user
+      // click is unreliable across browsers and can look like a popup.
+      // Instead we surface a visible action in the lead card itself.
+      var lastCard = cardsBox && cardsBox.querySelector('.agent-mini-lead');
+      if (lastCard) {
+        var btn = document.createElement('button');
+        btn.className = 'agent-mini-lead-btn';
+        btn.textContent = 'Ekibe bildirimi gönder (e-posta aç)';
+        btn.addEventListener('click', function () { mailLink.click(); });
+        lastCard.appendChild(btn);
+      }
+    } catch (e) { /* non-critical */ }
   }
 
   // Greet on load, once, without requiring a click — matches the brief's
@@ -169,18 +281,34 @@
   }
 
   // ---- Real backend call ----
+  // Backend now returns { reply, cards, stage, leadCaptured } (Agent
+  // Engine — tool calls + demo portfolio search + lead capture). Falls
+  // back gracefully if an older/plain { reply } shape is ever served.
   async function getAssistantReply(userText) {
     try {
       var res = await fetch(ASSISTANT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText, history: conversationHistory }),
+        body: JSON.stringify({
+          message: userText,
+          history: conversationHistory,
+          stage: getStage(),
+          visitorId: visitorId,
+        }),
       });
       if (!res.ok) throw new Error('backend error ' + res.status);
       var data = await res.json();
-      return data.reply || 'Şu anda yanıt üretemedim, lütfen tekrar deneyin.';
+      return {
+        reply: data.reply || 'Şu anda yanıt üretemedim, lütfen tekrar deneyin.',
+        cards: Array.isArray(data.cards) ? data.cards : [],
+        stage: data.stage || null,
+      };
     } catch (err) {
-      return 'Şu anda canlı Agent bağlantısı kurulamadı (backend geçici olarak devrede olmayabilir). Lütfen info@veraliq.com adresine yazın, size dönelim.';
+      return {
+        reply: 'Şu anda canlı Agent bağlantısı kurulamadı (backend geçici olarak devrede olmayabilir). Lütfen info@veraliq.com adresine yazın, size dönelim.',
+        cards: [],
+        stage: null,
+      };
     }
   }
 
@@ -192,10 +320,12 @@
     input.value = '';
     setStatus('düşünüyor…');
 
-    getAssistantReply(text).then(function (reply) {
-      setCaption(reply, 'bot');
-      conversationHistory.push({ role: 'model', text: reply });
-      speakReply(reply);
+    getAssistantReply(text).then(function (result) {
+      setCaption(result.reply, 'bot');
+      conversationHistory.push({ role: 'model', text: result.reply });
+      speakReply(result.reply);
+      renderCards(result.cards);
+      if (result.stage) setStage(result.stage);
     });
   }
 
