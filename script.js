@@ -313,6 +313,23 @@
     }
   }
 
+  // A backgrounded tab throttles timers (and can starve the WebRTC
+  // connection itself), so a scheduled reconnect may not have actually run
+  // by the time the visitor comes back. Check immediately on return and
+  // reconnect right away rather than waiting on a throttled timer.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if (intentionalClose) return;
+    if (els.win.hidden && els.bubble.hidden) return; // closed
+    var tracks = els.video.srcObject ? els.video.srcObject.getTracks() : [];
+    var dead = tracks.length > 0 && tracks.every(function (t) { return t.readyState === 'ended'; });
+    if (dead || !els.statusDot.classList.contains('live')) {
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectAttempts = 0;
+      initAgent();
+    }
+  });
+
   // Auto-connect on first visit so the agent is already live in the corner
   // by the time a visitor notices it — no click required to "wake it up".
   setWindowState('corner');
