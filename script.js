@@ -3,13 +3,14 @@
 // Never place secret keys in client-side JavaScript — they become
 // publicly visible to anyone who views page source.
 //
-// NOTE (Ağustos 2026): Sitedeki canlı AI Agent ("Elif Kaya") artık burada
-// yazılmış bir chat/avatar UI değil — tamamen Anam.ai'nin kendi
-// barındırdığı widget'ı (bkz. index.html, </body> öncesi <anam-agent>
-// satırı). Görüntü, ses, dil geçişi (TR/EN) ve konuşma mantığının
-// tamamı Anam Lab'de (persona: Elif Kaya) yapılandırıldı ve orada
-// yönetiliyor. Bu dosya artık sadece sitenin geri kalan sıradan
-// etkileşimlerinden (mobil menü, SSS akordeonu, demo formu) sorumlu.
+// NOTE (Ağustos 2026): Sitedeki canlı AI Agent ("Elif Kaya") artık Anam.ai'nin
+// hazır widget'ı değil — bu dosyanın alt kısmındaki Adaptive Agent Window
+// bölümü, Anam JS SDK'sını doğrudan kullanarak gerçek video akışı ve
+// corner/half/fullscreen/minimized/closed durum makinesini yönetiyor.
+// Oturum token'ı https://veraliq-agent.veraliq-com.workers.dev/session
+// adresinden alınır; gerçek Anam API anahtarı hiçbir zaman tarayıcıya inmez.
+// Ses, dil davranışı (TR kilitli) ve konuşma mantığının tamamı Anam Lab'de
+// (persona: Elif Kaya) yapılandırıldı.
 
 (function () {
   'use strict';
@@ -61,4 +62,213 @@
       if (status) status.classList.add('show');
     });
   }
+})();
+
+// ===========================================================================
+// ADAPTIVE AGENT WINDOW — "Elif Kaya"
+// States: corner (default) | half | fullscreen | minimized (bubble) | closed
+// ===========================================================================
+(function () {
+  'use strict';
+
+  var SESSION_ENDPOINT = 'https://veraliq-agent.veraliq-com.workers.dev/session';
+  var SDK_URL = 'https://esm.sh/@anam-ai/js-sdk@latest';
+
+  var els = {
+    win: document.getElementById('agentWindow'),
+    header: document.getElementById('agentHeader'),
+    video: document.getElementById('agentVideo'),
+    loading: document.getElementById('agentLoading'),
+    micBlocked: document.getElementById('agentMicBlocked'),
+    indicator: document.getElementById('agentIndicator'),
+    statusDot: document.getElementById('agentStatusDot'),
+    halfBtn: document.getElementById('agentHalfBtn'),
+    fullBtn: document.getElementById('agentFullBtn'),
+    minBtn: document.getElementById('agentMinBtn'),
+    closeBtn: document.getElementById('agentCloseBtn'),
+    bubble: document.getElementById('agentBubble'),
+    bubbleVideo: document.getElementById('agentBubbleVideo'),
+    bubbleDot: document.getElementById('agentBubbleDot'),
+    reopenBtn: document.getElementById('agentReopenBtn')
+  };
+
+  // If the markup isn't present for some reason, bail out quietly rather
+  // than throwing and breaking the rest of the page's scripts.
+  if (!els.win || !els.video) return;
+
+  var anamClient = null;
+  var lastWindowState = 'corner'; // state to return to from the bubble
+
+  function setWindowState(state) {
+    els.win.hidden = false;
+    els.win.dataset.state = state;
+    els.bubble.hidden = true;
+    els.reopenBtn.hidden = true;
+    if (state !== 'fullscreen') lastWindowState = state;
+  }
+
+  function minimize() {
+    // Copy the live stream reference into the bubble's video element so the
+    // agent keeps talking/listening while the site behind is fully visible.
+    try { els.bubbleVideo.srcObject = els.video.srcObject; } catch (e) {}
+    els.win.hidden = true;
+    els.bubble.hidden = false;
+    els.reopenBtn.hidden = true;
+  }
+
+  function restoreFromBubble() {
+    setWindowState(lastWindowState === 'fullscreen' ? 'corner' : lastWindowState);
+  }
+
+  async function closeAgent() {
+    els.win.hidden = true;
+    els.bubble.hidden = true;
+    els.reopenBtn.hidden = false;
+    try {
+      if (anamClient && typeof anamClient.stopStreaming === 'function') {
+        anamClient.stopStreaming();
+      }
+    } catch (e) {}
+    anamClient = null;
+    els.statusDot.classList.remove('live');
+    els.bubbleDot.classList.remove('live');
+  }
+
+  async function reopenAgent() {
+    els.reopenBtn.hidden = true;
+    setWindowState('corner');
+    els.loading.classList.remove('hide');
+    await initAgent();
+  }
+
+  // ---- drag-to-corner (only while in "corner" state) ----
+  (function setupDrag() {
+    var dragging = false, offsetX = 0, offsetY = 0;
+
+    els.header.addEventListener('pointerdown', function (e) {
+      if (els.win.dataset.state !== 'corner') return;
+      if (e.target.closest('.agent-btn')) return;
+      dragging = true;
+      var rect = els.win.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      els.win.classList.add('dragging');
+      els.header.classList.add('grabbing');
+      els.win.style.left = rect.left + 'px';
+      els.win.style.top = rect.top + 'px';
+      els.win.style.right = 'auto';
+      els.win.style.bottom = 'auto';
+      try { els.header.setPointerCapture(e.pointerId); } catch (e2) {}
+    });
+
+    els.header.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      els.win.style.left = (e.clientX - offsetX) + 'px';
+      els.win.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      els.win.classList.remove('dragging');
+      els.header.classList.remove('grabbing');
+
+      var rect = els.win.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var corner =
+        (cx < window.innerWidth / 2 ? 'l' : 'r') +
+        (cy < window.innerHeight / 2 ? 't' : 'b');
+      var cornerMap = { lt: 'tl', rt: 'tr', lb: 'bl', rb: 'br' };
+      els.win.dataset.corner = cornerMap[corner] || 'br';
+
+      // hand positioning back to the corner-anchored CSS rules
+      els.win.style.left = '';
+      els.win.style.top = '';
+      els.win.style.right = '';
+      els.win.style.bottom = '';
+    }
+    els.header.addEventListener('pointerup', endDrag);
+    els.header.addEventListener('pointercancel', endDrag);
+  })();
+
+  // ---- controls ----
+  els.halfBtn.addEventListener('click', function () {
+    setWindowState(els.win.dataset.state === 'half' ? 'corner' : 'half');
+  });
+  els.fullBtn.addEventListener('click', function () {
+    setWindowState(els.win.dataset.state === 'fullscreen' ? 'corner' : 'fullscreen');
+  });
+  els.minBtn.addEventListener('click', minimize);
+  els.closeBtn.addEventListener('click', closeAgent);
+  els.bubble.addEventListener('click', restoreFromBubble);
+  els.reopenBtn.addEventListener('click', reopenAgent);
+
+  // ---- Anam session + SDK wiring ----
+  async function fetchSessionToken() {
+    var resp = await fetch(SESSION_ENDPOINT, { method: 'POST' });
+    if (!resp.ok) throw new Error('session_token_http_' + resp.status);
+    var data = await resp.json();
+    if (!data || !data.sessionToken) throw new Error('session_token_missing');
+    return data.sessionToken;
+  }
+
+  function markLive(isLive) {
+    els.statusDot.classList.toggle('live', !!isLive);
+    els.bubbleDot.classList.toggle('live', !!isLive);
+    if (isLive) els.loading.classList.add('hide');
+  }
+
+  function wireEvents(client, AnamEvent) {
+    function on(name, handler) {
+      try {
+        if (AnamEvent && AnamEvent[name] && typeof client.addListener === 'function') {
+          client.addListener(AnamEvent[name], handler);
+        }
+      } catch (e) {}
+    }
+    on('VIDEO_PLAY_STARTED', function () { markLive(true); });
+    on('SESSION_READY', function () { markLive(true); });
+    on('CONNECTION_ESTABLISHED', function () { markLive(true); });
+    on('CONNECTION_CLOSED', function () { markLive(false); });
+    on('USER_SPEECH_STARTED', function () { els.indicator.hidden = false; });
+    on('USER_SPEECH_ENDED', function () { els.indicator.hidden = true; });
+    on('MIC_PERMISSION_DENIED', function () { els.micBlocked.hidden = false; });
+    on('MIC_PERMISSION_GRANTED', function () { els.micBlocked.hidden = true; });
+  }
+
+  async function initAgent() {
+    try {
+      var sdk = await import(/* webpackIgnore: true */ SDK_URL);
+      var createClient = sdk.createClient;
+      var AnamEvent = sdk.AnamEvent;
+      if (typeof createClient !== 'function') throw new Error('sdk_shape_unexpected');
+
+      var sessionToken = await fetchSessionToken();
+      anamClient = createClient(sessionToken);
+
+      wireEvents(anamClient, AnamEvent);
+
+      if (typeof anamClient.streamToVideoElement === 'function') {
+        await anamClient.streamToVideoElement('agentVideo');
+      }
+      // Safety net: some SDK versions fire readiness events we didn't catch
+      // by name above — reveal the video as soon as it actually has frames.
+      els.video.addEventListener('playing', function () { markLive(true); }, { once: true });
+    } catch (err) {
+      // Fail quietly in the UI — never fall back to any old placeholder.
+      // Keep the loading text but swap it to a short, honest note so the
+      // window doesn't spin forever if the SDK/network is unavailable.
+      var textEl = els.loading.querySelector('.agent-loading-text');
+      if (textEl) textEl.textContent = 'Agent şu anda bağlanamıyor.';
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[VeraliqAgent] init failed:', err);
+      }
+    }
+  }
+
+  // Auto-connect on first visit so the agent is already live in the corner
+  // by the time a visitor notices it — no click required to "wake it up".
+  setWindowState('corner');
+  initAgent();
 })();

@@ -93,8 +93,9 @@
     .nav-toggle{display:block;}
   }
 
-  /* HERO — clean marketing copy; the live avatar presence itself lives
-     entirely in Anam.ai's own floating widget (bottom-right), not here. */
+  /* HERO — clean marketing copy; the live "Elif Kaya" agent window is a
+     separate, adaptive fixed-position element (see .agent-window below),
+     not part of this hero markup. */
   .hero-visual{
     position:relative;min-height:78vh;padding:0;
     display:flex;align-items:center;justify-content:center;
@@ -274,9 +275,130 @@
     font-size:12.5px;color:var(--text-dim);
   }
 
-  /* NOTE: no custom chat/avatar UI here anymore — the live "Elif Kaya" agent
-     presence is entirely Anam.ai's own floating widget, embedded near the
-     end of <body>. It renders and positions itself; nothing to style. */
+  /* ===================================================================
+     ADAPTIVE AGENT WINDOW — real video-streaming "Elif Kaya" agent.
+     States (data-state on #agentWindow): corner | half | fullscreen
+     Separate elements handle "minimized" (agent-bubble) and "closed"
+     (agent-reopen) so the site behind is never blocked in those modes.
+     =================================================================== */
+  .agent-window{
+    position:fixed;z-index:900;
+    width:340px;height:480px;
+    background:#0B1220;border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25);
+    display:flex;flex-direction:column;
+    transition:width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
+               left .28s cubic-bezier(.2,.8,.2,1),right .28s cubic-bezier(.2,.8,.2,1),
+               top .28s cubic-bezier(.2,.8,.2,1),bottom .28s cubic-bezier(.2,.8,.2,1),
+               border-radius .28s ease,opacity .2s ease;
+  }
+  .agent-window[hidden]{display:none;}
+  .agent-window.dragging{transition:none;}
+
+  /* corner state — anchored to one of four corners */
+  .agent-window[data-state="corner"][data-corner="br"]{right:20px;bottom:20px;left:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="bl"]{left:20px;bottom:20px;right:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="tr"]{right:20px;top:88px;left:auto;bottom:auto;}
+  .agent-window[data-state="corner"][data-corner="tl"]{left:20px;top:88px;right:auto;bottom:auto;}
+  @media(max-width:480px){
+    .agent-window[data-state="corner"]{width:calc(100vw - 24px);height:440px;left:12px !important;right:12px !important;}
+  }
+
+  /* half-screen state — right half of viewport, full height */
+  .agent-window[data-state="half"]{
+    top:0;right:0;left:auto;bottom:auto;width:46vw;height:100vh;border-radius:0;
+  }
+  @media(max-width:760px){.agent-window[data-state="half"]{width:100vw;}}
+
+  /* fullscreen state */
+  .agent-window[data-state="fullscreen"]{
+    top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;border-radius:0;z-index:1000;
+  }
+
+  .agent-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;background:rgba(255,255,255,0.04);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    cursor:grab;user-select:none;flex-shrink:0;
+  }
+  .agent-header.grabbing{cursor:grabbing;}
+  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;}
+  .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
+  .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;}
+  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-controls{display:flex;gap:4px;flex-shrink:0;}
+  .agent-btn{
+    width:26px;height:26px;border-radius:6px;border:none;
+    background:transparent;color:#C6CCDB;font-size:13px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .15s;
+  }
+  .agent-btn:hover{background:rgba(255,255,255,0.10);color:#fff;}
+  .agent-btn-close:hover{background:rgba(217,58,64,0.25);color:#ff9098;}
+
+  .agent-stage{position:relative;flex:1;min-height:0;background:#050810;}
+  .agent-video{width:100%;height:100%;object-fit:cover;display:block;background:#050810;}
+  .agent-loading{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:#0B1220;transition:opacity .3s ease;
+  }
+  .agent-loading.hide{opacity:0;pointer-events:none;}
+  .agent-spinner{
+    width:34px;height:34px;border-radius:50%;
+    border:3px solid rgba(255,255,255,0.15);border-top-color:var(--blue);
+    animation:agent-spin 0.85s linear infinite;
+  }
+  @keyframes agent-spin{to{transform:rotate(360deg);}}
+  .agent-loading-text{font-size:12.5px;color:#9AA3B8;font-family:'IBM Plex Mono',monospace;}
+  .agent-mic-blocked{
+    position:absolute;left:12px;right:12px;bottom:12px;
+    background:rgba(217,58,64,0.14);border:1px solid rgba(217,58,64,0.35);
+    border-radius:8px;padding:10px 12px;
+  }
+  .agent-mic-blocked p{margin:0;font-size:11.5px;line-height:1.5;color:#ffd7d9;}
+  .agent-indicator{
+    position:absolute;left:14px;bottom:14px;display:flex;gap:3px;align-items:flex-end;height:16px;
+  }
+  .agent-indicator span{
+    width:3px;background:var(--green);border-radius:2px;
+    animation:agent-bounce 0.9s ease-in-out infinite;
+  }
+  .agent-indicator span:nth-child(1){height:6px;animation-delay:0s;}
+  .agent-indicator span:nth-child(2){height:14px;animation-delay:.15s;}
+  .agent-indicator span:nth-child(3){height:9px;animation-delay:.3s;}
+  @keyframes agent-bounce{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
+
+  /* minimized — small circular bubble; site behind is fully visible */
+  .agent-bubble{
+    position:fixed;z-index:900;width:64px;height:64px;border-radius:50%;
+    border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;
+    box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;
+  }
+  .agent-bubble[hidden]{display:none;}
+  .agent-bubble[data-corner="br"]{right:20px;bottom:20px;}
+  .agent-bubble[data-corner="bl"]{left:20px;bottom:20px;}
+  .agent-bubble[data-corner="tr"]{right:20px;top:88px;}
+  .agent-bubble[data-corner="tl"]{left:20px;top:88px;}
+  .agent-bubble-video{width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-dot{
+    position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;
+    background:#5B6479;border:2px solid #0B1220;
+  }
+  .agent-bubble-dot.live{background:var(--green);}
+
+  /* closed — small reopen tab, replaces the window entirely */
+  .agent-reopen{
+    position:fixed;right:20px;bottom:20px;z-index:900;
+    padding:12px 18px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);font-size:13px;font-weight:500;
+    font-family:'Inter',sans-serif;cursor:pointer;
+    box-shadow:0 8px 24px rgba(10,15,30,0.14);
+    display:flex;align-items:center;gap:8px;
+  }
+  .agent-reopen[hidden]{display:none;}
+  .agent-reopen::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--blue);}
 </style>
 </head>
 <body>
@@ -617,14 +739,49 @@
   </div>
 </footer>
 
-<!-- Canlı AI Agent "Elif Kaya" — Anam.ai'nin kendi barındırdığı widget'ı.
-     Görüntü, ses (Türkçe/İngilizce otomatik geçiş) ve konuşma mantığının
-     tamamı Anam Lab'de (persona: Elif Kaya) yapılandırıldı; buradan sadece
-     iki satırla gömülüyor. Sağ altta küçük bir baloncuk olarak başlar,
-     tıklanınca canlı görüntülü/sesli görüşmeye açılır. -->
-<anam-agent agent-id="9ae72476-5233-481d-a836-1c0b433b4fd1" ui-transcript="false"></anam-agent>
-<script src="https://unpkg.com/@anam-ai/agent-widget" async></script>
+<!-- Canlı AI Agent "Elif Kaya" — Anam.ai JS SDK ile kurulan, gerçek video
+     akışlı, uyarlanabilir (corner/half/fullscreen/minimized) agent penceresi.
+     Görüntü, ses (Türkçe kilitli dil davranışı dahil) ve konuşma mantığının
+     tamamı Anam Lab'de (persona: Elif Kaya) yapılandırıldı; bu pencere sadece
+     o oturumu görüntüler ve kontrol eder. Oturum token'ı veraliq-agent
+     worker'ından (bkz. worker/session-worker.js) alınır; API anahtarı hiçbir
+     zaman tarayıcıya inmez. -->
+<div id="agentWindow" class="agent-window" data-state="corner" data-corner="br" hidden>
+  <div class="agent-header" id="agentHeader">
+    <div class="agent-header-id">
+      <span class="agent-dot" id="agentStatusDot"></span>
+      <span class="agent-name">Elif Kaya</span>
+      <span class="agent-role mono">VERALIQ AI Agent</span>
+    </div>
+    <div class="agent-controls">
+      <button type="button" class="agent-btn" id="agentHalfBtn" title="Yarım ekran" aria-label="Yarım ekran">▣</button>
+      <button type="button" class="agent-btn" id="agentFullBtn" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+      <button type="button" class="agent-btn" id="agentMinBtn" title="Küçült" aria-label="Küçült">–</button>
+      <button type="button" class="agent-btn agent-btn-close" id="agentCloseBtn" title="Kapat" aria-label="Kapat">✕</button>
+    </div>
+  </div>
+  <div class="agent-stage">
+    <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <div class="agent-loading" id="agentLoading">
+      <div class="agent-spinner"></div>
+      <div class="agent-loading-text">Agent hazırlanıyor…</div>
+    </div>
+    <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
+      <p>Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz.</p>
+    </div>
+    <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
+  </div>
+</div>
 
-<script src="script.js?v=4"></script>
+<!-- Küçültülmüş hâl: köşede küçük, sitenin tamamı görünür kalır -->
+<button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden aria-label="Elif Kaya'yı genişlet">
+  <video id="agentBubbleVideo" class="agent-bubble-video" autoplay playsinline muted></video>
+  <span class="agent-bubble-dot" id="agentBubbleDot"></span>
+</button>
+
+<!-- Kapatıldığında: yeniden açma butonu -->
+<button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Agent'ı Aç</button>
+
+<script src="script.js?v=5"></script>
 </body>
 </html>
