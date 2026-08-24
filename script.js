@@ -64,16 +64,14 @@
   }
 
   // ---- Hero capability chips: click to pin a detail; otherwise auto-rotate
-  // through them, pausing on hover/touch/focus. ----
-  window.__chipDiag = window.__chipDiag || [];
-  window.__chipDiag.push('block-entered');
+  // through them, pausing on hover/touch/focus. Wrapped in try/catch so a
+  // future markup change here can never take down nav/FAQ/demo-form init
+  // below it in this same IIFE. ----
   try {
     var chipRow = document.getElementById('chipRow');
     var chipDetail = document.getElementById('chipDetail');
-    window.__chipDiag.push('lookup-done:' + !!chipRow + ':' + !!chipDetail);
     if (chipRow && chipDetail) {
       var chips = Array.prototype.slice.call(chipRow.querySelectorAll('.chip'));
-      window.__chipDiag.push('chips-count:' + chips.length);
       var activeIndex = 0;
       var rotateTimer = null;
       var paused = false;
@@ -98,7 +96,6 @@
           paused = true; // user made an explicit choice — stop auto-rotating
         });
       });
-      window.__chipDiag.push('listeners-attached');
       chipRow.addEventListener('mouseenter', function () { paused = true; });
       chipRow.addEventListener('mouseleave', function () { paused = false; });
       chipRow.addEventListener('touchstart', function () { paused = true; }, { passive: true });
@@ -107,13 +104,11 @@
 
       showChip(0);
       startRotation();
-      window.__chipDiag.push('block-complete');
-    } else {
-      window.__chipDiag.push('block-skipped-null-refs');
     }
   } catch (chipErr) {
-    window.__chipDiag.push('EXCEPTION:' + chipErr.message);
-    document.documentElement.setAttribute('data-chip-error', chipErr.message + ' | ' + (chipErr.stack || '').slice(0, 500));
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[VeraliqChips] init failed:', chipErr);
+    }
   }
 })();
 
