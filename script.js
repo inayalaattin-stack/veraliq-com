@@ -98,6 +98,9 @@
 
   var anamClient = null;
   var lastWindowState = 'corner'; // state to return to from the bubble
+  var intentionalClose = false;   // true only when the user clicked "close"
+  var reconnectAttempts = 0;
+  var reconnectTimer = null;
 
   function setWindowState(state) {
     els.win.hidden = false;
@@ -121,6 +124,8 @@
   }
 
   async function closeAgent() {
+    intentionalClose = true;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     els.win.hidden = true;
     els.bubble.hidden = true;
     els.reopenBtn.hidden = false;
@@ -135,10 +140,35 @@
   }
 
   async function reopenAgent() {
+    intentionalClose = false;
+    reconnectAttempts = 0;
     els.reopenBtn.hidden = true;
     setWindowState('corner');
     els.loading.classList.remove('hide');
+    var textEl = els.loading.querySelector('.agent-loading-text');
+    if (textEl) textEl.textContent = 'Agent hazırlanıyor…';
     await initAgent();
+  }
+
+  // The Anam WebRTC connection can drop on its own (network blip, a long
+  // spell with the tab backgrounded, idle timeout). Unless the user
+  // explicitly closed the window, reconnect automatically instead of
+  // leaving a frozen/black video behind — with capped backoff so a genuine
+  // outage doesn't hammer the token endpoint forever.
+  function scheduleReconnect() {
+    if (intentionalClose) return;
+    if (els.win.hidden && els.bubble.hidden) return; // window is "closed"
+    if (reconnectTimer) return; // already scheduled
+    if (reconnectAttempts >= 5) return;
+    reconnectAttempts++;
+    var delay = Math.min(reconnectAttempts * 1500, 8000);
+    var textEl = els.loading.querySelector('.agent-loading-text');
+    if (textEl) textEl.textContent = 'Bağlantı yeniden kuruluyor…';
+    els.loading.classList.remove('hide');
+    reconnectTimer = setTimeout(function () {
+      reconnectTimer = null;
+      initAgent();
+    }, delay);
   }
 
   // ---- drag-to-corner (only while in "corner" state) ----
@@ -216,7 +246,13 @@
   function markLive(isLive) {
     els.statusDot.classList.toggle('live', !!isLive);
     els.bubbleDot.classList.toggle('live', !!isLive);
-    if (isLive) els.loading.classList.add('hide');
+    if (isLive) {
+      els.loading.classList.add('hide');
+      reconnectAttempts = 0;
+      // Keep the bubble's video mirroring the live stream at all times, not
+      // just at the moment minimize() is clicked, so it's never stale.
+      try { els.bubbleVideo.srcObject = els.video.srcObject; } catch (e) {}
+    }
   }
 
   function wireEvents(client, AnamEvent) {
@@ -230,7 +266,7 @@
     on('VIDEO_PLAY_STARTED', function () { markLive(true); });
     on('SESSION_READY', function () { markLive(true); });
     on('CONNECTION_ESTABLISHED', function () { markLive(true); });
-    on('CONNECTION_CLOSED', function () { markLive(false); });
+    on('CONNECTION_CLOSED', function () { markLive(false); scheduleReconnect(); });
     on('USER_SPEECH_STARTED', function () { els.indicator.hidden = false; });
     on('USER_SPEECH_ENDED', function () { els.indicator.hidden = true; });
     on('MIC_PERMISSION_DENIED', function () { els.micBlocked.hidden = false; });
@@ -238,6 +274,15 @@
   }
 
   async function initAgent() {
+    // Defensively tear down any previous (likely already-dead) client and
+    // clear the stale frame before reconnecting, so we never show a frozen
+    // last frame under a "live" green dot.
+    try {
+      if (anamClient && typeof anamClient.stopStreaming === 'function') anamClient.stopStreaming();
+    } catch (e) {}
+    anamClient = null;
+    try { els.video.srcObject = null; } catch (e) {}
+
     try {
       var sdk = await import(/* webpackIgnore: true */ SDK_URL);
       var createClient = sdk.createClient;
@@ -257,10 +302,11 @@
       els.video.addEventListener('playing', function () { markLive(true); }, { once: true });
     } catch (err) {
       // Fail quietly in the UI — never fall back to any old placeholder.
-      // Keep the loading text but swap it to a short, honest note so the
-      // window doesn't spin forever if the SDK/network is unavailable.
+      // Keep the loading text but swap it to a short, honest note, and
+      // retry with backoff rather than leaving the window dead forever.
       var textEl = els.loading.querySelector('.agent-loading-text');
       if (textEl) textEl.textContent = 'Agent şu anda bağlanamıyor.';
+      scheduleReconnect();
       if (typeof console !== 'undefined' && console.warn) {
         console.warn('[VeraliqAgent] init failed:', err);
       }
