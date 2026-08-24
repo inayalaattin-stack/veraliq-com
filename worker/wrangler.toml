@@ -1,0 +1,13 @@
+name = "veraliq-agent"
+main = "session-worker.js"
+compatibility_date = "2026-08-01"
+
+# Required secret (set via `wrangler secret put ANAM_API_KEY` or the
+# Cloudflare dashboard -> Workers & Pages -> veraliq-agent -> Settings ->
+# Variables and Secrets): ANAM_API_KEY -- an Anam Lab API key with
+# session-token creation permission.
+#
+# This worker deliberately has no bindings (no KV/D1/R2, no other env
+# vars) -- it does exactly one thing: mint a short-lived Anam session
+# token for the "Elif Kaya" persona so the browser never sees the real
+# Anam API key. See session-worker.js for the full explanation.
