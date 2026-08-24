@@ -62,6 +62,46 @@
       if (status) status.classList.add('show');
     });
   }
+
+  // ---- Hero capability chips: click to pin a detail; otherwise auto-rotate
+  // through them, pausing on hover/touch/focus. ----
+  var chipRow = document.getElementById('chipRow');
+  var chipDetail = document.getElementById('chipDetail');
+  if (chipRow && chipDetail) {
+    var chips = Array.prototype.slice.call(chipRow.querySelectorAll('.chip'));
+    var activeIndex = 0;
+    var rotateTimer = null;
+    var paused = false;
+
+    function showChip(index) {
+      activeIndex = index;
+      chips.forEach(function (c, i) { c.classList.toggle('active', i === index); });
+      chipDetail.textContent = chips[index].getAttribute('data-detail') || '';
+    }
+
+    function startRotation() {
+      if (rotateTimer) return;
+      rotateTimer = setInterval(function () {
+        if (paused) return;
+        showChip((activeIndex + 1) % chips.length);
+      }, 3800);
+    }
+
+    chips.forEach(function (chip, i) {
+      chip.addEventListener('click', function () {
+        showChip(i);
+        paused = true; // user made an explicit choice — stop auto-rotating
+      });
+    });
+    chipRow.addEventListener('mouseenter', function () { paused = true; });
+    chipRow.addEventListener('mouseleave', function () { paused = false; });
+    chipRow.addEventListener('touchstart', function () { paused = true; }, { passive: true });
+    chipRow.addEventListener('focusin', function () { paused = true; });
+    chipRow.addEventListener('focusout', function () { paused = false; });
+
+    showChip(0);
+    startRotation();
+  }
 })();
 
 // ===========================================================================
