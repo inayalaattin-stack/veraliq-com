@@ -13,6 +13,22 @@
 
 const ELIF_KAYA_PERSONA_ID = "9ae72476-5233-481d-a836-1c0b433b4fd1";
 
+// Maps the site's selected language (ISO 639-1, matching i18n.js) to an Anam
+// personaId configured for that language. Anam's session-token API treats
+// personaId and runtime overrides (voiceId/languageCode/systemPrompt) as
+// mutually exclusive — a persona referenced by ID cannot have its language
+// overridden per-request. So making the Agent actually SPEAK a language
+// requires a separate persona built for it in Anam Lab; until one exists
+// for a given code here, every language safely falls back to the Turkish
+// "Elif Kaya" persona rather than sending a malformed request upstream.
+const PERSONA_BY_LANGUAGE = {
+  tr: ELIF_KAYA_PERSONA_ID,
+  // en: "<add an English Anam persona id here once created in Anam Lab>",
+  // ar: "<...>", ru: "<...>", de: "<...>", fa: "<...>", fr: "<...>", es: "<...>",
+};
+
+const SUPPORTED_LANGUAGE_RE = /^[a-z]{2}$/;
+
 const ALLOWED_ORIGINS = new Set([
   "https://veraliq.com",
   "https://www.veraliq.com",
@@ -68,6 +84,13 @@ export default {
           // Allows a future tenant-aware frontend to request a different
           // company's persona; today the site only ever sends the default.
           personaId = body.personaId;
+        } else if (body && typeof body.language === "string" && SUPPORTED_LANGUAGE_RE.test(body.language)) {
+          // Site-selected language (see i18n.js). Only ever picks a persona
+          // from our own allowlisted map above — never used to build a
+          // request field directly — so an unmapped/not-yet-configured
+          // language just quietly keeps the default Turkish persona.
+          const mapped = PERSONA_BY_LANGUAGE[body.language];
+          if (mapped) personaId = mapped;
         }
       } catch (_) {
         // no body / not JSON — fine, use the default persona.
