@@ -3,11 +3,11 @@
 // Never place secret keys in client-side JavaScript — they become
 // publicly visible to anyone who views page source.
 //
-// NOTE (Ağustos 2026): Sitedeki canlı AI Agent ("Olivia") artık burada
+// NOTE (Ağustos 2026): Sitedeki canlı AI Agent ("Elif Kaya") artık burada
 // yazılmış bir chat/avatar UI değil — tamamen Anam.ai'nin kendi
 // barındırdığı widget'ı (bkz. index.html, </body> öncesi <anam-agent>
 // satırı). Görüntü, ses, dil geçişi (TR/EN) ve konuşma mantığının
-// tamamı Anam Lab'de (persona: Olivia) yapılandırıldı ve orada
+// tamamı Anam Lab'de (persona: Elif Kaya) yapılandırıldı ve orada
 // yönetiliyor. Bu dosya artık sadece sitenin geri kalan sıradan
 // etkileşimlerinden (mobil menü, SSS akordeonu, demo formu) sorumlu.
 
