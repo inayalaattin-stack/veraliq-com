@@ -9,8 +9,165 @@
 // corner/half/fullscreen/minimized/closed durum makinesini yönetiyor.
 // Oturum token'ı https://veraliq-agent.veraliq-com.workers.dev/session
 // adresinden alınır; gerçek Anam API anahtarı hiçbir zaman tarayıcıya inmez.
-// Ses, dil davranışı (TR kilitli) ve konuşma mantığının tamamı Anam Lab'de
-// (persona: Elif Kaya) yapılandırıldı.
+// Ses, dil davranışı ve konuşma mantığının tamamı Anam Lab'de (persona: Elif
+// Kaya) yapılandırıldı. Sitenin dil seçici sistemi seçilen dili bu oturuma
+// da iletir (bkz. VeraliqI18N ve aşağıdaki Agent bölümü) — ancak bugün Anam
+// tarafında yalnızca Türkçe için gerçek bir persona var; başka bir dil
+// eşlemesi eklenene kadar Agent her zaman Türkçe konuşmaya devam eder.
+
+// ===========================================================================
+// I18N ENGINE — reads dictionaries from window.VERALIQ_I18N (i18n.js),
+// applies them to every [data-i18n*] element, persists the choice, and
+// notifies the rest of the page (chips, Agent) via a "veraliq:langchange"
+// event. Exposes window.VeraliqI18N = { getLang, setLang, t } for other
+// modules in this file to use.
+// ===========================================================================
+var VeraliqI18N = (function () {
+  'use strict';
+
+  var STORAGE_KEY = 'veraliqLang';
+  var DEFAULT_LANG = 'tr';
+  var data = (typeof window !== 'undefined' && window.VERALIQ_I18N) || { languages: [], dict: {} };
+  var languages = data.languages || [];
+  var dict = data.dict || {};
+  var currentLang = DEFAULT_LANG;
+
+  function supported(code) {
+    return languages.some(function (l) { return l.code === code; });
+  }
+
+  function detectInitialLang() {
+    try {
+      var saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved && supported(saved)) return saved;
+    } catch (e) {}
+    try {
+      var nav = (navigator.language || navigator.userLanguage || '').slice(0, 2).toLowerCase();
+      if (nav && supported(nav)) return nav;
+    } catch (e) {}
+    return DEFAULT_LANG;
+  }
+
+  function t(key) {
+    var langDict = dict[currentLang] || dict[DEFAULT_LANG] || {};
+    if (key in langDict) return langDict[key];
+    var fallback = dict[DEFAULT_LANG] || {};
+    return fallback[key] || key;
+  }
+
+  function langMeta(code) {
+    for (var i = 0; i < languages.length; i++) {
+      if (languages[i].code === code) return languages[i];
+    }
+    return languages[0] || { code: 'tr', label: 'Türkçe', flag: '🇹🇷', dir: 'ltr' };
+  }
+
+  function applyToDom() {
+    var meta = langMeta(currentLang);
+    document.documentElement.setAttribute('lang', currentLang);
+    document.documentElement.setAttribute('dir', meta.dir || 'ltr');
+
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      var key = el.getAttribute('data-i18n');
+      var val = t(key);
+      if (el.hasAttribute('data-i18n-html')) {
+        el.innerHTML = val;
+      } else {
+        el.textContent = val;
+      }
+    }
+    var altNodes = document.querySelectorAll('[data-i18n-alt]');
+    for (var j = 0; j < altNodes.length; j++) {
+      altNodes[j].setAttribute('alt', t(altNodes[j].getAttribute('data-i18n-alt')));
+    }
+    var titleNodes = document.querySelectorAll('[data-i18n-title]');
+    for (var k = 0; k < titleNodes.length; k++) {
+      titleNodes[k].setAttribute('title', t(titleNodes[k].getAttribute('data-i18n-title')));
+    }
+    var ariaNodes = document.querySelectorAll('[data-i18n-aria]');
+    for (var m = 0; m < ariaNodes.length; m++) {
+      ariaNodes[m].setAttribute('aria-label', t(ariaNodes[m].getAttribute('data-i18n-aria')));
+    }
+
+    var flagEl = document.getElementById('langBtnFlag');
+    var codeEl = document.getElementById('langBtnCode');
+    if (flagEl) flagEl.textContent = meta.flag;
+    if (codeEl) codeEl.textContent = meta.code.toUpperCase();
+
+    var opts = document.querySelectorAll('.lang-opt');
+    for (var n = 0; n < opts.length; n++) {
+      opts[n].classList.toggle('active', opts[n].getAttribute('data-lang') === currentLang);
+    }
+  }
+
+  function setLang(code) {
+    if (!supported(code)) return;
+    currentLang = code;
+    try { window.localStorage.setItem(STORAGE_KEY, code); } catch (e) {}
+    applyToDom();
+    document.dispatchEvent(new CustomEvent('veraliq:langchange', { detail: { lang: code } }));
+  }
+
+  function buildSwitcher() {
+    var btn = document.getElementById('langBtn');
+    var menu = document.getElementById('langMenu');
+    if (!btn || !menu) return;
+
+    languages.forEach(function (l) {
+      var opt = document.createElement('button');
+      opt.type = 'button';
+      opt.className = 'lang-opt';
+      opt.setAttribute('data-lang', l.code);
+      opt.setAttribute('role', 'menuitemradio');
+      opt.textContent = l.flag + '  ' + l.label;
+      opt.addEventListener('click', function () {
+        setLang(l.code);
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+      menu.appendChild(opt);
+    });
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.classList.contains('open')) return;
+      if (menu.contains(e.target) || btn.contains(e.target)) return;
+      menu.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function init() {
+    currentLang = detectInitialLang();
+    buildSwitcher();
+    applyToDom();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  return {
+    getLang: function () { return currentLang; },
+    setLang: setLang,
+    t: t
+  };
+})();
+window.VeraliqI18N = VeraliqI18N;
 
 (function () {
   'use strict';
@@ -64,9 +221,10 @@
   }
 
   // ---- Hero capability chips: click to pin a detail; otherwise auto-rotate
-  // through them, pausing on hover/touch/focus. Wrapped in try/catch so a
-  // future markup change here can never take down nav/FAQ/demo-form init
-  // below it in this same IIFE. ----
+  // through them, pausing on hover/touch/focus. Detail text is looked up
+  // through VeraliqI18N by each chip's data-key, so it re-renders correctly
+  // when the visitor switches language. Wrapped in try/catch so a future
+  // markup change here can never take down nav/FAQ/demo-form init above. ----
   try {
     var chipRow = document.getElementById('chipRow');
     var chipDetail = document.getElementById('chipDetail');
@@ -76,10 +234,15 @@
       var rotateTimer = null;
       var paused = false;
 
+      function chipDetailText(chip) {
+        var key = chip.getAttribute('data-key');
+        return key ? VeraliqI18N.t(key + '.detail') : '';
+      }
+
       function showChip(index) {
         activeIndex = index;
         chips.forEach(function (c, i) { c.classList.toggle('active', i === index); });
-        chipDetail.textContent = chips[index].getAttribute('data-detail') || '';
+        chipDetail.textContent = chipDetailText(chips[index]);
       }
 
       function startRotation() {
@@ -101,6 +264,14 @@
       chipRow.addEventListener('touchstart', function () { paused = true; }, { passive: true });
       chipRow.addEventListener('focusin', function () { paused = true; });
       chipRow.addEventListener('focusout', function () { paused = false; });
+
+      // Re-render the currently pinned/rotating chip's detail text whenever
+      // the visitor switches language (labels refresh on their own via the
+      // i18n engine's [data-i18n] pass — only the JS-set detail line needs
+      // an explicit nudge here).
+      document.addEventListener('veraliq:langchange', function () {
+        chipDetail.textContent = chipDetailText(chips[activeIndex]);
+      });
 
       showChip(0);
       startRotation();
@@ -194,7 +365,7 @@
     setWindowState('corner');
     els.loading.classList.remove('hide');
     var textEl = els.loading.querySelector('.agent-loading-text');
-    if (textEl) textEl.textContent = 'Agent hazırlanıyor…';
+    if (textEl) textEl.textContent = VeraliqI18N.t('agent.loadingText');
     await initAgent();
   }
 
@@ -211,7 +382,7 @@
     reconnectAttempts++;
     var delay = Math.min(reconnectAttempts * 1500, 8000);
     var textEl = els.loading.querySelector('.agent-loading-text');
-    if (textEl) textEl.textContent = 'Bağlantı yeniden kuruluyor…';
+    if (textEl) textEl.textContent = VeraliqI18N.t('agent.reconnecting');
     els.loading.classList.remove('hide');
     reconnectTimer = setTimeout(function () {
       reconnectTimer = null;
@@ -284,7 +455,16 @@
 
   // ---- Anam session + SDK wiring ----
   async function fetchSessionToken() {
-    var resp = await fetch(SESSION_ENDPOINT, { method: 'POST' });
+    // Pass the visitor's chosen site language along so the worker can, in
+    // principle, route to a persona configured for that language. As of
+    // today only a Turkish persona ("Elif Kaya") exists in Anam Lab, so the
+    // worker currently falls back to it for every language until additional
+    // per-language personas are created there — see worker/session-worker.js.
+    var resp = await fetch(SESSION_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: VeraliqI18N.getLang() })
+    });
     if (!resp.ok) throw new Error('session_token_http_' + resp.status);
     var data = await resp.json();
     if (!data || !data.sessionToken) throw new Error('session_token_missing');
@@ -353,7 +533,7 @@
       // Keep the loading text but swap it to a short, honest note, and
       // retry with backoff rather than leaving the window dead forever.
       var textEl = els.loading.querySelector('.agent-loading-text');
-      if (textEl) textEl.textContent = 'Agent şu anda bağlanamıyor.';
+      if (textEl) textEl.textContent = VeraliqI18N.t('agent.unavailable');
       scheduleReconnect();
       if (typeof console !== 'undefined' && console.warn) {
         console.warn('[VeraliqAgent] init failed:', err);
@@ -376,6 +556,21 @@
       reconnectAttempts = 0;
       initAgent();
     }
+  });
+
+  // Anam session language is fixed for the lifetime of a session (it can't
+  // be changed mid-conversation), so when the visitor switches the site's
+  // language mid-visit, reconnect with a fresh session requesting the new
+  // language rather than leaving the Agent silently out of sync.
+  document.addEventListener('veraliq:langchange', function () {
+    if (intentionalClose) return;
+    if (els.win.hidden && els.bubble.hidden) return; // closed — nothing live to refresh
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    reconnectAttempts = 0;
+    els.loading.classList.remove('hide');
+    var textEl = els.loading.querySelector('.agent-loading-text');
+    if (textEl) textEl.textContent = VeraliqI18N.t('agent.loadingText');
+    initAgent();
   });
 
   // Auto-connect on first visit so the agent is already live in the corner
