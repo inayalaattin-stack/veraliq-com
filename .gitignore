@@ -1,0 +1,18 @@
+# Secrets — never commit these. Cloudflare Worker secrets are set via
+# `wrangler secret put` or the dashboard, never stored in this repo.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+**/credentials.json
+**/service-account*.json
+
+# Local tooling
+node_modules/
+.wrangler/
+.DS_Store
+*.log
+.vscode/
