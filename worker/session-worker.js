@@ -46,10 +46,25 @@ export default {
         );
       }
 
+      // Reject abnormally large bodies before parsing (basic DoS/abuse guard;
+      // real per-IP rate limiting still needs a Cloudflare dashboard Rate
+      // Limiting rule or a KV/Durable-Object counter — see security report).
+      const contentLength = Number(request.headers.get("Content-Length") || 0);
+      if (contentLength > 2048) {
+        return new Response(
+          JSON.stringify({ error: "payload_too_large" }),
+          { status: 413, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+
       let personaId = ELIF_KAYA_PERSONA_ID;
       try {
         const body = await request.json();
-        if (body && typeof body.personaId === "string" && body.personaId.length > 0) {
+        // Anam persona IDs are UUIDs. Strictly allowlist the shape so this
+        // endpoint can never be used to smuggle arbitrary strings into the
+        // upstream Anam API call.
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (body && typeof body.personaId === "string" && UUID_RE.test(body.personaId)) {
           // Allows a future tenant-aware frontend to request a different
           // company's persona; today the site only ever sends the default.
           personaId = body.personaId;
