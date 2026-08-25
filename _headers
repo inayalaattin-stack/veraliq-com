@@ -26,6 +26,15 @@
 # hiç dokunulmadı, canlı sohbet etkilenmiyor. `spatiusProvider` config.js'te
 # hâlâ varsayılan DEĞİL (hâlâ 'anam') — bu satırlar sadece izole test
 # sayfasının (spatius-test.html) çalışabilmesi için var.
+#
+# GÜNCELLEME (2026-08-25) — 'wasm-unsafe-eval': spatius-test.html'i gerçek
+# tarayıcıda otomatik test ederken (Claude'un kendi Chrome oturumu) şu hata
+# görüldü: "WebAssembly.instantiate(): ... violates ... script-src". Sebep:
+# AvatarKit'in 3DGS render motoru WebAssembly kullanıyor, CSP'de
+# 'wasm-unsafe-eval' yoktu. Bu, GENİŞ 'unsafe-eval' DEĞİL — sadece
+# WebAssembly derlemesine izin veren, modern tarayıcıların desteklediği dar
+# kapsamlı bir CSP anahtar kelimesi (rastgele string->kod eval() çalıştırmayı
+# AÇMIYOR). script-src ve worker-src'ye eklendi.
 
 /*
   X-Frame-Options: DENY
@@ -33,7 +42,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://esm.sh https://*.spatius.ai blob:; worker-src 'self' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://veraliq-spatius-session.veraliq-com.workers.dev https://esm.sh https://*.anam.ai wss://*.anam.ai https://*.spatius.ai wss://*.spatius.ai; img-src 'self' data: https://*.anam.ai https://*.spatius.ai; media-src 'self' blob: https://*.anam.ai https://*.spatius.ai; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://esm.sh https://*.spatius.ai blob:; worker-src 'self' 'wasm-unsafe-eval' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://veraliq-spatius-session.veraliq-com.workers.dev https://esm.sh https://*.anam.ai wss://*.anam.ai https://*.spatius.ai wss://*.spatius.ai; img-src 'self' data: https://*.anam.ai https://*.spatius.ai; media-src 'self' blob: https://*.anam.ai https://*.spatius.ai; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
 
 # script.js changes frequently during active development; avoid the platform's
 # default long asset cache (previously 4h) causing stale JS on live visits.
