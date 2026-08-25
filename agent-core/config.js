@@ -10,8 +10,15 @@
 // default production path rather than just "unused but still shipped".
 
 export const AGENT_PROVIDER_CONFIG = {
-  // 'mock' (default today — no GPU, always available) | 'quicktalk' | 'musetalk' | 'anam' (legacy, off by default)
-  avatarProvider: 'mock',
+  // 'anam' (kept live on purpose — see note below) | 'mock' (no GPU, always available, for local dev/testing only) | 'quicktalk' | 'musetalk'
+  //
+  // Kept on 'anam' deliberately: the new provider-agnostic pipeline below is
+  // merged and ready, but the only zero-GPU avatar available today (Mock)
+  // was judged not acceptable for real visitors (too crude/cartoonish for a
+  // live site). Anam stays the production avatar until a real photoreal
+  // self-hosted avatar (QuickTalk/MuseTalk on a GPU host) is ready to swap
+  // in — at that point this one line is the only change needed.
+  avatarProvider: 'anam',
   // 'webspeech' (default today — free, browser-native) | 'chatterbox'
   ttsProvider: 'webspeech',
   // 'webspeech' (default today — free, browser-native) | 'whisper'
