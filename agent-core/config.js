@@ -10,7 +10,7 @@
 // default production path rather than just "unused but still shipped".
 
 export const AGENT_PROVIDER_CONFIG = {
-  // 'anam' (kept live on purpose — see note below) | 'mock' (no GPU, always available, for local dev/testing only) | 'quicktalk' | 'musetalk'
+  // 'anam' (kept live on purpose — see note below) | 'mock' (no GPU, always available, for local dev/testing only) | 'quicktalk' | 'musetalk' | 'spatius'
   //
   // Kept on 'anam' deliberately: the new provider-agnostic pipeline below is
   // merged and ready, but the only zero-GPU avatar available today (Mock)
@@ -18,6 +18,9 @@ export const AGENT_PROVIDER_CONFIG = {
   // live site). Anam stays the production avatar until a real photoreal
   // self-hosted avatar (QuickTalk/MuseTalk on a GPU host) is ready to swap
   // in — at that point this one line is the only change needed.
+  // 'spatius' henüz İSKELET halinde — bkz. agent-core/avatar-providers/
+  // spatius-avatar-provider.js başındaki durum notu. SPATIUS_AVATAR_ID
+  // doldurulup gerçek SDK ile doğrulanana kadar bunu seçmeyin.
   avatarProvider: 'anam',
   // 'webspeech' (default today — free, browser-native) | 'chatterbox'
   ttsProvider: 'webspeech',
@@ -40,6 +43,10 @@ const LOADERS = {
     quicktalk: () => import('./avatar-providers/quicktalk-avatar-provider.js').then((m) => m.QuickTalkAvatarProvider),
     musetalk: () => import('./avatar-providers/musetalk-avatar-provider.js').then((m) => m.MuseTalkAvatarProvider),
     anam: () => import('./avatar-providers/anam-avatar-provider.js').then((m) => m.AnamAvatarProvider),
+    // Ücretsiz Avatar Havuzu — 1. sağlayıcı (Clara/Halima). Bkz. dosyanın
+    // başındaki durum notu: production'a bağlanması için önce Spatius
+    // hesabı + avatar-id + session-token worker'ı gerekiyor.
+    spatius: () => import('./avatar-providers/spatius-avatar-provider.js').then((m) => m.SpatiusAvatarProvider),
   },
   tts: {
     webspeech: () => import('./tts-providers/webspeech-tts-provider.js').then((m) => m.WebSpeechTTSProvider),

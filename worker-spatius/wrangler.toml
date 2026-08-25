@@ -1,0 +1,15 @@
+name = "veraliq-spatius-session"
+main = "session-worker.js"
+compatibility_date = "2026-08-01"
+
+# Gerekli secret'lar (worker/session-worker.js'deki ANAM_API_KEY ile AYNI
+# yöntemle eklenir — `wrangler secret put <isim>` veya Cloudflare dashboard ->
+# Workers & Pages -> veraliq-spatius-session -> Settings -> Variables and
+# Secrets):
+#
+#   SPATIUS_APP_ID   -- Spatius Studio'dan (app.spatius.ai) alınan App ID
+#   SPATIUS_API_KEY  -- aynı App ID'ye bağlı API Key
+#
+# Bu worker, worker/ klasöründeki CANLI Anam worker'ından TAMAMEN AYRI ve
+# BAĞIMSIZ deploy edilir — ikisi birbirini etkilemez, biri bozulursa/
+# yeniden deploy edilirse diğeri çalışmaya devam eder.
