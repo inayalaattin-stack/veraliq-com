@@ -109,7 +109,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Agent hazırlanıyor…",
       "agent.micBlocked":"Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz.",
       "agent.bubbleAria":"Elif Kaya'yı genişlet","agent.reopenBtn":"Agent'ı Aç",
-      "agent.reconnecting":"Bağlantı yeniden kuruluyor…","agent.unavailable":"Agent şu anda bağlanamıyor."
+      "agent.reconnecting":"Bağlantı yeniden kuruluyor…","agent.unavailable":"Agent şu anda bağlanamıyor.",
+      "agent.liveBadge":"● Canlı AI Satış Asistanı"
     },
     en: {
       "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compare":"CRM Difference","nav.channels":"Integration","nav.trust":"Security","nav.faq":"FAQ","nav.contact":"Contact",
@@ -205,7 +206,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Preparing the Agent…",
       "agent.micBlocked":"Microphone access was denied. Elif Kaya can't hear you — enable microphone access in your browser settings and refresh the page. You can also continue by typing.",
       "agent.bubbleAria":"Expand Elif Kaya","agent.reopenBtn":"Open Agent",
-      "agent.reconnecting":"Reconnecting…","agent.unavailable":"The Agent is unavailable right now."
+      "agent.reconnecting":"Reconnecting…","agent.unavailable":"The Agent is unavailable right now.",
+      "agent.liveBadge":"● Live AI Sales Agent"
     },
     ar: {
       "nav.workforce":"AI Workforce","nav.modules":"الوحدات","nav.compare":"الفرق مع CRM","nav.channels":"التكامل","nav.trust":"الأمان","nav.faq":"الأسئلة الشائعة","nav.contact":"تواصل معنا",
@@ -301,7 +303,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"جارٍ تجهيز الوكيل…",
       "agent.micBlocked":"لم يتم منح إذن الميكروفون. لا تستطيع إيليف كايا سماعك — فعّل إذن الميكروفون من إعدادات المتصفح وأعد تحميل الصفحة. يمكنك أيضاً المتابعة بالكتابة.",
       "agent.bubbleAria":"توسيع إيليف كايا","agent.reopenBtn":"فتح الوكيل",
-      "agent.reconnecting":"جارٍ إعادة الاتصال…","agent.unavailable":"الوكيل غير متاح حالياً."
+      "agent.reconnecting":"جارٍ إعادة الاتصال…","agent.unavailable":"الوكيل غير متاح حالياً.",
+      "agent.liveBadge":"● مساعد مبيعات ذكاء اصطناعي مباشر"
     },
     ru: {
       "nav.workforce":"AI Workforce","nav.modules":"Модули","nav.compare":"Отличие от CRM","nav.channels":"Интеграция","nav.trust":"Безопасность","nav.faq":"Вопросы","nav.contact":"Контакты",
@@ -397,7 +400,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Подготовка агента…",
       "agent.micBlocked":"Доступ к микрофону не предоставлен. Элиф Кая вас не слышит — включите доступ к микрофону в настройках браузера и обновите страницу. Вы также можете продолжить, печатая текст.",
       "agent.bubbleAria":"Развернуть Элиф Кая","agent.reopenBtn":"Открыть агента",
-      "agent.reconnecting":"Переподключение…","agent.unavailable":"Агент сейчас недоступен."
+      "agent.reconnecting":"Переподключение…","agent.unavailable":"Агент сейчас недоступен.",
+      "agent.liveBadge":"● ИИ-ассистент онлайн"
     },
     de: {
       "nav.workforce":"AI Workforce","nav.modules":"Module","nav.compare":"CRM-Unterschied","nav.channels":"Integration","nav.trust":"Sicherheit","nav.faq":"FAQ","nav.contact":"Kontakt",
@@ -493,7 +497,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Agent wird vorbereitet…",
       "agent.micBlocked":"Mikrofonzugriff wurde verweigert. Elif Kaya kann Sie nicht hören — aktivieren Sie den Mikrofonzugriff in Ihren Browsereinstellungen und laden Sie die Seite neu. Sie können auch per Texteingabe fortfahren.",
       "agent.bubbleAria":"Elif Kaya erweitern","agent.reopenBtn":"Agent öffnen",
-      "agent.reconnecting":"Verbindung wird wiederhergestellt…","agent.unavailable":"Der Agent ist derzeit nicht erreichbar."
+      "agent.reconnecting":"Verbindung wird wiederhergestellt…","agent.unavailable":"Der Agent ist derzeit nicht erreichbar.",
+      "agent.liveBadge":"● Live KI-Vertriebsassistent"
     },
     fa: {
       "nav.workforce":"AI Workforce","nav.modules":"ماژول‌ها","nav.compare":"تفاوت با CRM","nav.channels":"یکپارچه‌سازی","nav.trust":"امنیت","nav.faq":"سوالات متداول","nav.contact":"تماس با ما",
@@ -589,7 +594,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"در حال آماده‌سازی ایجنت…",
       "agent.micBlocked":"دسترسی میکروفون داده نشده است. الیف کایا صدای شما را نمی‌شنود — دسترسی میکروفون را در تنظیمات مرورگر فعال کرده و صفحه را رفرش کنید. می‌توانید با تایپ کردن نیز ادامه دهید.",
       "agent.bubbleAria":"بزرگ کردن الیف کایا","agent.reopenBtn":"باز کردن ایجنت",
-      "agent.reconnecting":"در حال اتصال مجدد…","agent.unavailable":"ایجنت در حال حاضر در دسترس نیست."
+      "agent.reconnecting":"در حال اتصال مجدد…","agent.unavailable":"ایجنت در حال حاضر در دسترس نیست.",
+      "agent.liveBadge":"● دستیار فروش هوش مصنوعی زنده"
     },
     fr: {
       "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compare":"Différence CRM","nav.channels":"Intégration","nav.trust":"Sécurité","nav.faq":"FAQ","nav.contact":"Contact",
@@ -685,7 +691,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Préparation de l'Agent…",
       "agent.micBlocked":"L'accès au microphone a été refusé. Elif Kaya ne peut pas vous entendre — activez l'accès au microphone dans les réglages de votre navigateur et actualisez la page. Vous pouvez aussi continuer en écrivant.",
       "agent.bubbleAria":"Agrandir Elif Kaya","agent.reopenBtn":"Ouvrir l'Agent",
-      "agent.reconnecting":"Reconnexion en cours…","agent.unavailable":"L'Agent est actuellement indisponible."
+      "agent.reconnecting":"Reconnexion en cours…","agent.unavailable":"L'Agent est actuellement indisponible.",
+      "agent.liveBadge":"● Assistant commercial IA en direct"
     },
     es: {
       "nav.workforce":"AI Workforce","nav.modules":"Módulos","nav.compare":"Diferencia con CRM","nav.channels":"Integración","nav.trust":"Seguridad","nav.faq":"Preguntas","nav.contact":"Contacto",
@@ -781,7 +788,8 @@ window.VERALIQ_I18N = {
       "agent.loadingText":"Preparando al Agente…",
       "agent.micBlocked":"No se concedió acceso al micrófono. Elif Kaya no puede oírte — habilita el acceso al micrófono en la configuración de tu navegador y actualiza la página. También puedes continuar escribiendo.",
       "agent.bubbleAria":"Expandir a Elif Kaya","agent.reopenBtn":"Abrir Agente",
-      "agent.reconnecting":"Reconectando…","agent.unavailable":"El Agente no está disponible en este momento."
+      "agent.reconnecting":"Reconectando…","agent.unavailable":"El Agente no está disponible en este momento.",
+      "agent.liveBadge":"● Asistente de ventas IA en vivo"
     }
   }
 };

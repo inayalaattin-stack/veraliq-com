@@ -9,23 +9,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* Sapphire & Champagne Luxe */
-    --ink:#FAF8F5;
-    --ink-2:#F2ECE2;
-    --panel:#FFFFFF;
-    --line: rgba(46,46,46,0.12);
-    --text:#2E2E2E;
-    --text-dim:#5C554B;
-    --text-dim-soft:#8A8378;
-    --accent:#C79C5A;
-    --accent-text:#96702F;
-    --accent-dim:#F0E4CE;
-    --accent-ink:#3D2E17;
-    --navy:#102542;
-    --navy-2:#1A2F4D;
-    --green:#1F9D63;
+    /* VERALIQ Design System — Obsidian + Champagne + AI Mint
+       (replaces the previous light "Sapphire & Champagne Luxe" theme;
+       variable NAMES are kept unchanged on purpose so every existing
+       selector below repaints correctly without being touched one by one —
+       see docs/DESIGN_SYSTEM_ANALYSIS.md for the full mapping rationale) */
+    --ink:#080A0A;          /* Obsidian — page background */
+    --ink-2:#101413;        /* Deep Graphite — secondary surface / hover wash */
+    --panel:#171C19;        /* Surface — cards, panels, menus */
+    --line: #252C28;        /* Border */
+    --text:#EDE9DF;         /* Warm White — primary text */
+    --text-dim:#8A918C;     /* Muted Text — secondary text */
+    --text-dim-soft: rgba(138,145,140,0.65);
+    --accent:#BFA16A;       /* Champagne — primary accent */
+    --accent-text:#D4BB87;  /* Champagne Hover — brighter, for small mono labels */
+    --accent-dim: rgba(191,161,106,0.14);
+    --accent-ink:#080A0A;   /* dark text ON champagne-background buttons */
+    --navy:#101413;         /* portal-preview surface (kept as its own token; no longer literal navy) */
+    --navy-2:#171C19;
+    --green:#7EE0B2;        /* AI Mint — repurposed for "live / positive / AI" indicators */
     --red:#D93A40;
-    --radius: 4px;
+    --radius: 8px;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -56,7 +60,7 @@
   header{
     position:fixed;top:0;left:0;right:0;z-index:1002;
     backdrop-filter:blur(12px);
-    background:rgba(250,248,245,0.82);
+    background:rgba(8,10,10,0.82);
     border-bottom:1px solid var(--line);
   }
   nav{
@@ -92,7 +96,7 @@
     font-family:'IBM Plex Mono',monospace;
     transition:all .2s;white-space:nowrap;
   }
-  .nav-cta:hover{border-color:var(--accent);background:rgba(199,156,90,0.10);}
+  .nav-cta:hover{border-color:var(--accent);background:rgba(191,161,106,0.10);}
   .nav-toggle{display:none;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;}
   @media(max-width:960px){
     .nav-links{
@@ -112,6 +116,9 @@
     position:relative;padding:0;
     border-bottom:1px solid var(--line);
     overflow:hidden;background:var(--ink);
+    background-image:
+      radial-gradient(ellipse 900px 560px at 18% 8%, rgba(16,20,19,0.9) 0%, transparent 60%),
+      radial-gradient(ellipse 640px 480px at 92% 18%, rgba(126,224,178,0.05) 0%, transparent 65%);
   }
   .hero-grid{
     display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;
@@ -124,7 +131,7 @@
   .hero-showcase{
     position:relative;border-radius:20px;overflow:hidden;
     border:1px solid var(--line);
-    box-shadow:0 36px 64px -24px rgba(16,37,66,0.28),0 8px 20px rgba(46,46,46,0.08);
+    box-shadow:0 36px 64px -24px rgba(0,0,0,0.55),0 8px 20px rgba(0,0,0,0.25);
     max-width:100%;
   }
   .hero-showcase img{width:100%;height:auto;display:block;}
@@ -179,9 +186,9 @@
     transition:all .2s;cursor:pointer;border:none;font-family:'Inter',sans-serif;
   }
   .btn-primary{background:var(--accent);color:var(--accent-ink);font-weight:600;}
-  .btn-primary:hover{background:#B98A47;transform:translateY(-1px);}
-  .btn-ghost{border:1px solid var(--line);color:var(--text);}
-  .btn-ghost:hover{border-color:var(--text-dim);}
+  .btn-primary:hover{background:var(--accent-text);transform:translateY(-1px);}
+  .btn-ghost{border:1px solid var(--accent);color:var(--text);background:transparent;}
+  .btn-ghost:hover{border-color:var(--accent-text);background:rgba(191,161,106,0.08);}
   .hero-footnote{
     margin-top:32px;font-size:13px;color:var(--text-dim);
     letter-spacing:0.01em;opacity:0.85;
@@ -215,8 +222,8 @@
   @media(max-width:960px){.portal-grid{grid-template-columns:1fr;}}
   .portal-visual{
     position:relative;border-radius:20px;overflow:hidden;
-    border:1px solid rgba(255,255,255,0.12);
-    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);
+    border:1px solid var(--line);
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
   }
   .portal-visual img{width:100%;height:auto;display:block;}
   .portal-note{
@@ -263,7 +270,7 @@
   .compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   @media(max-width:900px){.compare-grid{grid-template-columns:1fr;}}
   .compare-item{background:var(--panel);padding:36px 32px;}
-  .compare-item .old{color:var(--text-dim);font-size:14px;margin-bottom:12px;text-decoration:line-through;text-decoration-color:rgba(139,147,167,0.4);}
+  .compare-item .old{color:var(--text-dim);font-size:14px;margin-bottom:12px;text-decoration:line-through;text-decoration-color:rgba(138,145,140,0.5);}
   .compare-item .new{color:var(--text);font-size:17px;font-weight:500;font-family:'Space Grotesk',sans-serif;}
 
   /* Modules grid */
@@ -353,7 +360,10 @@
     width:340px;height:480px;
     background:#0B1220;border:1px solid rgba(255,255,255,0.10);
     border-radius:14px;overflow:hidden;
-    box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25);
+    /* subtle AI Mint ambient glow (VERALIQ design system §7) — kept very
+       low-opacity on purpose, this is a premium accent, not a neon frame */
+    box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25),
+               0 0 0 1px rgba(126,224,178,0.06), 0 0 40px -8px rgba(126,224,178,0.16);
     display:flex;flex-direction:column;
     transition:width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
                left .28s cubic-bezier(.2,.8,.2,1),right .28s cubic-bezier(.2,.8,.2,1),
@@ -437,6 +447,25 @@
   .agent-indicator span:nth-child(3){height:9px;animation-delay:.3s;}
   @keyframes agent-bounce{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
 
+  /* "● CANLI AI SATIŞ ASİSTANI" badge (design system §7) — purely CSS-driven
+     off :has(), no widget.js change needed: shows only once agentStatusDot
+     actually carries the .live class (i.e. the agent is really connected),
+     never a fake "live" claim while still loading/reconnecting. */
+  .agent-live-badge{
+    display:none;position:absolute;left:12px;top:12px;z-index:2;
+    align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+    background:rgba(8,10,10,0.55);border:1px solid rgba(126,224,178,0.35);
+    backdrop-filter:blur(4px);
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:0.05em;
+    color:#BFE9D4;text-transform:uppercase;white-space:nowrap;
+  }
+  .agent-live-badge::before{
+    content:'';width:6px;height:6px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 0 3px rgba(126,224,178,0.25);flex-shrink:0;
+  }
+  .agent-window:has(.agent-dot.live) .agent-live-badge{display:flex;}
+  .agent-window[data-state="fullscreen"] .agent-live-badge{top:16px;left:16px;}
+
   /* minimized — small circular bubble; site behind is fully visible */
   .agent-bubble{
     position:fixed;z-index:900;width:64px;height:64px;border-radius:50%;
@@ -480,7 +509,7 @@
   .lang-menu{
     position:absolute;top:calc(100% + 8px);right:0;min-width:170px;
     background:var(--panel);border:1px solid var(--line);border-radius:10px;
-    box-shadow:0 20px 40px -12px rgba(16,37,66,0.22);
+    box-shadow:0 20px 40px -12px rgba(0,0,0,0.5);
     padding:6px;display:none;flex-direction:column;gap:2px;z-index:1001;
     max-height:70vh;overflow-y:auto;
   }
@@ -915,6 +944,7 @@
   </div>
   <div class="agent-stage">
     <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <div class="agent-live-badge" data-i18n="agent.liveBadge">● CANLI AI SATIŞ ASİSTANI</div>
     <div class="agent-loading" id="agentLoading">
       <div class="agent-spinner"></div>
       <div class="agent-loading-text" id="agentLoadingText" data-i18n="agent.loadingText">Agent hazırlanıyor…</div>
