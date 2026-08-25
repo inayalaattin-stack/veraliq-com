@@ -72,7 +72,15 @@ const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 // "Clara" avatarının id'si. app.spatius.ai/avatars/library'den
 // (İmparator'ın hesabına giriş yapmış tarayıcısı üzerinden, sadece bu genel
 // kimlik değeri okunarak — API Key sayfasına hiç girilmedi) 2026-08-25'te alındı.
-const SPATIUS_AVATAR_ID = 'c7069121-8245-4015-9940-82d0dc0c6bda';
+//
+// DÜZELTME (2026-08-25): İlk seferde yanlışlıkla Halima'nın id'si
+// (c7069121-8245-4015-9940-82d0dc0c6bda) buraya girilmişti — spatius-test.html
+// ile canlı testte avatar Clara değil Halima olarak göründü VE
+// "controller.onError: App ID mismatch" hatası alındı (Halima'nın id'si bu
+// hesabın/App ID'sinin avatar listesine ait değildi). Spatius Studio'nun
+// Herkese Açık Avatarlar sayfası (accessibility tree ile tam/kısaltılmamış
+// id okunarak) tekrar kontrol edildi — Clara'nın doğru id'si:
+const SPATIUS_AVATAR_ID = 'd51ab422-3db7-47cc-afa8-7273b02bc70b';
 
 // Worker 2026-08-25'te deploy edildi (worker-spatius/README.md), secret'lar
 // (SPATIUS_APP_ID / SPATIUS_API_KEY) girildi. Upstream endpoint doğruluğu
@@ -115,7 +123,10 @@ export class SpatiusAvatarProvider extends AvatarProvider {
 
     const { appId, sessionToken } = await this._fetchSessionToken();
 
-    AvatarSDK.initialize(appId, { drivingServiceMode: DrivingServiceMode.direct });
+    // initialize() ASENKRON — spatius-test.html ile canlı doğrulandı:
+    // await edilmezse AvatarManager.shared.load() "AvatarSDK not
+    // initialized" hatası fırlatıyor.
+    await AvatarSDK.initialize(appId, { drivingServiceMode: DrivingServiceMode.direct });
     AvatarSDK.setSessionToken(sessionToken);
 
     const avatar = await AvatarManager.shared.load(SPATIUS_AVATAR_ID);

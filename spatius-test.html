@@ -76,7 +76,11 @@
     window.addEventListener('error', (e) => log('window.onerror: ' + e.message, 'err'));
 
     const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
-    const SPATIUS_AVATAR_ID = 'c7069121-8245-4015-9940-82d0dc0c6bda';
+    // DÜZELTME (2026-08-25): Önceki ID (c7069121-...) yanlışlıkla Halima'ya
+    // aitti (Spatius Studio Herkese Açık Avatarlar listesinden doğrulandı) —
+    // "App ID mismatch" bağlantı hatasının sebebi de muhtemelen buydu.
+    // Doğru Clara ID'si:
+    const SPATIUS_AVATAR_ID = 'd51ab422-3db7-47cc-afa8-7273b02bc70b';
     const SPATIUS_SESSION_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/session';
 
     let sessionData = null;
