@@ -32,6 +32,23 @@
 // değeri saniye sanılınca tarih ~56000 yılına gidiyor, "24 saatten fazla"
 // hatası da buradan geliyordu. Aşağıda saniyeye çevrildi. Yanıttaki alan
 // adı da doğrulandı: "sessionToken" (data.sessionToken zaten doğruydu).
+//
+// ÜÇÜNCÜ BUG (bulundu ve düzeltildi): session token akışı çalışıp Elif Kaya
+// (Clara görseli) doğru şekilde göründükten SONRA bile
+// "controller.onError: App ID mismatch" ile bağlantı kopuyordu. Claude'un
+// kendi Chrome oturumundan sessionToken'ın JWT payload'ı decode edilerek
+// (fetch sarmalanıp yanıt yakalanarak) kanıtlandı: JWT'nin İÇİNDEKİ gerçek
+// app_id (Spatius'un API Key'e göre KENDİ belirlediği değer, ör.
+// "app_mt8yu8ny_101kfqg") ile bu worker'ın env.SPATIUS_APP_ID secret'ından
+// döndürdüğü appId (kullanıcının Studio'dan elle kopyaladığı değer, ör.
+// "app_mt8yog5x_1dn99l4") BİRBİRİNDEN FARKLIYDI — muhtemelen elle
+// kopyalarken karışan benzer karakterler yüzünden (yog5x/yu8ny gibi).
+// AvatarSDK.initialize(appId, ...) bu iki değerin eşleşmesini bekliyor.
+// FIX: env.SPATIUS_APP_ID'ye güvenmek yerine, gerçek app_id artık
+// session token'ın KENDİSİNDEN (JWT payload'ından) okunuyor — bu, Spatius
+// sunucusunun API Key'e göre belirlediği TEK doğru kaynak; elle
+// kopyalanan/yanlış yazılabilecek bir secret'a bağımlılığı tamamen ortadan
+// kaldırıyor. env.SPATIUS_APP_ID sadece decode başarısız olursa yedek.
 
 const UPSTREAM_URL = 'https://console.us-west.spatius.ai/v1/console/session-tokens';
 
@@ -39,6 +56,22 @@ const ALLOWED_ORIGINS = new Set([
   'https://veraliq.com',
   'https://www.veraliq.com',
 ]);
+
+// Session token'ın (JWT) imzasını DOĞRULAMAZ — sadece payload'daki app_id
+// claim'ini okur (görüntüleme/eşleştirme amaçlı, bir yetkilendirme kontrolü
+// değil; gerçek yetkilendirme zaten Spatius'un kendi Motion Server'ında
+// oluyor). atob() Cloudflare Workers runtime'ında global olarak mevcut.
+function decodeJwtAppId(jwt) {
+  try {
+    const payloadB64Url = jwt.split('.')[1];
+    const payloadB64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(payloadB64);
+    const payload = JSON.parse(json);
+    return payload.app_id || null;
+  } catch (e) {
+    return null;
+  }
+}
 
 function corsHeaders(origin) {
   const allow = ALLOWED_ORIGINS.has(origin) ? origin : 'https://veraliq.com';
@@ -108,10 +141,15 @@ export default {
       const data = await upstreamResp.json();
       // data.sessionToken: docs.spatius.ai/api-reference/api-reference.md ile
       // doğrulandı — Spatius yanıtı bu alanı "sessionToken" adıyla döndürüyor.
-      // (Geçici "rawUpstream" teşhis alanı sorunun bulunmasından sonra
-      // kaldırıldı — asıl sorun expireAt biriminin ms/sn karışıklığıydı.)
+      //
+      // appId: elle girilen env.SPATIUS_APP_ID YERİNE, session token'ın
+      // kendi JWT payload'ındaki "app_id" claim'i kullanılıyor — bkz.
+      // yukarıdaki "ÜÇÜNCÜ BUG" notu. Bu, "App ID mismatch" hatasını kökten
+      // çözüyor çünkü AvatarSDK.initialize()'a artık HER ZAMAN token'la
+      // eşleşen doğru değer gidiyor.
+      const jwtAppId = decodeJwtAppId(data.sessionToken);
       return new Response(
-        JSON.stringify({ sessionToken: data.sessionToken, appId: env.SPATIUS_APP_ID.trim() }),
+        JSON.stringify({ sessionToken: data.sessionToken, appId: jwtAppId || env.SPATIUS_APP_ID.trim() }),
         { headers: { ...headers, 'Content-Type': 'application/json' } }
       );
     }
