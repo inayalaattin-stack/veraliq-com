@@ -16,3 +16,10 @@ node_modules/
 .DS_Store
 *.log
 .vscode/
+
+# VERALIQ Digital Human Engine — voice biometric material, never committed
+# (see services/tts/README.md — spec section 4's consent rule)
+services/tts/voice_profiles/*.wav
+
+__pycache__/
+*.pyc

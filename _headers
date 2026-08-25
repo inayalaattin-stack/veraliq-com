@@ -2,6 +2,19 @@
 # Applies real, standard security headers to every response.
 # Adjust CSP `connect-src` / `script-src` to match any third-party
 # services you actually add (analytics, fonts, your /api/assistant host).
+#
+# VERALIQ Digital Human Engine (see docs/DIGITAL_HUMAN_ENGINE_REPORT.md):
+# the DEFAULT providers (mock avatar, browser STT/TTS, FAQ sales brain) make
+# NO outbound network calls at all, so no CSP change was needed for them.
+# The moment you set AGENT_PROVIDER_CONFIG.selfHostedBaseUrl in
+# agent-core/config.js to point at your GPU server (Chatterbox/Whisper/
+# OpenTalking — see docs/SELF_HOSTED_DEPLOYMENT.md), you MUST add that
+# server's origin to `connect-src` below (and a `wss://` entry too, for
+# whisper-stt-provider.js's WebSocket) or the browser will silently block
+# the requests. The `https://*.anam.ai` / `wss://*.anam.ai` entries below
+# are ONLY needed if you deliberately re-enable the legacy
+# anam-avatar-provider.js — safe to remove once Anam is fully retired
+# (spec "PHASE 16").
 
 /*
   X-Frame-Options: DENY

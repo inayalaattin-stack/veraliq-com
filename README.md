@@ -1,44 +1,57 @@
-# Veraliq — Kurumsal Web Sitesi
+# Veraliq — Kurumsal Web Sitesi + Digital Human Engine
 
 ## Bu pakette ne var
-- `index.html` — Ana site (hero, çözümler, global varlık, güvenlik, iletişim, AI asistan widget'ı)
-- `script.js` — Etkileşim mantığı (menü, dil algılama, asistan arayüzü)
-- `_headers` — Cloudflare Pages / Netlify için güvenlik başlıkları (CSP, HSTS, vb.)
+- `index.html`, `script.js`, `i18n.js` — Ana site (hero, çözümler, 8 dilli i18n, FAQ, demo formu)
+- `privacy.html`, `kvkk.html`, `terms.html` — yasal sayfalar
+- `_headers` — Cloudflare Pages güvenlik başlıkları (CSP, HSTS, vb.)
+- `agent-core/` — **VERALIQ Digital Human Engine**: provider-agnostic canlı AI agent mimarisi (avatar/TTS/STT/LLM). Bkz. `docs/DIGITAL_HUMAN_ENGINE_REPORT.md`.
+- `services/` — self-hosted STT/TTS/Avatar servisleri için Docker + kurulum rehberi (GPU makinenizde çalıştırılır). Bkz. `docs/SELF_HOSTED_DEPLOYMENT.md`.
+- `worker/` — Cloudflare Worker; şu an yalnızca **opsiyonel/legacy** Anam.ai session-token proxy'si (varsayılan olarak kullanılmıyor)
+- `docs/` — mimari rapor + self-host kurulum rehberi
 - `backup-template.sh` — Gerçek 3-2-1 yedekleme şablonu (siz doldurup planlarsınız)
-- `deploy.yml` — GitHub Actions: statik site dağıtımı + gece güvenlik taraması + 6 saatte bir yedekleme tetikleyici
+
+## Canlı AI Agent — mimari özeti
+
+Site üzerindeki "Elif Kaya" agent'ı artık **VERALIQ Digital Human Engine**
+üzerinden çalışıyor — Anam.ai'ye bağımlı değil. Varsayılan (bugün, production'da
+aktif) yapılandırma:
+
+| Katman | Varsayılan provider | Maliyet | Not |
+|---|---|---|---|
+| Avatar | `MockAvatarProvider` | $0, GPU gerekmez | Canvas tabanlı, emotion-reaktif idle avatar |
+| TTS | `WebSpeechTTSProvider` | $0 | Tarayıcı native SpeechSynthesis |
+| STT | `WebSpeechSTTProvider` | $0 | Tarayıcı native SpeechRecognition (Chrome/Edge/Safari; Firefox desteklemiyor) |
+| LLM | `FaqSalesBrainProvider` | $0, anahtar gerekmez | Deterministik VERALIQ SSS motoru |
+
+Hangi provider'ın kullanılacağı **tek bir dosyadan** değiştirilir:
+`agent-core/config.js`. Kendi GPU sunucunuzu (self-hosted QuickTalk/MuseTalk
+avatar, Chatterbox TTS, faster-whisper STT) devreye almak için
+`docs/SELF_HOSTED_DEPLOYMENT.md`'yi izleyin — kod tarafı zaten hazır, sadece
+config'de provider adını değiştirip `selfHostedBaseUrl`'ü sunucunuza
+yönlendirmeniz yeterli.
+
+Eski Anam.ai entegrasyonu **silinmedi**, `agent-core/avatar-providers/anam-avatar-provider.js`
+içinde izole edildi ve config'de `avatarProvider: 'anam'` seçilmediği sürece
+hiç yüklenmiyor (dynamic import). Detaylı bağımlılık haritası, lisans
+araştırması ve GPU/maliyet analizi için: `docs/DIGITAL_HUMAN_ENGINE_REPORT.md`.
 
 ## Kurulum adımları (siz veya ekibiniz yapmalı)
-1. Bu dosyaları bir GitHub reposuna (`veraliq-com`) yükleyin.
-2. `deploy.yml` dosyasını `.github/workflows/deploy.yml` yoluna taşıyın.
-3. GitHub repo secrets'a ekleyin: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `R2_BUCKET`, `S3_BUCKET`, `BACKUP_ENCRYPTION_KEY`.
-4. Cloudflare Pages'te yeni proje oluşturup bu repoyu bağlayın, DNS kaydını `www.veraliq.com` için ekleyin.
-5. Cloudflare panelinden WAF, Rate Limiting ve DDoS korumasını (Pro/Business/Enterprise plana göre) etkinleştirin — bunlar Cloudflare hesap ayarlarıdır, kodla otomatik açılmaz.
-6. `index.html` içindeki `[Şehir, Ülke — düzenleyin]` ve MERSİS/ticaret sicil no gibi yer tutucuları gerçek bilgilerinizle değiştirin.
-
-## Asistan artık gerçek bir yapay zekaya bağlı ✅
-
-Önceki sürümde `script.js` sabit/demo yanıtlar veriyordu. Artık **gerçek, çalışan bir backend** var:
-
-- `worker/worker.js` — Cloudflare Worker, Google Gemini'nin ücretsiz katmanına bağlanıyor
-- `worker/README.md` — 5 dakikalık kurulum rehberi (ücretsiz API anahtarı alma dahil)
-- `script.js` — artık `ASSISTANT_ENDPOINT`'e gerçek istek atıyor, sesli giriş/çıkış (Web Speech API) eklendi
-
-**Yapmanız gereken tek şey**: `worker/README.md`'deki 5 adımı takip edip kendi ücretsiz API anahtarınızı almak ve worker'ı deploy etmek. Kod tarafında başka bir şey değişmiyor.
-
-Backend henüz deploy edilmediyse, asistan sahte akıllılık göstermek yerine dürüst bir "bağlantı kurulamadı, info@veraliq.com'a yazın" mesajı verir — önceki turda eleştirdiğimiz "sahte demo" sorununu bilerek burada tekrar etmedik.
+1. Bu dosyaları bir GitHub reposuna (`veraliq-com`) yükleyin / mevcut repoya push edin.
+2. Cloudflare Pages'te bu repoyu bağlayın (repo kökü = publish dizini, build adımı yok — saf statik dosyalar + ES modülleri).
+3. Cloudflare panelinden WAF, Rate Limiting ve DDoS korumasını (Pro/Business/Enterprise plana göre) etkinleştirin — bunlar Cloudflare hesap ayarlarıdır, kodla otomatik açılmaz.
+4. (Opsiyonel, yalnızca Anam'ı yeniden açmak isterseniz) `worker/README.md`'deki adımları izleyin.
+5. (Opsiyonel, self-hosted GPU altyapısına geçmek için) `docs/SELF_HOSTED_DEPLOYMENT.md`'yi izleyin.
 
 ## Bilinçli olarak YAPILMAYAN şeyler ve nedenleri
 | İstenen | Neden yapılmadı | Bunun yerine ne var |
 |---|---|---|
-| Kullanıcının insanla konuştuğunu sanmasını sağlayan video asistan | Yanıltıcı UX; güven inşa etmez, güveni riske atar | Kimliği açık, çok dilli metin/sesli asistan iskeleti |
-| Kendi kendini sınırsızca güncelleyen "AI CEO" | Denetimsiz otomatik kod değişikliği güvenlik açığıdır | Gece taraması + PR tabanlı, insan onaylı güncelleme akışı |
-| 20 dakikada tam otonom canlıya alma | Gerçek hesap erişimi ve DNS/SSL süreçleri dışarıdan tamamlanamaz | Adım adım, sizin çalıştıracağınız net bir kurulum rehberi |
+| Tam CRM/ödeme/onay/sözleşme/WhatsApp backend'i | Bu, koddan sıfırdan bir SaaS platformu inşa etmek — ayrı bir mühendislik projesi | `docs/DIGITAL_HUMAN_ENGINE_REPORT.md` §0'da kapsam dışı bırakıldığı ve neden açıkça belirtildi |
+| GPU'lu gerçek avatar'ın bu oturumda çalıştırılıp doğrulanması | Bu cloud ortamında GPU yok | Kod yazıldı, `docs/SELF_HOSTED_DEPLOYMENT.md` ile kendi GPU'nuzda doğrulanacak |
 | Sahte müşteri sayısı/istatistik | Yanlış pazarlama beyanı riski | Yer tutuculu, dürüst şablon alanları |
 
 ## İyileştirme önerileri (öncelik sırasına göre)
-1. **Gerçek içerik**: Yer tutucu bölge/ofis bilgilerini ve MERSİS numarasını gerçek verilerle doldurun.
-2. **KVKK/GDPR sayfaları**: `/privacy.html` ve `/kvkk.html` şu an linklenmiş ama oluşturulmadı — bir sonraki adımda yazabilirim.
-3. **Analitik**: Gizlilik dostu bir analitik (Plausible, Fathom) ekleyin; Google Analytics kullanacaksanız çerez rızası akışını da ekleyin.
-4. **Performans**: Görseller eklendiğinde WebP/AVIF ve `loading="lazy"` kullanın.
-5. **Erişilebilirlik**: Renk kontrastları WCAG AA için kontrol edildi; formlar eklendiğinde etiketleme ve klavye odağını test edin.
-6. **Asistan backend'i**: Yukarıdaki adımları takip ederek gerçek bir model bağlayın; ilk aşamada yalnızca SSS düzeyinde yanıtlarla sınırlı tutup zamanla genişletin.
+1. **Self-host'a geçiş**: `docs/SELF_HOSTED_DEPLOYMENT.md`'yi GPU makinenizde uygulayıp `avatarProvider`/`ttsProvider`/`sttProvider`'ı gerçek self-hosted servislere çevirin.
+2. **Gerçek LLM**: `agent-core/llm-providers/openai-provider.js` ya da `anthropic-provider.js`'i aktif etmeden önce, API anahtarını tutan küçük bir Cloudflare Worker (mevcut `worker/session-worker.js` deseni gibi) yazın — anahtar asla tarayıcıya konmamalı.
+3. **CRM/ödeme/onay backend'i**: `docs/DIGITAL_HUMAN_ENGINE_REPORT.md`'nin "Bu turda yapılmayanlar" listesindeki katmanlar için ayrı bir çalışma planlayın.
+4. **Analitik**: Gizlilik dostu bir analitik (Plausible, Fathom) ekleyin.
+5. **Erişilebilirlik**: Renk kontrastları WCAG AA için kontrol edildi; yeni formlar eklendiğinde etiketleme ve klavye odağını test edin.

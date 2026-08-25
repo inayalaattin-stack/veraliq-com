@@ -1,0 +1,46 @@
+# VERALIQ Digital Human Engine — self-hosted GPU services for local/dev use
+# on your own machine (see docs/SELF_HOSTED_DEPLOYMENT.md). Run this ON the
+# GPU machine (e.g. the Lenovo LOQ 15IAX9), not in this cloud sandbox — it
+# has no GPU and this file has not been executed here.
+#
+# OpenTalking (the avatar engine) is NOT included here — it's a separate,
+# existing project with its own install/compose flow; see
+# services/avatar/README.md for why and how to run it alongside these two.
+#
+# Requires: NVIDIA Container Toolkit installed on the host
+# (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/).
+
+services:
+  stt:
+    build: ./services/stt
+    ports:
+      - "8001:8001"
+    environment:
+      - WHISPER_MODEL_SIZE=small
+      - WHISPER_DEVICE=cuda
+      - WHISPER_COMPUTE_TYPE=float16
+      - ALLOWED_ORIGINS=https://veraliq.com,http://localhost:8080
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  tts:
+    build: ./services/tts
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./services/tts/voice_profiles:/app/voice_profiles
+    environment:
+      - DEFAULT_VOICE_ID=elif-kaya-tr
+      - ALLOWED_ORIGINS=https://veraliq.com,http://localhost:8080
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

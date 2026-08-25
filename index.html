@@ -890,13 +890,15 @@
   </div>
 </footer>
 
-<!-- Canlı AI Agent "Elif Kaya" — Anam.ai JS SDK ile kurulan, gerçek video
-     akışlı, uyarlanabilir (corner/half/fullscreen/minimized) agent penceresi.
-     Görüntü, ses (Türkçe kilitli dil davranışı dahil) ve konuşma mantığının
-     tamamı Anam Lab'de (persona: Elif Kaya) yapılandırıldı; bu pencere sadece
-     o oturumu görüntüler ve kontrol eder. Oturum token'ı veraliq-agent
-     worker'ından (bkz. worker/session-worker.js) alınır; API anahtarı hiçbir
-     zaman tarayıcıya inmez. -->
+<!-- Canlı AI Agent "Elif Kaya" — VERALIQ Digital Human Engine (bkz.
+     docs/DIGITAL_HUMAN_ENGINE_REPORT.md). Uyarlanabilir (corner/half/
+     fullscreen/minimized) pencere durum makinesi agent-core/widget.js
+     içinde; STT/LLM/TTS/Avatar tamamı agent-core/config.js üzerinden
+     seçilen, değiştirilebilir provider'lar. Varsayılan: GPU gerektirmeyen
+     Mock Avatar + tarayıcı STT/TTS + deterministik VERALIQ SSS motoru —
+     hepsi $0 maliyetli ve anahtar gerektirmez. Eski Anam.ai entegrasyonu
+     agent-core/avatar-providers/anam-avatar-provider.js içinde izole,
+     varsayılan KAPALI (bkz. worker/session-worker.js — artık opsiyonel). -->
 <div id="agentWindow" class="agent-window" data-state="corner" data-corner="br" hidden>
   <div class="agent-header" id="agentHeader">
     <div class="agent-header-id">
@@ -934,6 +936,7 @@
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden data-i18n="agent.reopenBtn">Agent'ı Aç</button>
 
 <script src="i18n.js?v=1"></script>
-<script src="script.js?v=8"></script>
+<script src="script.js?v=9"></script>
+<script type="module" src="agent-core/widget.js?v=1"></script>
 </body>
 </html>

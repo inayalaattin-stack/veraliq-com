@@ -1,0 +1,10 @@
+# Versions pinned as of 2026-08-25 research pass — NOT installed/verified in
+# this session (no GPU). Check https://pypi.org/project/chatterbox-tts/ and
+# https://github.com/resemble-ai/chatterbox for the current release before
+# building; pin whatever is actually latest-stable at deploy time.
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+torch==2.4.1
+torchaudio==2.4.1
+chatterbox-tts
