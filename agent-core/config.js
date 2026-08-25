@@ -18,12 +18,23 @@ export const AGENT_PROVIDER_CONFIG = {
   // live site). Anam stays the production avatar until a real photoreal
   // self-hosted avatar (QuickTalk/MuseTalk on a GPU host) is ready to swap
   // in — at that point this one line is the only change needed.
-  // 'spatius' henüz İSKELET halinde — bkz. agent-core/avatar-providers/
-  // spatius-avatar-provider.js başındaki durum notu. SPATIUS_AVATAR_ID
-  // doldurulup gerçek SDK ile doğrulanana kadar bunu seçmeyin.
-  avatarProvider: 'anam',
-  // 'webspeech' (default today — free, browser-native) | 'chatterbox'
-  ttsProvider: 'webspeech',
+  // 'spatius' PRODUCTION'A ALINDI (2026-08-25, Imparator onayi: "elif kaya
+  // yayina al"). Persona: Elif Kaya (gorsel olarak Spatius'un "Clara" kutuphane
+  // avatari). Turkce ses kalitesi henuz "gercek insan gibi" seviyesinde degil
+  // (bkz. google-translate-tts-provider.js basindaki risk notlari) — Imparator
+  // bunu bilerek "simdilik turkce destegi koymayalim, sonra dusunecegim" dedi;
+  // yani ses su an ROBOTIK/KLASIK kalitede calisiyor, sessiz DEGIL. Daha iyi
+  // bir ucretsiz/GPU'suz Turkce TTS bulununca burada sadece ttsProvider
+  // degisecek, avatarProvider ayni kalacak.
+  avatarProvider: 'spatius',
+  // 'googleTranslate' ZORUNLU eşleşme: 'spatius' provider'i speak() icinde
+  // gercek bir audioBuffer bekliyor (yoksa throw ediyor) ve orchestrator.js
+  // bu hatayi sessizce yutuyor — yani 'webspeech' ile birlikte kullanilirsa
+  // Elif Kaya gorunur ama HICBIR SES CIKMAZ (sessiz/bozuk production). Bu
+  // yuzden 'spatius' secili oldugu surece ttsProvider da 'googleTranslate'
+  // olmali. Kalite notu: klasik/robotik (insan gibi degil) — bkz.
+  // google-translate-tts-provider.js basindaki 4 maddelik risk notu.
+  ttsProvider: 'googleTranslate',
   // 'webspeech' (default today — free, browser-native) | 'whisper'
   sttProvider: 'webspeech',
   // 'faq' (default today — free, deterministic, no API key) | 'openai' | 'anthropic'
@@ -52,6 +63,7 @@ const LOADERS = {
   tts: {
     webspeech: () => import('./tts-providers/webspeech-tts-provider.js').then((m) => m.WebSpeechTTSProvider),
     chatterbox: () => import('./tts-providers/chatterbox-tts-provider.js').then((m) => m.ChatterboxTTSProvider),
+    googleTranslate: () => import('./tts-providers/google-translate-tts-provider.js').then((m) => m.GoogleTranslateTTSProvider),
   },
   stt: {
     webspeech: () => import('./stt-providers/webspeech-stt-provider.js').then((m) => m.WebSpeechSTTProvider),

@@ -27,13 +27,29 @@ o "backend" görevini görür.
   alınıyordu. İkisi de `session-worker.js`'de düzeltildi.
 - ✅ Session token akışı canlı test edildi ve **çalışıyor**:
   `POST /session` artık gerçek bir `sessionToken` + `appId` döndürüyor.
-- ⏳ Clara'nın (Elif Kaya için kullanılacak) avatar-id'si: **alındı** —
-  `c7069121-8245-4015-9940-82d0dc0c6bda` (bkz.
-  `agent-core/avatar-providers/spatius-avatar-provider.js`).
-- ⏳ Sıradaki adım: `spatius-avatar-provider.js`'in gerçek
-  `@spatius/avatarkit` SDK'sıyla tarayıcıda uçtan uca test edilmesi
-  (DOM mount şekli, `AvatarSDK.initialize()` imzası ve PCM16 chunk'lama
-  hâlâ doğrulanmadı — dosyanın başındaki not'a bakın).
+- ✅ Clara'nın (Elif Kaya için kullanılacak) doğru avatar-id'si bulundu ve
+  düzeltildi — ilk denemede yanlışlıkla Halima'nın id'si girilmişti
+  (`c7069121-...`), bu "App ID mismatch" hatasına yol açıyordu. Doğru id:
+  `d51ab422-3db7-47cc-afa8-7273b02bc70b`.
+- ✅ "App ID mismatch" hatası kökten çözüldü: worker artık `appId`'yi elle
+  girilen secret yerine session token'ın kendi JWT payload'ından okuyor
+  (`decodeJwtAppId`, bkz. `session-worker.js`).
+- ✅ `spatius-avatar-provider.js` gerçek `@spatius/avatarkit` SDK'sıyla
+  uçtan uca CANLI test edildi (`spatius-test.html`, Claude'un kendi Chrome
+  oturumuyla otomatik test): Clara görseli doğru yükleniyor, bağlantı
+  "connected" durumunda kalıyor, `controller.send()` ile ses gönderimi
+  çalışıyor.
+- ✅ `/tts` route'u eklendi: Türkçe konuşma testi için ücretsiz, kart/hesap
+  gerektirmeyen bir bulut TTS'i (Google Translate'in dokümante edilmemiş
+  `translate_tts` endpoint'i) proxy'liyor — bkz.
+  `agent-core/tts-providers/google-translate-tts-provider.js` başındaki
+  risk/sınır notları (resmi değil, ticari kullanım için lisanslanmamış,
+  sadece doğrulama/köprü katmanı olarak düşünülmeli).
+- ⏳ Sıradaki adım: `spatius-test.html`'deki "4) Türkçe Konuşma Testi"
+  butonuyla üretilen sesin gerçekten akıcı/anlaşılır olup olmadığının
+  İmparator tarafından dinlenerek onaylanması (ben bunu duyamıyorum) —
+  sonrasında `config.js`'te `avatarProvider`/`ttsProvider` değişikliği için
+  son onay bekleniyor (brief madde 17/19).
 
 ## Deploy adımları (İmparator'ın kendi Cloudflare hesabından yapması gerekir
 — Claude bu adımı sizin adınıza yapamaz, çünkü hesap/kimlik bilgisi işlemleri

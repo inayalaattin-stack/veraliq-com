@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="VERALIQ">
+  <!--
+    VERALIQ marka işareti — 2026-08-25.
+    Konsept: "V" monogramı (VERALIQ'in ilk harfi) aynı zamanda bir çatı/bina
+    silüetinin köşesini andırıyor (gayrimenkul) — sağ üst köşesindeki nokta,
+    sitenin geri kalanında zaten kullanılan "canlı/AI" göstergesi olan AI
+    Mint rengiyle (--green:#7EE0B2) bir "sinyal/uç nokta" (yapay zekâ satış
+    danışmanının hep açık/canlı olması) hissi veriyor. Renkler doğrudan
+    index.html'deki mevcut design token'larından alındı — yeni bir palet
+    icat edilmedi (--ink:#080A0A, --accent:#BFA16A, --green:#7EE0B2).
+    Tek dosya, tüm boyutlarda (favicon'dan header logosuna) kullanılan tek
+    kaynak. index.html'deki tüm <link rel="icon"> etiketleri doğrudan bu
+    SVG'ye işaret ediyor (modern tarayıcıların hepsi SVG favicon destekliyor).
+    assets/generate-favicons.py adında, PNG raster fallback üretebilecek
+    (sandbox'ta üçüncü parti kütüphane kurulamadığı için Python stdlib ile
+    yazılmış) bir script de hazır duruyor — ileride Apple Touch Icon için
+    gerçek bir PNG istenirse "python3 assets/generate-favicons.py" çalıştırıp
+    üretilen 3 dosyayı index.html'e eklemek yeterli.
+  -->
+  <rect width="64" height="64" rx="14" fill="#080A0A"/>
+  <path d="M16 17 L32 47 L48 17" fill="none" stroke="#BFA16A" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="48" cy="16" r="5.5" fill="#7EE0B2"/>
+  <circle cx="48" cy="16" r="9" fill="none" stroke="#7EE0B2" stroke-opacity="0.35" stroke-width="2"/>
+</svg>

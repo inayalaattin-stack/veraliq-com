@@ -50,7 +50,36 @@
 // kopyalanan/yanlış yazılabilecek bir secret'a bağımlılığı tamamen ortadan
 // kaldırıyor. env.SPATIUS_APP_ID sadece decode başarısız olursa yedek.
 
+// DORDUNCU EKLENTI (2026-08-25) - /tts route'u: "konusma testlerini
+// tamamla" istegi uzerine arastirildi. Spatius KENDI TTS'ini calistirmiyor
+// (yukaridaki mimari not), yani Turkce'nin akici/insansi cikmasi TAMAMEN
+// bizim sectigimiz TTS saglayicisina bagli. Repodaki tek ses-buffer ureten
+// secenek (chatterbox) kullanicinin kendi GPU sunucusunu gerektiriyor -
+// hic kurulmadi (docs/SELF_HOSTED_DEPLOYMENT.md). Denenenler:
+//   - ElevenLabs: kart istemiyor AMA free tier ticari kullanim YASAK -
+//     elendi.
+//   - Google Cloud TTS / Azure Speech: ikisi de free tier icin gercek bir
+//     fatura hesabi (genelde kart dogrulamali) istiyor - "asla kart
+//     ekleme" kuraliyla celisiyor - elendi.
+//   - StreamElements'in eski ucretsiz TTS endpoint'i (topluluk arasinda
+//     yillardir bilinen bir "trick"): CANLI test edildi - ARTIK
+//     CALISMIYOR, "401 Unauthorized - No API key was found" donuyor.
+//   - Google Translate'in dokumante edilmemis "translate_tts" endpoint'i
+//     (client=tw-ob varyanti - gTTS gibi acik kaynak kutuphanelerin de
+//     kullandigi, token gerektirmeyen varyant): CANLI test edildi, GERCEK
+//     Turkce ses (mp3) dondurdugu dogrulandi. Kart yok, kayit yok, API key
+//     yok. Resmi bir SLA'si YOK ve herhangi bir an degisebilir/
+//     engellenebilir - bu risk google-translate-tts-provider.js'te acikca
+//     belirtiliyor. Tarayicidan dogrudan fetch CORS/CSP tarafindan
+//     engellendigi icin, bu worker uzerinden proxy'leniyor - tipki /session
+//     gibi.
 const UPSTREAM_URL = 'https://console.us-west.spatius.ai/v1/console/session-tokens';
+const TTS_UPSTREAM_URL = 'https://translate.google.com/translate_tts';
+// Google'in bu dokumante edilmemis endpoint'i, tek istekte ~200 karakterden
+// uzun metinlerde kesiliyor/hata veriyor gozlemlendi (topluluk raporlari) -
+// bu yuzden istemci tarafi (google-translate-tts-provider.js) metni cumle
+// sinirlarinda parcalayip bu route'a birden fazla kez istek atiyor.
+const TTS_MAX_CHARS = 200;
 
 const ALLOWED_ORIGINS = new Set([
   'https://veraliq.com',
@@ -152,6 +181,56 @@ export default {
         JSON.stringify({ sessionToken: data.sessionToken, appId: jwtAppId || env.SPATIUS_APP_ID.trim() }),
         { headers: { ...headers, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (url.pathname === '/tts' && request.method === 'GET') {
+      const text = (url.searchParams.get('text') || '').slice(0, TTS_MAX_CHARS);
+      const lang = url.searchParams.get('lang') || 'tr';
+      if (!text.trim()) {
+        return new Response(
+          JSON.stringify({ error: 'missing_text' }),
+          { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const upstream = new URL(TTS_UPSTREAM_URL);
+      upstream.searchParams.set('ie', 'UTF-8');
+      upstream.searchParams.set('q', text);
+      upstream.searchParams.set('tl', lang);
+      upstream.searchParams.set('client', 'tw-ob');
+
+      let ttsResp;
+      try {
+        ttsResp = await fetch(upstream.toString(), {
+          headers: {
+            // Google'in bu dokumante edilmemis endpoint'i bot gibi gorunen
+            // isteklere karsi hassas olabiliyor - gercekci bir tarayici
+            // User-Agent/Referer ile istek atiliyor (Worker sunucu-tarafinda
+            // calistigi icin bunu tarayici CORS kurallarindan bagimsiz
+            // serbestce ayarlayabiliyoruz).
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+            'Referer': 'https://translate.google.com/',
+          },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({ error: 'tts_upstream_unreachable' }),
+          { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!ttsResp.ok) {
+        return new Response(
+          JSON.stringify({ error: 'tts_upstream_failed', status: ttsResp.status }),
+          { status: 502, headers: { ...headers, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Ses baytlarini oldugu gibi (streaming) geri veriyoruz - hicbir
+      // sekilde bu Worker'da saklanmiyor/loglanmiyor.
+      return new Response(ttsResp.body, {
+        headers: { ...headers, 'Content-Type': ttsResp.headers.get('content-type') || 'audio/mpeg' },
+      });
     }
 
     return new Response('Not found', { status: 404, headers });

@@ -2,8 +2,18 @@
 //
 // SpatiusAvatarProvider — VERALIQ Ücretsiz Avatar Havuzu, 1. sağlayıcı.
 //
-// STATUS (2026-08-25): İSKELET / TAMAMLANMAMIŞ. Henüz production'a
-// BAĞLANMADI ve config.js'teki varsayılan avatarProvider hâlâ 'anam'.
+// STATUS (2026-08-25): PRODUCTION'A ALINDI — Imparator onayi: "elif kaya
+// yayina al simdilik turkce destegi koymayalim sonra dusunecegim". config.js
+// artik avatarProvider: 'spatius' + ttsProvider: 'googleTranslate' (zorunlu
+// eslesme, asagida ve config.js'te aciklandi). Baglanti + gorsel render
+// ucdan uca CANLI dogrulandi (spatius-test.html uzerinden, Claude'un kendi
+// Chrome oturumuyla otomatik test edildi): Clara gorseli dogru yukleniyor,
+// "App ID mismatch" hatasi KOKTEN cozuldu (JWT'den okuma), baglanti
+// "connected" durumunda kaliyor. Ses tarafi: google-translate-tts-provider.js
+// (bkz. o dosyanin basindaki 4 maddelik risk notu) su an ROBOTIK/KLASIK
+// kalitede calisiyor, insan gibi degil — Imparator bunu BILEREK kabul etti
+// ve daha iyi bir ucretsiz/GPU'suz Turkce TTS bulununca (Piper WASM veya
+// benzeri) sadece config.js'teki ttsProvider degisecek.
 // NOT (2026-08-25): VERALIQ'in ortak AI satış danışmanı persona ismi
 // "Clara" değil "Elif Kaya" — mevcut canlı Anam entegrasyonuyla (bkz.
 // worker/session-worker.js, script.js) aynı isim, tutarlılık için
@@ -42,9 +52,11 @@
 // TEK KISIT: Spatius'a ham ses (PCM16) göndermemiz gerektiği için, bu
 // provider yalnızca GERÇEK ses verisi (AudioBuffer) üreten bir
 // TTSProvider ile çalışır — 'webspeech' (tarayıcı TTS'i, ham buffer
-// vermiyor) İLE ÇALIŞMAZ. Bugün repodaki tek uyumlu aday 'chatterbox'
-// (self-hosted, bkz. docs/SELF_HOSTED_DEPLOYMENT.md) ya da ileride
-// eklenecek, ses verisi döndüren ücretsiz bulut bir Türkçe TTS.
+// vermiyor) İLE ÇALIŞMAZ. Uyumlu adaylar: 'googleTranslate' (ücretsiz
+// bulut, bkz. agent-core/tts-providers/google-translate-tts-provider.js —
+// bugün canlı test edilen, hesap/kart gerektirmeyen seçenek) ya da
+// 'chatterbox' (self-hosted, GPU gerektirir, bkz.
+// docs/SELF_HOSTED_DEPLOYMENT.md — henüz kurulmadı).
 //
 // providesOwnPipeline=false / rendersOwnAudioFromText=false olarak
 // işaretli — yani bu, QuickTalk/MuseTalk ailesiyle aynı "saf render
@@ -83,9 +95,10 @@ const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 const SPATIUS_AVATAR_ID = 'd51ab422-3db7-47cc-afa8-7273b02bc70b';
 
 // Worker 2026-08-25'te deploy edildi (worker-spatius/README.md), secret'lar
-// (SPATIUS_APP_ID / SPATIUS_API_KEY) girildi. Upstream endpoint doğruluğu
-// (worker-spatius/session-worker.js içindeki UPSTREAM_URL) henüz gerçek bir
-// session-token isteğiyle test edilmedi — bkz. dosyanın ilerisindeki not.
+// (SPATIUS_APP_ID / SPATIUS_API_KEY) girildi. Session-token akışı CANLI
+// test edildi ve doğrulandı (gerçek sessionToken + appId dönüyor, JWT'den
+// okunan appId App ID mismatch hatasını çözdü). Aynı worker artık ayrıca
+// bir /tts route'u da sunuyor (google-translate-tts-provider.js için).
 const SPATIUS_SESSION_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/session';
 
 export class SpatiusAvatarProvider extends AvatarProvider {
@@ -149,22 +162,34 @@ export class SpatiusAvatarProvider extends AvatarProvider {
   }
 
   /**
-   * @param {{done: Promise<void>, stop: () => void, audioBuffer?: AudioBuffer}} ttsHandle
+   * @param {{done: Promise<void>, stop: () => void, audioBuffer?: AudioBuffer, audioBufferPromise?: Promise<AudioBuffer>}} ttsHandle
    */
   async speak(ttsHandle) {
     if (!this._controller) return;
-    if (!ttsHandle || !ttsHandle.audioBuffer) {
+
+    // GUNCELLEME (2026-08-25): audioBuffer artik SENKRON hazir olmayabilir -
+    // google-translate-tts-provider.js gibi ag tabanli saglayicilar ses
+    // verisini fetch+decode ETTIKTEN sonra doldurabiliyor, bu yuzden bir
+    // `audioBufferPromise` da destekleniyor. webspeech/chatterbox gibi
+    // buffer HIC uretmeyen/uretemeyen saglayicilar icin davranis ayni kaliyor
+    // (asagida hata firlatiliyor).
+    let audioBuffer = ttsHandle && ttsHandle.audioBuffer;
+    if (!audioBuffer && ttsHandle && ttsHandle.audioBufferPromise) {
+      audioBuffer = await ttsHandle.audioBufferPromise;
+    }
+
+    if (!audioBuffer) {
       // Bkz. dosya başındaki mimari not: 'webspeech' gibi ham buffer
       // vermeyen bir TTS ile bu provider ÇALIŞMAZ. Sessizce başarısız olmak
       // yerine açıkça hata fırlatıyoruz ki yanlış TTS eşleşmesi config
       // aşamasında fark edilsin.
       throw new Error(
-        '[SpatiusAvatarProvider] ttsProvider gerçek bir audioBuffer üretmiyor. ' +
-        'Spatius için ttsProvider: \'chatterbox\' (veya buffer döndüren başka bir ' +
-        'sağlayıcı) seçilmeli, \'webspeech\' değil.'
+        '[SpatiusAvatarProvider] ttsProvider gerçek bir audioBuffer üretmiyor (veya ' +
+        'üretim başarısız oldu). Spatius için ttsProvider: \'googleTranslate\' veya ' +
+        '\'chatterbox\' (buffer döndüren bir sağlayıcı) seçilmeli, \'webspeech\' değil.'
       );
     }
-    const pcm16 = floatAudioBufferToPCM16(ttsHandle.audioBuffer);
+    const pcm16 = floatAudioBufferToPCM16(audioBuffer);
     this._controller.send(pcm16, /* end */ true);
     if (ttsHandle.done) await ttsHandle.done;
   }
@@ -212,17 +237,43 @@ export class SpatiusAvatarProvider extends AvatarProvider {
   }
 }
 
+// AvatarKit'in beklediği tam hedef sample rate resmi dokümanlarda hiç
+// belirtilmedi (yukarıdaki "DOĞRULANMAMIŞ VARSAYIMLAR" notu) — 16000 Hz,
+// spatius-test.html'deki ilk canlı testte (sentetik 440Hz ton, hatasız
+// kabul edildi) kullanılan değerle aynı tutuluyor, tutarlılık için.
+const SPATIUS_TARGET_SAMPLE_RATE = 16000;
+
 /**
  * AvatarKit'in beklediği "mono 16-bit PCM (s16le)" formatına dönüştürür.
- * TODO: gerçek entegrasyonda hedef sample rate (session config'te
- * belirlenen) ile AudioBuffer'ın kendi sample rate'i eşleşmiyorsa
- * resample gerekir — bu basit sürüm resample YAPMIYOR, sadece
- * float32 -> int16 dönüşümü yapıyor.
+ * GÜNCELLEME (2026-08-25): artık kaynak AudioBuffer'ın sample rate'i
+ * hedeften farklıysa BASİT DOĞRUSAL (linear) resample uygulanıyor — önceki
+ * sürüm bunu atlıyordu, bu da gerçek bir TTS (örn. Google'ın ~24kHz mp3'ü)
+ * Spatius'un beklediği hızdan farklı bir hızda gönderilirse sesin
+ * "hızlı/tiz" ya da "yavaş/kalın" çıkmasına (kalite sorunuyla karıştırılabilecek
+ * bir artefakta) yol açabilirdi. Doğrusal resample mükemmel değildir (basit
+ * bir alçak geçiren filtre yok) ama bu ölçekte (konuşma sesi) fark
+ * edilmeyecek kadar iyi sonuç verir.
  * @param {AudioBuffer} audioBuffer
  * @returns {Int16Array}
  */
 function floatAudioBufferToPCM16(audioBuffer) {
-  const float32 = audioBuffer.getChannelData(0);
+  let float32 = audioBuffer.getChannelData(0);
+  const srcRate = audioBuffer.sampleRate;
+
+  if (srcRate !== SPATIUS_TARGET_SAMPLE_RATE) {
+    const ratio = srcRate / SPATIUS_TARGET_SAMPLE_RATE;
+    const outLength = Math.round(float32.length / ratio);
+    const resampled = new Float32Array(outLength);
+    for (let i = 0; i < outLength; i++) {
+      const srcPos = i * ratio;
+      const i0 = Math.floor(srcPos);
+      const i1 = Math.min(i0 + 1, float32.length - 1);
+      const frac = srcPos - i0;
+      resampled[i] = float32[i0] * (1 - frac) + float32[i1] * frac;
+    }
+    float32 = resampled;
+  }
+
   const pcm16 = new Int16Array(float32.length);
   for (let i = 0; i < float32.length; i++) {
     const s = Math.max(-1, Math.min(1, float32[i]));
