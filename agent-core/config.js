@@ -43,7 +43,8 @@ const LOADERS = {
     quicktalk: () => import('./avatar-providers/quicktalk-avatar-provider.js').then((m) => m.QuickTalkAvatarProvider),
     musetalk: () => import('./avatar-providers/musetalk-avatar-provider.js').then((m) => m.MuseTalkAvatarProvider),
     anam: () => import('./avatar-providers/anam-avatar-provider.js').then((m) => m.AnamAvatarProvider),
-    // Ücretsiz Avatar Havuzu — 1. sağlayıcı (Clara/Halima). Bkz. dosyanın
+    // Ücretsiz Avatar Havuzu — 1. sağlayıcı (Elif Kaya persona'sı, Spatius'un
+    // "Clara" adlı kütüphane avatarını kullanıyor). Bkz. dosyanın
     // başındaki durum notu: production'a bağlanması için önce Spatius
     // hesabı + avatar-id + session-token worker'ı gerekiyor.
     spatius: () => import('./avatar-providers/spatius-avatar-provider.js').then((m) => m.SpatiusAvatarProvider),

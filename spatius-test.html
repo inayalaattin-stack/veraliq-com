@@ -113,7 +113,11 @@
         }
 
         log('AvatarSDK.initialize() çağrılıyor, appId=' + sessionData.appId);
-        AvatarSDK.initialize(sessionData.appId, { drivingServiceMode: DrivingServiceMode ? DrivingServiceMode.direct : undefined });
+        // initialize() ASENKRON — await edilmezse sonraki SDK çağrıları
+        // "AvatarSDK not initialized" hatası veriyor (bu tam olarak ilk
+        // test turunda gördüğümüz hata).
+        await AvatarSDK.initialize(sessionData.appId, { drivingServiceMode: DrivingServiceMode ? DrivingServiceMode.direct : undefined });
+        log('AvatarSDK.initialize() tamamlandı.');
         AvatarSDK.setSessionToken(sessionData.sessionToken);
         log('Session token SDK\'ya verildi.');
 

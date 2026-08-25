@@ -4,9 +4,17 @@
 //
 // STATUS (2026-08-25): İSKELET / TAMAMLANMAMIŞ. Henüz production'a
 // BAĞLANMADI ve config.js'teki varsayılan avatarProvider hâlâ 'anam'.
+// NOT (2026-08-25): VERALIQ'in ortak AI satış danışmanı persona ismi
+// "Clara" değil "Elif Kaya" — mevcut canlı Anam entegrasyonuyla (bkz.
+// worker/session-worker.js, script.js) aynı isim, tutarlılık için
+// İmparator'ın talebiyle düzeltildi. Aşağıdaki "Clara" geçen yerler,
+// Spatius'un KENDİ kütüphanesindeki avatarın kendi katalog adı — o görsel
+// avatarı Elif Kaya persona'sı için kullanıyoruz, isim çakışması sadece
+// tesadüf.
+//
 // Bu dosya, İmparator'ın onayladığı Spatius avatarı "Clara" (Spatius'un
 // kendi kütüphanesindeki, vintage/kurumsal görünümlü avatar — Halima değil,
-// karar 2026-08-25'te Clara olarak netleşti) için VERALIQ'in Clara
+// karar 2026-08-25'te Clara olarak netleşti) için VERALIQ'in Elif Kaya
 // karakterini Spatius'un Motion Server'ı üzerinden render etmeye
 // hazırlanan bir provider'dır — ama devreye alınması için AŞAĞIDAKİ 2
 // bilginin proje sahibi tarafından sağlanması gerekiyor (bkz.
@@ -28,7 +36,7 @@
 //
 // MİMARİ NOTU — Spatius, Anam'ın aksine KENDİ TTS/LLM/STT'sini ÇALIŞTIRMAZ.
 // Sadece "audio-in → lip-sync video-out" yapan saf bir render motoru
-// (Motion Server). Bu iyi haber: Clara'nın TÜRKÇE konuşması Spatius'a
+// (Motion Server). Bu iyi haber: Elif Kaya'nın TÜRKÇE konuşması Spatius'a
 // değil, BİZİM seçtiğimiz TTS sağlayıcısına bağlı — yani Türkçe desteği
 // site zaten sahip olduğumuz TTS katmanından geliyor (agent-core/tts-providers/).
 // TEK KISIT: Spatius'a ham ses (PCM16) göndermemiz gerektiği için, bu
@@ -60,14 +68,17 @@ import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js';
 
 const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 
-// TODO(İmparator'dan bekleniyor): Clara'nın Spatius avatar-id'si.
-// app.spatius.ai/avatars/library → Clara kartı → "Copy avatar-id".
-const SPATIUS_AVATAR_ID = '';
+// Elif Kaya için kullanılacak Spatius avatar-id'si — Spatius kütüphanesindeki
+// "Clara" avatarının id'si. app.spatius.ai/avatars/library'den
+// (İmparator'ın hesabına giriş yapmış tarayıcısı üzerinden, sadece bu genel
+// kimlik değeri okunarak — API Key sayfasına hiç girilmedi) 2026-08-25'te alındı.
+const SPATIUS_AVATAR_ID = 'c7069121-8245-4015-9940-82d0dc0c6bda';
 
-// Bu worker HENÜZ DEPLOY EDİLMEDİ — worker-spatius/README.md'deki adımları
-// izleyip kendi Cloudflare hesabınızdan deploy ettikten sonra buradaki
-// URL'i gerçek workers.dev adresiyle güncelleyin.
-const SPATIUS_SESSION_ENDPOINT = 'https://veraliq-spatius-session.<SIZIN-SUBDOMAIN>.workers.dev/session';
+// Worker 2026-08-25'te deploy edildi (worker-spatius/README.md), secret'lar
+// (SPATIUS_APP_ID / SPATIUS_API_KEY) girildi. Upstream endpoint doğruluğu
+// (worker-spatius/session-worker.js içindeki UPSTREAM_URL) henüz gerçek bir
+// session-token isteğiyle test edilmedi — bkz. dosyanın ilerisindeki not.
+const SPATIUS_SESSION_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/session';
 
 export class SpatiusAvatarProvider extends AvatarProvider {
   constructor() {
@@ -82,7 +93,7 @@ export class SpatiusAvatarProvider extends AvatarProvider {
   async init({ videoEl } = {}) {
     if (!SPATIUS_AVATAR_ID) {
       throw new Error(
-        '[SpatiusAvatarProvider] SPATIUS_AVATAR_ID boş — Clara\'nın avatar-id\'si ' +
+        '[SpatiusAvatarProvider] SPATIUS_AVATAR_ID boş — Elif Kaya için kullanılacak avatar-id\'si ' +
         'henüz girilmedi. Bu provider seçilmemeli (config.js hâlâ \'anam\' kullanmalı).'
       );
     }
