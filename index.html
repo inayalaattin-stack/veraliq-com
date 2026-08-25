@@ -100,10 +100,20 @@
   .nav-toggle{display:none;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;}
   @media(max-width:960px){
     .nav-links{
-      position:fixed;top:60px;left:0;right:0;bottom:0;
+      position:fixed;top:60px;left:0;right:0;height:calc(100vh - 60px);z-index:1050;
       background:var(--ink);flex-direction:column;justify-content:flex-start;
       padding:40px 32px;gap:24px;transform:translateX(100%);
       transition:transform .3s ease;
+      /* BUG FIX (reported on live mobile, 2026-08-25): this panel used to
+         be sized with `bottom:0` and rely on the browser to auto-stretch
+         height between top/bottom. On real mobile browsers that
+         auto-stretch was NOT happening (confirmed via getBoundingClientRect
+         — height computed to ~80px instead of filling the screen), so the
+         opaque background only covered a thin strip and the menu links,
+         still laid out below it, rendered directly over the hero content —
+         completely unreadable. Using an explicit `height` sidesteps the
+         browser's stretch-calculation quirk entirely. z-index is also now
+         explicit rather than relying on z-index:auto containment. */
     }
     .nav-links.open{transform:translateX(0);}
     .nav-toggle{display:block;}
@@ -221,11 +231,63 @@
   .portal-grid > *{min-width:0;}
   @media(max-width:960px){.portal-grid{grid-template-columns:1fr;}}
   .portal-visual{
-    position:relative;border-radius:20px;overflow:hidden;
-    border:1px solid var(--line);
+    position:relative;border-radius:20px;
+    overflow-x:auto;overflow-y:hidden;
+    border:1px solid var(--line);background:var(--ink);
     box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
   }
   .portal-visual img{width:100%;height:auto;display:block;}
+
+  /* Kodlanmış portal dashboard mockup — sabit örnek verilerle, gerçek
+     ürünün henüz var olmayan bir ekranını temsil eder (bkz. HTML yorumu). */
+  .pm-chrome{
+    display:flex;align-items:center;gap:6px;padding:9px 12px;
+    background:rgba(0,0,0,0.35);border-bottom:1px solid var(--line);
+    min-width:380px;
+  }
+  .pmc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;opacity:0.85;}
+  .pmc-url{
+    margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+    color:var(--text-dim);letter-spacing:0.02em;
+  }
+  .pm-body{display:flex;min-width:380px;}
+  .pm-sidebar{
+    width:108px;flex-shrink:0;background:rgba(0,0,0,0.25);
+    border-right:1px solid var(--line);padding:16px 10px;
+  }
+  .pm-slogo{
+    display:flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:11.5px;color:var(--text);margin-bottom:18px;letter-spacing:-0.01em;
+  }
+  .pm-slogo-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+  .pm-nav{display:flex;flex-direction:column;gap:2px;}
+  .pm-nav-item{
+    font-size:10px;color:var(--text-dim);padding:6px 8px;border-radius:6px;
+  }
+  .pm-nav-item.active{background:var(--accent-dim);color:var(--accent-text);font-weight:500;}
+  .pm-main{flex:1;padding:16px;background:var(--ink-2);min-width:0;}
+  .pm-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+  .pm-kpi{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:10px 11px;display:flex;flex-direction:column;gap:3px;
+  }
+  .pm-kpi-label{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:0.06em;color:var(--text-dim);}
+  .pm-kpi-val{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:var(--text);}
+  .pm-kpi-val.gold{color:var(--accent-text);}
+  .pm-kpi-delta{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--green);}
+  .pm-kpi-delta.neutral{color:var(--text-dim);}
+  .pm-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .pm-panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px;}
+  .pm-panel-title{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:0.06em;color:var(--text-dim);margin-bottom:9px;}
+  .pm-fbar{display:flex;align-items:center;gap:5px;margin-bottom:7px;font-size:9px;}
+  .pm-fbar:last-child{margin-bottom:0;}
+  .pm-fbar span{width:38px;flex-shrink:0;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pm-fbar i{flex:1;height:5px;border-radius:3px;background:var(--line);position:relative;display:block;overflow:hidden;font-style:normal;}
+  .pm-fbar i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w);background:linear-gradient(90deg,var(--accent-text),var(--accent));border-radius:3px;}
+  .pm-fbar b{width:24px;text-align:right;color:var(--text);font-weight:600;font-family:'Space Grotesk',sans-serif;flex-shrink:0;font-size:10px;}
+  .pm-feed-row{font-size:9px;line-height:1.75;color:var(--text-dim);}
+  .pm-feed-row b{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);opacity:0.75;margin-right:4px;}
+  .pm-feed-row em{font-style:normal;font-weight:600;color:var(--accent-text);margin-right:3px;}
   .portal-note{
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;
     color:var(--accent);text-transform:uppercase;
@@ -254,10 +316,25 @@
   .workforce-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   @media(max-width:900px){.workforce-grid{grid-template-columns:1fr 1fr;}}
   @media(max-width:560px){.workforce-grid{grid-template-columns:1fr;}}
-  .wf-dept{background:var(--panel);padding:30px 26px;}
+  .wf-dept{background:var(--panel);padding:30px 26px;display:flex;flex-direction:column;}
   .wf-dept-head{font-size:11px;color:var(--accent-text);letter-spacing:0.08em;margin-bottom:16px;}
-  .wf-agent{font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:2px;}
+  .wf-agent{font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:3px;}
+  .wf-agent-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .wf-role{font-size:12px;color:var(--text-dim);font-weight:400;}
+  /* per-agent live status pill — mint, matches design system §7/§9 */
+  .wf-status{
+    font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.05em;
+    color:var(--green);text-transform:uppercase;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
+  }
+  .wf-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(126,224,178,0.25);}
+  /* department-level activity metric — champagne number, muted label */
+  .wf-metric{
+    margin-top:auto;padding-top:16px;border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.04em;
+    color:var(--text-dim);text-transform:uppercase;
+  }
+  .wf-metric b{color:var(--accent-text);font-size:16px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:0;margin-right:5px;}
   .wf-total{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--panel);}
   .wf-total-num{font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;color:var(--accent-text);margin:6px 0 2px;}
   .wf-note{text-align:center;font-size:11px;color:var(--text-dim);opacity:0.7;margin-top:14px;}
@@ -534,6 +611,7 @@
   [dir="rtl"] .problem-item{border-left:none;border-right:2px solid var(--accent-dim);padding-left:0;padding-right:20px;}
   [dir="rtl"] .trust-item{flex-direction:row-reverse;text-align:right;}
   [dir="rtl"] .wf-agent{align-items:flex-end;text-align:right;}
+  [dir="rtl"] .wf-agent-top{flex-direction:row-reverse;}
   [dir="rtl"] .faq-q{text-align:right;}
   [dir="rtl"] .footer-bottom{text-align:right;}
 </style>
@@ -654,18 +732,21 @@
     <div class="workforce-grid">
       <div class="wf-dept">
         <div class="wf-dept-head mono" data-i18n="wf.dept1head">SATIŞ · 3 Agent</div>
-        <div class="wf-agent">Elif Kaya <span class="wf-role" data-i18n="wf.role1">Müşteri Karşılama</span></div>
-        <div class="wf-agent">Zeynep Arslan <span class="wf-role" data-i18n="wf.role2">Yatırım Danışmanı</span></div>
-        <div class="wf-agent">Ahmet Demir <span class="wf-role" data-i18n="wf.role3">Satış Agent'ı</span></div>
+        <div class="wf-agent"><div class="wf-agent-top">Elif Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role1">Müşteri Karşılama</span></div>
+        <div class="wf-agent"><div class="wf-agent-top">Zeynep Arslan <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role2">Yatırım Danışmanı</span></div>
+        <div class="wf-agent"><div class="wf-agent-top">Ahmet Demir <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role3">Satış Agent'ı</span></div>
+        <div class="wf-metric" data-i18n="wf.metric1" data-i18n-html><b>24</b> LEAD · BU AY</div>
       </div>
       <div class="wf-dept">
         <div class="wf-dept-head mono" data-i18n="wf.dept2head">OPERASYON · 2 Agent</div>
-        <div class="wf-agent">Mehmet Yılmaz <span class="wf-role" data-i18n="wf.role4">Follow-up</span></div>
-        <div class="wf-agent">Ayşe Kaya <span class="wf-role" data-i18n="wf.role5">Randevu Koordinasyonu</span></div>
+        <div class="wf-agent"><div class="wf-agent-top">Mehmet Yılmaz <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role4">Follow-up</span></div>
+        <div class="wf-agent"><div class="wf-agent-top">Ayşe Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role5">Randevu Koordinasyonu</span></div>
+        <div class="wf-metric" data-i18n="wf.metric2" data-i18n-html><b>8</b> FOLLOW-UP · TAMAMLANDI</div>
       </div>
       <div class="wf-dept">
         <div class="wf-dept-head mono" data-i18n="wf.dept3head">PAZARLAMA · 1 Agent</div>
-        <div class="wf-agent"><span data-i18n="wf.agent6">İçerik Agent'ı</span> <span class="wf-role" data-i18n="wf.role6">Kampanya &amp; İçerik</span></div>
+        <div class="wf-agent"><div class="wf-agent-top"><span data-i18n="wf.agent6">İçerik Agent'ı</span> <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role6">Kampanya &amp; İçerik</span></div>
+        <div class="wf-metric" data-i18n="wf.metric3" data-i18n-html><b>3</b> KAMPANYA · AKTİF</div>
       </div>
       <div class="wf-dept wf-total">
         <div class="wf-dept-head mono" data-i18n="wf.totalhead">TOPLAM</div>
@@ -743,8 +824,57 @@
           <li data-i18n="portal.li4">Şirketinizin markasıyla PDF/Excel raporlama</li>
         </ul>
       </div>
+      <!-- Kodlanmış tasarım önizlemesi — gerçek veri değil, sabit örnek
+           değerlerle portalın hedeflenen görsel dilini gösterir (bkz. section
+           başlığındaki "TASARIM VİZYONU" etiketi ve yukarıdaki açıklama
+           metni). Canlı, çok kiracılı portal henüz inşa edilmedi. -->
       <div class="portal-visual">
-        <img src="assets/hero-showcase-a.jpg" data-i18n-alt="portal.imgAlt" alt="VERALIQ şirket portalı tasarım vizyonu" width="1400" height="763" loading="lazy">
+        <div class="pm-chrome">
+          <span class="pmc-dot" style="background:#D93A40;"></span>
+          <span class="pmc-dot" style="background:#BFA16A;"></span>
+          <span class="pmc-dot" style="background:#7EE0B2;"></span>
+          <span class="pmc-url">portal.veraliq.com/dashboard</span>
+        </div>
+        <div class="pm-body">
+          <aside class="pm-sidebar">
+            <div class="pm-slogo"><span class="pm-slogo-dot"></span>VERALIQ</div>
+            <nav class="pm-nav">
+              <span class="pm-nav-item active">Dashboard</span>
+              <span class="pm-nav-item">AI Workforce</span>
+              <span class="pm-nav-item">Leads</span>
+              <span class="pm-nav-item">Customers</span>
+              <span class="pm-nav-item">Properties</span>
+              <span class="pm-nav-item">Sales</span>
+              <span class="pm-nav-item">Reports</span>
+            </nav>
+          </aside>
+          <div class="pm-main">
+            <div class="pm-kpis">
+              <div class="pm-kpi"><span class="pm-kpi-label">REVENUE</span><span class="pm-kpi-val gold">₺2.4M</span><span class="pm-kpi-delta">▲ 18%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">LEADS</span><span class="pm-kpi-val">312</span><span class="pm-kpi-delta">▲ 9%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">CONVERSION</span><span class="pm-kpi-val">%24</span><span class="pm-kpi-delta">▲ 3%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">APPOINTMENTS</span><span class="pm-kpi-val">47</span><span class="pm-kpi-delta neutral">bu hafta</span></div>
+            </div>
+            <div class="pm-row">
+              <div class="pm-panel">
+                <div class="pm-panel-title">SALES FUNNEL</div>
+                <div class="pm-fbar"><span>Lead</span><i style="--w:100%"></i><b>312</b></div>
+                <div class="pm-fbar"><span>Nitelikli</span><i style="--w:68%"></i><b>212</b></div>
+                <div class="pm-fbar"><span>Randevu</span><i style="--w:41%"></i><b>128</b></div>
+                <div class="pm-fbar"><span>Satış</span><i style="--w:19%"></i><b>59</b></div>
+              </div>
+              <div class="pm-panel">
+                <div class="pm-panel-title">AI ACTIVITY</div>
+                <div class="pm-feed">
+                  <div class="pm-feed-row"><b>09:42</b> <em>Elif Kaya</em> Yeni lead analiz edildi.</div>
+                  <div class="pm-feed-row"><b>09:45</b> <em>Ahmet Demir</em> WhatsApp follow-up gönderildi.</div>
+                  <div class="pm-feed-row"><b>09:48</b> <em>Zeynep Arslan</em> 3 uygun portföy eşleştirildi.</div>
+                  <div class="pm-feed-row"><b>09:53</b> <em>Ayşe Kaya</em> Randevu oluşturuldu.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
