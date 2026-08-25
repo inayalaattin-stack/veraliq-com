@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--
+  spatius-test.html — TEK KULLANIMLIK, İZOLE test sayfası.
+
+  AMAÇ: agent-core/avatar-providers/spatius-avatar-provider.js içindeki
+  DOĞRULANMAMIŞ varsayımları (AvatarSDK.initialize() imzası, AvatarView'ın
+  mount şekli, controller.send() ile ses akışı) gerçek @spatius/avatarkit
+  SDK'sıyla, gerçek bir tarayıcıda görsel olarak doğrulamak.
+
+  BU SAYFA PRODUCTION'IN BİR PARÇASI DEĞİL:
+    - index.html, script.js, i18n.js İÇİNDE HİÇBİR YERE bağlı değil (link yok,
+      hiçbir menüden erişilmiyor) — sadece doğrudan URL ile açılabiliyor.
+    - Mevcut Anam tabanlı canlı sohbet deneyimini hiç etkilemiyor.
+    - Doğrulama bittikten sonra bu dosya silinebilir (agent-core/config.js'te
+      avatarProvider hâlâ 'anam' — bu test dosyası onu DEĞİŞTİRMİYOR).
+
+  NEDEN repo kökünde (index.html ile aynı yerde)?
+    Worker'ın CORS allowlist'i (worker-spatius/session-worker.js,
+    ALLOWED_ORIGINS) sadece https://veraliq.com / https://www.veraliq.com
+    origin'lerine izin veriyor. Bu dosya Cloudflare Pages ile aynı domainde
+    deploy olduğu için (repo kökü = Pages'in serve ettiği klasör), tarayıcı
+    Origin header'ı otomatik olarak https://veraliq.com oluyor — worker
+    tarafında HİÇBİR KOD DEĞİŞİKLİĞİ / CORS gevşetmesi gerekmiyor.
+
+  KULLANIM: https://veraliq.com/spatius-test.html adresini açın, "1) Session
+  Token Al" → "2) Avatarı Yükle" → "3) Test Sesi Gönder" butonlarına sırayla
+  basın, ekranın alt kısmındaki log'u ve ortadaki avatar alanını gözlemleyin.
+-->
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>Spatius / Elif Kaya — İzole Test Sayfası</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; color: #fff; }
+  .warn { background: #3a2a00; border: 1px solid #a06a00; color: #ffcf7a; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+  #stage { width: 480px; height: 480px; background: #222; border: 1px solid #444; border-radius: 8px; margin: 16px 0; position: relative; overflow: hidden; }
+  button { background: #2a6df5; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; margin-right: 8px; margin-bottom: 8px; }
+  button:disabled { background: #444; cursor: not-allowed; }
+  #log { background: #000; color: #7dff7d; font-family: monospace; font-size: 12px; padding: 12px; border-radius: 6px; height: 260px; overflow-y: auto; white-space: pre-wrap; }
+  .err { color: #ff7d7d; }
+  .info { color: #7dcbff; }
+</style>
+</head>
+<body>
+  <h1>Spatius AvatarKit — Elif Kaya (Clara görseli) İzole Test Sayfası</h1>
+  <div class="warn">
+    Bu sayfa geçici bir doğrulama aracıdır, sitenin herhangi bir menüsünden
+    erişilmiyor ve canlı Anam sohbetini etkilemiyor. Amaç: gerçek Spatius
+    SDK'sının bu tarayıcıda çalışıp çalışmadığını, avatarın görünüp
+    görünmediğini ve ses gönderiminin dudak hareketi tetikleyip
+    tetiklemediğini görmek.
+  </div>
+
+  <div>
+    <button id="btnToken">1) Session Token Al</button>
+    <button id="btnLoad" disabled>2) Avatarı Yükle ve Bağlan</button>
+    <button id="btnAudio" disabled>3) Test Sesi Gönder (1sn ton)</button>
+  </div>
+
+  <div id="stage"></div>
+
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg, cls) {
+      const line = document.createElement('div');
+      if (cls) line.className = cls;
+      const t = new Date().toISOString().split('T')[1].replace('Z', '');
+      line.textContent = '[' + t + '] ' + msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log('[spatius-test]', msg);
+    }
+    window.addEventListener('error', (e) => log('window.onerror: ' + e.message, 'err'));
+
+    const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
+    const SPATIUS_AVATAR_ID = 'c7069121-8245-4015-9940-82d0dc0c6bda';
+    const SPATIUS_SESSION_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/session';
+
+    let sessionData = null;
+    let sdkModule = null;
+    let controller = null;
+    let avatarView = null;
+
+    document.getElementById('btnToken').addEventListener('click', async () => {
+      log('Session token isteniyor: ' + SPATIUS_SESSION_ENDPOINT);
+      try {
+        const resp = await fetch(SPATIUS_SESSION_ENDPOINT, { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok || !data.sessionToken || !data.appId) {
+          log('BAŞARISIZ: ' + JSON.stringify(data), 'err');
+          return;
+        }
+        sessionData = data;
+        log('OK — appId=' + data.appId + ', sessionToken alındı (uzunluk=' + data.sessionToken.length + ')', 'info');
+        document.getElementById('btnLoad').disabled = false;
+      } catch (e) {
+        log('HATA (fetch): ' + e.message, 'err');
+      }
+    });
+
+    document.getElementById('btnLoad').addEventListener('click', async () => {
+      log('AvatarKit CDN\'den yükleniyor: ' + AVATARKIT_CDN_URL);
+      try {
+        sdkModule = await import(/* webpackIgnore: true */ AVATARKIT_CDN_URL);
+        log('Modül anahtarları: ' + Object.keys(sdkModule).join(', '));
+        const { AvatarSDK, AvatarManager, AvatarView, DrivingServiceMode } = sdkModule;
+        if (!AvatarSDK || !AvatarManager || !AvatarView) {
+          log('BEKLENMEYEN SDK ŞEKLİ — AvatarSDK/AvatarManager/AvatarView bulunamadı.', 'err');
+          return;
+        }
+
+        log('AvatarSDK.initialize() çağrılıyor, appId=' + sessionData.appId);
+        AvatarSDK.initialize(sessionData.appId, { drivingServiceMode: DrivingServiceMode ? DrivingServiceMode.direct : undefined });
+        AvatarSDK.setSessionToken(sessionData.sessionToken);
+        log('Session token SDK\'ya verildi.');
+
+        log('Avatar yükleniyor: ' + SPATIUS_AVATAR_ID);
+        const avatar = await AvatarManager.shared.load(SPATIUS_AVATAR_ID);
+        log('Avatar nesnesi alındı, AvatarView oluşturuluyor...');
+
+        const stage = document.getElementById('stage');
+        avatarView = new AvatarView(avatar, stage);
+        controller = avatarView.controller;
+
+        controller.onConnectionState = (state) => log('Bağlantı durumu: ' + state, state === 'connected' ? 'info' : (state === 'failed' ? 'err' : ''));
+        controller.onError = (err) => log('controller.onError: ' + JSON.stringify(err && (err.message || err)), 'err');
+
+        log('initializeAudioContext() çağrılıyor (kullanıcı jesti içinde)...');
+        await controller.initializeAudioContext();
+        log('controller.start() çağrılıyor...');
+        await controller.start();
+        log('start() tamamlandı — avatar alanında Elif Kaya (Clara görseli) görünmeli.', 'info');
+
+        document.getElementById('btnAudio').disabled = false;
+      } catch (e) {
+        log('HATA (yükleme/bağlanma): ' + (e && e.message ? e.message : e), 'err');
+        console.error(e);
+      }
+    });
+
+    document.getElementById('btnAudio').addEventListener('click', () => {
+      try {
+        // Gerçek TTS yerine basit bir 1 saniyelik 440Hz sinüs tonu üretip
+        // PCM16'ya çevirip gönderiyoruz — amaç Türkçe konuşma değil, SADECE
+        // controller.send() akışının dudak hareketini tetikleyip
+        // tetiklemediğini görmek.
+        const sampleRate = 16000;
+        const seconds = 1;
+        const n = sampleRate * seconds;
+        const pcm16 = new Int16Array(n);
+        for (let i = 0; i < n; i++) {
+          const t = i / sampleRate;
+          const s = Math.sin(2 * Math.PI * 440 * t) * 0.5;
+          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        log('1 saniyelik test tonu gönderiliyor (sampleRate varsayımı=16000)...');
+        controller.send(pcm16, true);
+        log('send() çağrıldı — avatarda dudak/ağız hareketi olup olmadığını gözlemleyin.', 'info');
+      } catch (e) {
+        log('HATA (send): ' + (e && e.message ? e.message : e), 'err');
+      }
+    });
+
+    log('Sayfa hazır. "1) Session Token Al" ile başlayın.');
+  </script>
+</body>
+</html>
