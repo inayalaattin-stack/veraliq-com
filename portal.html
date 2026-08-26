@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERALIQ — Şirket Portalı</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="/assets/veraliq-mark.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --line:#252C28;
+    --text:#EDE9DF; --text-dim:#8A918C; --text-dim-soft:rgba(138,145,140,0.65);
+    --accent:#BFA16A; --accent-text:#D4BB87; --accent-dim:rgba(191,161,106,0.14);
+    --accent-ink:#080A0A; --green:#7EE0B2; --red:#D93A40; --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  a{color:inherit;}
+  header{position:sticky;top:0;z-index:10;background:rgba(8,10,10,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;text-decoration:none;color:var(--text);}
+  .logo img{width:22px;height:22px;}
+  .logo-sub{font-size:11px;font-weight:400;color:var(--text-dim);margin-left:8px;font-family:'IBM Plex Mono',monospace;}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent-text);border:1px solid var(--accent-dim);background:var(--accent-dim);padding:4px 10px;border-radius:999px;}
+  main{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
+  h1{font-size:22px;margin:0 0 6px;}
+  .sub{color:var(--text-dim);font-size:13.5px;margin:0 0 28px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;}
+  input, select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;}
+  input:focus, select:focus{outline:none;border-color:var(--accent);}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:600px){.row{grid-template-columns:1fr;}}
+  button{cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:6px;padding:10px 18px;transition:transform .12s ease, box-shadow .12s ease;}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(191,161,106,0.3);}
+  .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--line);}
+  .btn-ghost:hover{color:var(--text);border-color:var(--accent);}
+  .btn-sm{padding:6px 12px;font-size:12.5px;}
+  .err{color:var(--red);font-size:13px;margin-top:10px;}
+  .login-wrap{max-width:380px;margin:80px auto;}
+  .empty{color:var(--text-dim);font-size:13.5px;text-align:center;padding:30px 0;}
+  .notice{background:var(--accent-dim);border:1px solid rgba(191,161,106,0.3);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--accent-text);margin-bottom:20px;line-height:1.6;}
+  .proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:700px){.proj-grid{grid-template-columns:1fr;}}
+  .proj-card{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .proj-card h3{margin:0 0 6px;font-size:15px;}
+  .proj-meta{color:var(--text-dim);font-size:12.5px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
+  .status-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;background:var(--accent-dim);color:var(--accent-text);font-family:'IBM Plex Mono',monospace;}
+  .unit-list{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px;}
+  .unit-list li{display:flex;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--line);}
+  .unit-list li:first-child{border-top:none;}
+  .unit-boş{color:var(--text-dim);}
+  .unit-rezerve{color:var(--accent-text);}
+  .unit-satıldı{color:var(--green);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;}
+  .toast.show{opacity:1;}
+  .top-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .inline-form{display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .inline-form.open{display:block;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo" aria-label="VERALIQ ana sayfa">
+    <img src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">
+    VERALIQ<span class="logo-sub">Şirket Portalı</span>
+  </a>
+  <span class="badge">PROTOTİP / TEST ORTAMI</span>
+</header>
+
+<main>
+
+  <div id="loginView" class="login-wrap" hidden>
+    <div class="card">
+      <h1>Şirket Girişi</h1>
+      <p class="sub">Size verilen kullanıcı adı ve şifre ile giriş yapın.</p>
+      <div class="field">
+        <label for="pUser">Kullanıcı Adı</label>
+        <input type="text" id="pUser" placeholder="Örn. abcinsaat" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="pPass">Şifre</label>
+        <input type="password" id="pPass" placeholder="••••••••" autocomplete="off">
+      </div>
+      <button class="btn-primary" id="loginBtn" style="width:100%;">Giriş Yap</button>
+      <div class="err" id="loginErr" style="display:none;">Kullanıcı adı veya şifre hatalı.</div>
+    </div>
+  </div>
+
+  <div id="dashView" hidden>
+    <div class="top-actions">
+      <div>
+        <h1 id="companyName">—</h1>
+        <p class="sub" style="margin:0;">Projeleriniz ve birim durumları</p>
+      </div>
+      <button class="btn-ghost btn-sm" id="logoutBtn">Çıkış Yap</button>
+    </div>
+
+    <div class="notice">
+      Bu portal şu an <b>prototip/test amaçlıdır</b>: veriler yalnızca bu tarayıcıda (localStorage) saklanır, sunucuya kaydedilmez.
+    </div>
+
+    <div class="card">
+      <div class="top-actions" style="margin-bottom:0;">
+        <h2 style="margin:0;font-size:15px;">Projelerim</h2>
+        <button class="btn-primary btn-sm" id="toggleAddProj">+ Proje Ekle</button>
+      </div>
+      <div class="inline-form" id="addProjForm">
+        <div class="row">
+          <div class="field"><label>Proje Adı</label><input type="text" id="npName" placeholder="Örn. Vadi Konutları 2"></div>
+          <div class="field"><label>Konum</label><input type="text" id="npLocation" placeholder="Örn. İstanbul / Ataşehir"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Birim Sayısı</label><input type="number" id="npUnitCount" placeholder="Örn. 80"></div>
+          <div class="field"><label>Durum</label>
+            <select id="npStatus"><option>Planlama</option><option>İnşaat</option><option selected>Satışta</option><option>Tamamlandı</option></select>
+          </div>
+        </div>
+        <button class="btn-primary btn-sm" id="saveProjBtn">Kaydet</button>
+      </div>
+    </div>
+
+    <div id="projectsWrap"></div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var DB_KEY = 'veraliq_portal_db';
+  var SESSION_KEY = 'veraliq_portal_company_id';
+
+  function loadDb(){
+    try {
+      var raw = localStorage.getItem(DB_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return { companies: [] };
+  }
+  function saveDb(db){
+    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e){}
+  }
+  function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  var loginView = document.getElementById('loginView');
+  var dashView = document.getElementById('dashView');
+  var toastEl = document.getElementById('toast');
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  }
+
+  function currentCompanyId(){ return sessionStorage.getItem(SESSION_KEY); }
+
+  function render(){
+    var cid = currentCompanyId();
+    var db = loadDb();
+    var company = cid && db.companies.find(function(c){ return c.id === cid; });
+    if (!company) {
+      sessionStorage.removeItem(SESSION_KEY);
+      loginView.hidden = false;
+      dashView.hidden = true;
+      return;
+    }
+    loginView.hidden = true;
+    dashView.hidden = false;
+    document.getElementById('companyName').textContent = company.name;
+    renderProjects(company);
+  }
+
+  function renderProjects(company){
+    var wrap = document.getElementById('projectsWrap');
+    var projects = company.projects || [];
+    if (!projects.length) {
+      wrap.innerHTML = '<div class="card"><div class="empty">Henüz proje eklenmedi. Yukarıdan "+ Proje Ekle" ile başlayın.</div></div>';
+      return;
+    }
+    var html = '<div class="proj-grid">';
+    projects.forEach(function(p){
+      html += '<div class="proj-card">' +
+        '<h3>'+esc(p.name)+'</h3>' +
+        '<div class="proj-meta">'+esc(p.location||'-')+' · '+ (p.unitCount||0) +' birim</div>' +
+        '<span class="status-pill">'+esc(p.status||'-')+'</span>';
+      if (p.units && p.units.length) {
+        html += '<ul class="unit-list">';
+        p.units.forEach(function(u){
+          var cls = u.status === 'Satıldı' ? 'unit-satıldı' : (u.status === 'Rezerve' ? 'unit-rezerve' : 'unit-boş');
+          html += '<li><span>'+esc(u.no)+'</span><span class="'+cls+'">'+esc(u.status)+'</span></li>';
+        });
+        html += '</ul>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    var user = document.getElementById('pUser').value.trim();
+    var pass = document.getElementById('pPass').value;
+    var errEl = document.getElementById('loginErr');
+    var db = loadDb();
+    var company = db.companies.find(function(c){ return c.username === user && c.password === pass; });
+    if (company) {
+      sessionStorage.setItem(SESSION_KEY, company.id);
+      errEl.style.display = 'none';
+      render();
+    } else {
+      errEl.style.display = 'block';
+    }
+  });
+  document.getElementById('pPass').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    sessionStorage.removeItem(SESSION_KEY);
+    render();
+  });
+  document.getElementById('toggleAddProj').addEventListener('click', function(){
+    document.getElementById('addProjForm').classList.toggle('open');
+  });
+  document.getElementById('saveProjBtn').addEventListener('click', function(){
+    var name = document.getElementById('npName').value.trim();
+    var location = document.getElementById('npLocation').value.trim();
+    var unitCount = parseInt(document.getElementById('npUnitCount').value, 10) || 0;
+    var status = document.getElementById('npStatus').value;
+    if (!name) { toast('Proje adı gerekli.'); return; }
+    var cid = currentCompanyId();
+    var db = loadDb();
+    var company = db.companies.find(function(c){ return c.id === cid; });
+    if (!company) return;
+    company.projects = company.projects || [];
+    company.projects.push({ id: uid('proj'), name: name, location: location, unitCount: unitCount, status: status, createdAt: new Date().toISOString(), units: [] });
+    saveDb(db);
+    document.getElementById('npName').value = '';
+    document.getElementById('npLocation').value = '';
+    document.getElementById('npUnitCount').value = '';
+    document.getElementById('addProjForm').classList.remove('open');
+    toast('Proje eklendi.');
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
