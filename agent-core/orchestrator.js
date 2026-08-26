@@ -29,6 +29,7 @@ export class AgentOrchestrator {
    *   lang: string,
    *   onTranscript?: (entry: {role:'customer'|'agent', text:string}) => void,
    *   onError?: (err: any) => void,
+   *   autoListen?: boolean,
    * }} opts
    */
   constructor(opts) {
@@ -38,6 +39,15 @@ export class AgentOrchestrator {
     this.lang = opts.lang || 'tr';
     this.onTranscript = opts.onTranscript || function () {};
     this.onError = opts.onError || function () {};
+    // NOT (2026-08-26): varsayılan true (eski davranış korunuyor — mock/dev
+    // ortamında hiçbir şey bozulmasın). widget.js, gerçek üretim akışında
+    // (Spatius + "Görüşmeye Katıl" kapısı) bunu false geçirip beginListening()
+    // ile ziyaretçinin tıklamasına kadar mikrofonu ERTELİYOR. Sebep: birçok
+    // mobil tarayıcı (özellikle iOS Safari), sayfa yüklenir yüklenmez
+    // otomatik başlatılan mikrofon/konuşma tanıma isteklerini gerçek bir
+    // kullanıcı jesti içinde olmadığı için sessizce reddedebiliyor — bu da
+    // "seslenmeme rağmen avatar cevap vermiyor" şikayetinin bir parçasıydı.
+    this.autoListen = opts.autoListen !== false;
 
     this.history = [];
     this._activeTts = null;
@@ -77,6 +87,16 @@ export class AgentOrchestrator {
       } catch (e) { /* greeting is a nicety, never block startup on it */ }
     }
 
+    if (this.autoListen) this._listenLoop();
+  }
+
+  /**
+   * Starts (or restarts) the STT listen loop on demand — used by widget.js's
+   * "Görüşmeye Katıl" gate when autoListen:false was passed to the
+   * constructor. Safe to call only after start() has resolved.
+   */
+  beginListening() {
+    if (!this._started) return;
     this._listenLoop();
   }
 

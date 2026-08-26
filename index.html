@@ -75,7 +75,9 @@
     font-family:'Space Grotesk',sans-serif;
     font-weight:700;font-size:20px;letter-spacing:-0.01em;
     display:flex;align-items:center;gap:10px;
+    color:var(--text);text-decoration:none;cursor:pointer;
   }
+  .logo:hover{color:var(--accent-text);}
   .logo-mark{
     width:22px;height:22px;border-radius:6px;
     flex-shrink:0;display:block;
@@ -435,7 +437,7 @@
      (agent-reopen) so the site behind is never blocked in those modes.
      =================================================================== */
   .agent-window{
-    position:fixed;z-index:900;
+    position:fixed;z-index:1010;
     width:340px;height:480px;
     background:#0B1220;border:1px solid rgba(255,255,255,0.10);
     border-radius:14px;overflow:hidden;
@@ -461,15 +463,22 @@
     .agent-window[data-state="corner"]{width:calc(100vw - 24px);height:440px;left:12px !important;right:12px !important;}
   }
 
-  /* half-screen state — right half of viewport, full height */
+  /* half-screen state — right half of viewport, full height.
+     NOT (2026-08-26): height 100vh yerine 100dvh kullanılıyor (100vh
+     fallback ile) — mobil tarayıcılarda adres çubuğu görünür/gizli
+     olduğunda 100vh gerçek görünür alanı YANLIŞ hesaplıyor, bu da
+     pencerenin alt kısmının (ve dolayısıyla üstteki kontrol
+     düğmelerinin) ekran dışına taşmasına / "aşağı çekilememesine" yol
+     açıyordu (overflow:hidden olduğu için scroll da mümkün değildi).
+     100dvh, tarayıcının o anki GERÇEK görünür yüksekliğini kullanır. */
   .agent-window[data-state="half"]{
-    top:0;right:0;left:auto;bottom:auto;width:46vw;height:100vh;border-radius:0;
+    top:0;right:0;left:auto;bottom:auto;width:46vw;height:100vh;height:100dvh;border-radius:0;
   }
   @media(max-width:760px){.agent-window[data-state="half"]{width:100vw;}}
 
   /* fullscreen state */
   .agent-window[data-state="fullscreen"]{
-    top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;border-radius:0;z-index:1100;
+    top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;height:100dvh;border-radius:0;z-index:1100;
   }
 
   .agent-header{
@@ -526,6 +535,70 @@
   .agent-indicator span:nth-child(3){height:9px;animation-delay:.3s;}
   @keyframes agent-bounce{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
 
+  /* "Görüşmeye Katıl" giriş kapısı (2026-08-26) — mikrofon dinlemesi artık
+     otomatik BAŞLAMIYOR, ziyaretçi bu butona tıklayana kadar bekliyor.
+     İki sebep: (1) İmparator'ın açık isteği ("görüşmeye katıl butonu"),
+     (2) mobil tarayıcılarda (özellikle iOS Safari) mikrofon izni/erişimi
+     güvenilir şekilde yalnızca gerçek bir kullanıcı jestinden (tıklama)
+     başlatılan bir akış içinde çalışır — sayfa yüklenir yüklenmez
+     otomatik başlatılan STT, mobilde sessizce reddedilebiliyordu ("avatar
+     cevap vermiyor" şikayetinin bir parçası). Video/avatar görseli hâlâ
+     otomatik bağlanıyor (Elif Kaya "hazır bekliyor" izlenimi korunuyor),
+     sadece dinleme bu kapının arkasında. */
+  .agent-join-gate{
+    position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-end;gap:0;padding:0 16px 22px;
+    background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.55) 65%,rgba(5,8,16,0.85) 100%);
+    transition:opacity .25s ease;
+  }
+  .agent-join-gate[hidden]{display:none;}
+  .agent-join-btn{
+    display:flex;align-items:center;gap:9px;
+    padding:13px 22px;border-radius:999px;border:none;cursor:pointer;
+    background:var(--accent);color:var(--accent-ink);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14.5px;
+    box-shadow:0 8px 24px rgba(191,161,106,0.35);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .agent-join-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(191,161,106,0.45);}
+  .agent-join-btn:active{transform:translateY(0);}
+  .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
+  @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .agent-join-hint{margin-top:10px;font-size:11.5px;color:rgba(237,233,223,0.75);font-family:'IBM Plex Mono',monospace;text-align:center;}
+
+  /* Canlı altyazı / konuşma özeti (2026-08-26) — müşteri sağda, asistan
+     solda; her yeni mesaj eklendiğinde en altta görünür, ESKİ mesajlar
+     tamamen KAYBOLMAZ (kalıcı bir mini-transkript) — sadece kaydırılabilir
+     alanda yukarı doğru kayar. Video'nun altında, join-gate'in üstünde
+     ayrı bir katman. */
+  .agent-captions{
+    position:absolute;left:0;right:0;bottom:0;z-index:2;
+    max-height:46%;overflow-y:auto;
+    display:flex;flex-direction:column;gap:6px;
+    padding:14px 12px 12px;
+    background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.75) 40%,rgba(5,8,16,0.92) 100%);
+    scrollbar-width:thin;
+  }
+  .agent-captions[hidden]{display:none;}
+  .agent-caption-line{
+    max-width:82%;padding:7px 12px;border-radius:12px;
+    font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;
+    animation:agent-caption-in .2s ease;
+    word-wrap:break-word;
+  }
+  @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .agent-caption-line.customer{
+    align-self:flex-end;text-align:right;
+    background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);
+    color:#F5EEDD;border-bottom-right-radius:3px;
+  }
+  .agent-caption-line.agent{
+    align-self:flex-start;text-align:left;
+    background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);
+    color:#E7F7EF;border-bottom-left-radius:3px;
+  }
+  @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
+
   /* "● CANLI AI SATIŞ ASİSTANI" badge (design system §7) — purely CSS-driven
      off :has(), no widget.js change needed: shows only once agentStatusDot
      actually carries the .live class (i.e. the agent is really connected),
@@ -547,7 +620,7 @@
 
   /* minimized — small circular bubble; site behind is fully visible */
   .agent-bubble{
-    position:fixed;z-index:900;width:64px;height:64px;border-radius:50%;
+    position:fixed;z-index:1010;width:64px;height:64px;border-radius:50%;
     border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;
     box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;
   }
@@ -565,7 +638,7 @@
 
   /* closed — small reopen tab, replaces the window entirely */
   .agent-reopen{
-    position:fixed;right:20px;bottom:20px;z-index:900;
+    position:fixed;right:20px;bottom:20px;z-index:1010;
     padding:12px 18px;border-radius:999px;border:1px solid var(--line);
     background:var(--panel);color:var(--text);font-size:13px;font-weight:500;
     font-family:'Inter',sans-serif;cursor:pointer;
@@ -622,7 +695,7 @@
 
 <header>
   <nav>
-    <div class="logo"><img class="logo-mark" src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">VERALIQ<span class="logo-sub" data-i18n="logo.sub">Teknoloji &amp; Dijital Satış Çözümleri</span></div>
+    <a href="/" class="logo" aria-label="VERALIQ ana sayfa"><img class="logo-mark" src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">VERALIQ<span class="logo-sub" data-i18n="logo.sub">Teknoloji &amp; Dijital Satış Çözümleri</span></a>
     <div class="nav-links" id="navLinks">
       <a href="#workforce" data-i18n="nav.workforce">AI Workforce</a>
       <a href="#modules" data-i18n="nav.modules">Modüller</a>
@@ -1030,7 +1103,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="logo" style="margin-bottom:14px;"><img class="logo-mark" src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">VERALIQ</div>
+        <a href="/" class="logo" style="margin-bottom:14px;" aria-label="VERALIQ ana sayfa"><img class="logo-mark" src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">VERALIQ</a>
         <p style="max-width:280px;font-size:14px;color:var(--text-dim);" data-i18n="footer.tagline">Her şirketin kendi AI satış ekibini oluşturduğu platform.</p>
         <p style="max-width:280px;font-size:14px;color:var(--text-dim);margin-top:8px;" data-i18n="footer.address">Antalya, Türkiye</p>
       </div>
@@ -1047,6 +1120,9 @@
     <div class="footer-bottom">
       <span data-i18n="footer.copyright">© 2026 Veraliq. Tüm hakları saklıdır.</span>
       <span class="mono" data-i18n="footer.address">Antalya, Türkiye</span>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;line-height:1.6;color:var(--text-dim-soft);" data-i18n="footer.prototypeNotice">
+      Bu web sitesi şu an herhangi bir ticari faaliyette bulunmamaktadır; VERALIQ ürün ve hizmetlerinin geliştirme aşamasındaki bir prototip/demo sunumudur. Ticari faaliyetimiz ve ürün satışımız henüz başlamamıştır.
     </div>
   </div>
 </footer>
@@ -1085,6 +1161,14 @@
       <p data-i18n="agent.micBlocked">Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz.</p>
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
+    <div class="agent-captions" id="agentCaptions" hidden></div>
+    <div class="agent-join-gate" id="agentJoinGate" hidden>
+      <button type="button" class="agent-join-btn" id="agentJoinBtn">
+        <span class="dot"></span>
+        <span data-i18n="agent.joinBtn">Görüşmeye Katıl</span>
+      </button>
+      <div class="agent-join-hint" data-i18n="agent.joinHint">Mikrofonunuzu kullanmak için tıklayın</div>
+    </div>
   </div>
 </div>
 

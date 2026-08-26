@@ -125,6 +125,24 @@ export class SpatiusAvatarProvider extends AvatarProvider {
     // container eklenip eklenmeyeceği netleştirilmeli. Şimdilik parent
     // node'u container olarak kullanıyoruz.
     this._container = (videoEl && videoEl.parentElement) || videoEl;
+
+    // DÜZELTME (2026-08-26) — "avatar yarım görünüyor" hatası: AvatarKit,
+    // connect() sırasında bu container'a KENDİ <canvas>'ını ekliyor VE
+    // container'a inline `display:flex;align-items:center;justify-content:
+    // center` veriyor. Bizim orijinal <video id="agentVideo"> elementi
+    // (Spatius hiç kullanmıyor, srcObject'i asla set edilmiyor) o container'ın
+    // İÇİNDE, position:static bir kardeş olarak kalmaya devam ediyordu — bu
+    // da flex satırında canvas'la yer paylaşmasına, dolayısıyla avatarın
+    // olması gerekenin yaklaşık YARISI genişlikte render edilmesine yol
+    // açıyordu. Çözüm: Spatius'un video elementini hiç kullanmadığını
+    // bildiğimize göre, bu provider aktifken onu tamamen gizleyip flex
+    // akışından çıkarıyoruz (canvas tek başına tüm alanı kaplasın).
+    if (videoEl) {
+      try {
+        videoEl.style.display = 'none';
+        videoEl.style.position = 'absolute';
+      } catch (e) {}
+    }
   }
 
   async connect() {

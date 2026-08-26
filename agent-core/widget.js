@@ -51,6 +51,9 @@ const AGENT_IDENTITY = {
     bubbleVideo: document.getElementById('agentBubbleVideo'),
     bubbleDot: document.getElementById('agentBubbleDot'),
     reopenBtn: document.getElementById('agentReopenBtn'),
+    joinGate: document.getElementById('agentJoinGate'),
+    joinBtn: document.getElementById('agentJoinBtn'),
+    captions: document.getElementById('agentCaptions'),
   };
 
   if (!els.win || !els.video) return;
@@ -114,6 +117,46 @@ const AGENT_IDENTITY = {
   function setLoadingText(text) {
     var textEl = els.loading.querySelector('.agent-loading-text');
     if (textEl) textEl.textContent = text;
+  }
+
+  // ---- "Görüşmeye Katıl" giriş kapısı — bkz. orchestrator.js'teki
+  // autoListen notu. Video/avatar otomatik bağlanıyor, sadece mikrofon
+  // dinlemesi bu tıklamaya kadar erteleniyor. ----
+  var listeningStarted = false;
+  function showJoinGate() {
+    if (listeningStarted || !els.joinGate) return;
+    els.joinGate.hidden = false;
+  }
+  function hideJoinGate() {
+    if (els.joinGate) els.joinGate.hidden = true;
+  }
+  if (els.joinBtn) {
+    els.joinBtn.addEventListener('click', function () {
+      listeningStarted = true;
+      hideJoinGate();
+      if (orchestrator && typeof orchestrator.beginListening === 'function') {
+        orchestrator.beginListening();
+      }
+    });
+  }
+
+  // ---- Canlı altyazı / mini-transkript — müşteri sağda, asistan solda,
+  // eski satırlar tamamen silinmiyor (son 20 satırla sınırlı, kaydırılabilir).
+  // Spec kaynağı: İmparator'ın "cümle özeti yazıya dökülüp kayboluyor,
+  // onu entegre edelim" isteği — burada özetlemek yerine gerçek transkripti
+  // gösteriyoruz (daha basit ve daha doğru: hiçbir bilgi kaybı yok). ----
+  var CAPTION_MAX_LINES = 20;
+  function addCaption(entry) {
+    if (!els.captions || !entry || !entry.text) return;
+    els.captions.hidden = false;
+    var line = document.createElement('div');
+    line.className = 'agent-caption-line ' + (entry.role === 'customer' ? 'customer' : 'agent');
+    line.textContent = entry.text;
+    els.captions.appendChild(line);
+    while (els.captions.children.length > CAPTION_MAX_LINES) {
+      els.captions.removeChild(els.captions.firstChild);
+    }
+    els.captions.scrollTop = els.captions.scrollHeight;
   }
 
   function scheduleReconnect() {
@@ -200,6 +243,7 @@ const AGENT_IDENTITY = {
       els.loading.classList.add('hide');
       reconnectAttempts = 0;
       try { els.bubbleVideo.srcObject = els.video.srcObject; } catch (e) {}
+      showJoinGate();
     }
   }
 
@@ -219,6 +263,8 @@ const AGENT_IDENTITY = {
     if (orchestrator) { try { await orchestrator.stop(); } catch (e) {} orchestrator = null; }
     try { els.video.srcObject = null; } catch (e) {}
     els.micBlocked.hidden = true;
+    listeningStarted = false;
+    hideJoinGate();
 
     try {
       var providers = await createProviders(AGENT_PROVIDER_CONFIG);
@@ -243,6 +289,8 @@ const AGENT_IDENTITY = {
         agentIdentity: AGENT_IDENTITY,
         lang: I18N.getLang(),
         onError: onOrchestratorError,
+        onTranscript: addCaption,
+        autoListen: false,
       });
 
       await orchestrator.start();
