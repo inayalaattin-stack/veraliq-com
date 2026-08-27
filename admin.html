@@ -6,32 +6,19 @@
 <title>VERALIQ — Admin Paneli</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="/assets/veraliq-mark.svg">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --line:#252C28;
+    --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --panel-2:#1C2220; --line:#252C28;
     --text:#EDE9DF; --text-dim:#8A918C; --text-dim-soft:rgba(138,145,140,0.65);
     --accent:#BFA16A; --accent-text:#D4BB87; --accent-dim:rgba(191,161,106,0.14);
-    --accent-ink:#080A0A; --green:#7EE0B2; --red:#D93A40; --radius:8px;
+    --accent-ink:#080A0A; --green:#7EE0B2; --mint:#7EE0B2; --mint-dim:rgba(126,224,178,0.13);
+    --red:#D93A40; --radius:10px;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
   a{color:inherit;}
-  header{position:sticky;top:0;z-index:10;background:rgba(8,10,10,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
-  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;text-decoration:none;color:var(--text);}
-  .logo img{width:22px;height:22px;}
-  .logo-sub{font-size:11px;font-weight:400;color:var(--text-dim);margin-left:8px;font-family:'IBM Plex Mono',monospace;}
-  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent-text);border:1px solid var(--accent-dim);background:var(--accent-dim);padding:4px 10px;border-radius:999px;}
-  main{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
-  h1{font-size:22px;margin:0 0 6px;}
-  .sub{color:var(--text-dim);font-size:13.5px;margin:0 0 28px;}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
-  .field{margin-bottom:14px;}
-  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;}
-  input, select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;}
-  input:focus, select:focus{outline:none;border-color:var(--accent);}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media(max-width:600px){.row{grid-template-columns:1fr;}}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
   button{cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:6px;padding:10px 18px;transition:transform .12s ease, box-shadow .12s ease;}
   .btn-primary{background:var(--accent);color:var(--accent-ink);}
   .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(191,161,106,0.3);}
@@ -41,7 +28,13 @@
   .btn-danger:hover{background:rgba(217,58,64,0.1);}
   .btn-sm{padding:6px 12px;font-size:12.5px;}
   .err{color:var(--red);font-size:13px;margin-top:10px;}
-  .login-wrap{max-width:380px;margin:80px auto;}
+  input, select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;}
+  input:focus, select:focus{outline:none;border-color:var(--accent);}
+  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;}
+  .field{margin-bottom:14px;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:600px){.row{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:18px;}
   table{width:100%;border-collapse:collapse;font-size:13.5px;}
   th{text-align:left;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--line);}
   td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
@@ -50,98 +43,247 @@
   .mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
   .actions{display:flex;gap:8px;flex-wrap:wrap;}
   .empty{color:var(--text-dim);font-size:13.5px;text-align:center;padding:30px 0;}
-  .proj-list{margin-top:8px;padding-left:0;list-style:none;}
-  .proj-list li{padding:6px 0;border-top:1px dashed var(--line);font-size:12.5px;color:var(--text-dim);}
-  .proj-list li:first-child{border-top:none;}
-  .proj-list b{color:var(--text);}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:1500;}
   .toast.show{opacity:1;}
   .notice{background:var(--accent-dim);border:1px solid rgba(191,161,106,0.3);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--accent-text);margin-bottom:20px;line-height:1.6;}
+  .note-gap{background:rgba(138,145,140,0.08);border:1px dashed var(--line);border-radius:8px;padding:14px 16px;font-size:12.5px;color:var(--text-dim);line-height:1.7;}
   .inline-form{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:none;}
   .inline-form.open{display:block;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+  .pill-green{background:rgba(126,224,178,0.14);color:#8FEAC0;}
+  .pill-red{background:rgba(217,58,64,0.14);color:#ff9098;}
+  .pill-gray{background:rgba(138,145,140,0.14);color:var(--text-dim);}
+  .pill-gold{background:var(--accent-dim);color:var(--accent-text);}
+
+  /* ---------------- Login screen ---------------- */
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:32px;}
+  .login-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;margin-bottom:4px;}
+  .login-logo img{width:24px;height:24px;}
+  .login-sub{color:var(--text-dim);font-size:13px;margin:0 0 22px;}
+
+  /* ---------------- App shell (sidebar + topbar), mirrors portal.html ---------------- */
+  #app{display:none;min-height:100vh;}
+  #app.show{display:flex;}
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:236px;background:var(--panel);
+    border-right:1px solid var(--line);display:flex;flex-direction:column;
+    overflow-y:auto;
+    padding:18px 0;z-index:200;transition:transform .25s ease;
+  }
+  .sidebar-brand{display:flex;align-items:center;gap:9px;padding:0 18px 18px;font-weight:700;font-size:15px;border-bottom:1px solid var(--line);margin-bottom:12px;}
+  .sidebar-brand img{width:22px;height:22px;}
+  .sidebar-brand span.tag{font-size:10px;font-weight:500;color:var(--accent-text);border:1px solid var(--accent-dim);background:var(--accent-dim);padding:2px 7px;border-radius:999px;margin-left:auto;}
+  .nav-group{margin-bottom:6px;}
+  .nav-group-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim-soft);padding:10px 18px 6px;}
+  .nav-item{display:block;padding:9px 18px;font-size:13.5px;color:var(--text-dim);cursor:pointer;border-left:2px solid transparent;}
+  .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
+  .nav-item.active{color:var(--accent-text);background:var(--accent-dim);border-left-color:var(--accent);}
+  .app-main{flex:1;margin-left:236px;min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(8,10,10,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:14px;}
+  .topbar-title{font-weight:600;font-size:14.5px;}
+  .topbar-sub{font-size:11.5px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .topbar-spacer{flex:1;}
+  #menuToggle{display:none;background:transparent;border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:6px;}
+  .content{padding:26px;max-width:1180px;width:100%;margin:0 auto;}
+  .view-title{font-size:20px;margin:0 0 4px;}
+  .view-sub{color:var(--text-dim);font-size:13px;margin:0 0 22px;}
+  .view-actions{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .stat-card .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);margin-bottom:8px;}
+  .stat-card .val{font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;}
+  .stat-card.accent .val{color:var(--accent-text);}
+  .stat-card.mint .val{color:var(--mint);}
+
+  @media(max-width:900px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);box-shadow:0 0 0 100vw rgba(0,0,0,0.4);}
+    .app-main{margin-left:0;}
+    #menuToggle{display:inline-flex;}
+  }
+
+  /* ==================================================================
+     LIVE ADMIN AI WIDGET — "VERALIQ Admin AI"
+     Bu, index.html'deki canlı görüntülü "Elif Kaya" satış ajanıyla AYNI
+     window-chrome sistemidir (corner/half/fullscreen/minimize/reconnect/
+     barge-in) — bkz. agent-core/widget-runtime.js. Tek fark: persona ve
+     "beyin" (LLM provider) — bkz. agent-core/admin-widget.js
+     (llmProvider:'adminAssistant', platform-genelinde salt-okunur veri).
+     CSS aynen index.html'den PORT edildi (2026-08-27), yalnızca metin
+     etiketleri ("Elif Kaya" -> "VERALIQ Admin AI") değiştirildi.
+     ================================================================== */
+  .agent-window{
+    position:fixed;z-index:1010;width:340px;height:480px;
+    background:#0B1220;border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25),
+               0 0 0 1px rgba(126,224,178,0.06), 0 0 40px -8px rgba(126,224,178,0.16);
+    display:flex;flex-direction:column;
+    transition:width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
+               left .28s cubic-bezier(.2,.8,.2,1),right .28s cubic-bezier(.2,.8,.2,1),
+               top .28s cubic-bezier(.2,.8,.2,1),bottom .28s cubic-bezier(.2,.8,.2,1),
+               border-radius .28s ease,opacity .2s ease;
+  }
+  .agent-window[hidden]{display:none;}
+  .agent-window.dragging{transition:none;}
+  .agent-window[data-state="corner"][data-corner="br"]{right:20px;bottom:20px;left:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="bl"]{left:20px;bottom:20px;right:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="tr"]{right:20px;top:88px;left:auto;bottom:auto;}
+  .agent-window[data-state="corner"][data-corner="tl"]{left:20px;top:88px;right:auto;bottom:auto;}
+  @media(max-width:480px){.agent-window[data-state="corner"]{width:calc(100vw - 24px);height:440px;left:12px !important;right:12px !important;}}
+  .agent-window[data-state="half"]{top:0;right:0;left:auto;bottom:auto;width:46vw;height:100vh;height:100dvh;border-radius:0;}
+  @media(max-width:760px){.agent-window[data-state="half"]{width:100vw;}}
+  .agent-window[data-state="fullscreen"]{top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;height:100dvh;border-radius:0;z-index:1600;}
+  .agent-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);cursor:grab;user-select:none;flex-shrink:0;}
+  .agent-header.grabbing{cursor:grabbing;}
+  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;}
+  .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
+  .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;}
+  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-controls{display:flex;gap:4px;flex-shrink:0;}
+  .agent-btn{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:#C6CCDB;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;}
+  .agent-btn:hover{background:rgba(255,255,255,0.10);color:#fff;}
+  .agent-btn-close:hover{background:rgba(217,58,64,0.25);color:#ff9098;}
+  .agent-stage{position:relative;flex:1;min-height:0;background:#050810;}
+  .agent-video{width:100%;height:100%;object-fit:cover;display:block;background:#050810;}
+  .agent-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0B1220;transition:opacity .3s ease;}
+  .agent-loading.hide{opacity:0;pointer-events:none;}
+  .agent-spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--accent);animation:agent-spin 0.85s linear infinite;}
+  @keyframes agent-spin{to{transform:rotate(360deg);}}
+  .agent-loading-text{font-size:12.5px;color:#9AA3B8;font-family:'IBM Plex Mono',monospace;}
+  .agent-mic-blocked{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(217,58,64,0.14);border:1px solid rgba(217,58,64,0.35);border-radius:8px;padding:10px 12px;}
+  .agent-mic-blocked p{margin:0;font-size:11.5px;line-height:1.5;color:#ffd7d9;}
+  .agent-indicator{position:absolute;left:14px;bottom:14px;display:flex;gap:3px;align-items:flex-end;height:16px;}
+  .agent-indicator span{width:3px;background:var(--green);border-radius:2px;animation:agent-bounce 0.9s ease-in-out infinite;}
+  .agent-indicator span:nth-child(1){height:6px;animation-delay:0s;}
+  .agent-indicator span:nth-child(2){height:14px;animation-delay:.15s;}
+  .agent-indicator span:nth-child(3){height:9px;animation-delay:.3s;}
+  @keyframes agent-bounce{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
+  .agent-join-gate{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;padding:0 16px 22px;background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.55) 65%,rgba(5,8,16,0.85) 100%);transition:opacity .25s ease;}
+  .agent-join-gate[hidden]{display:none;}
+  .agent-join-btn{display:flex;align-items:center;gap:9px;padding:13px 22px;border-radius:999px;border:none;cursor:pointer;background:var(--accent);color:var(--accent-ink);font-family:'Inter',sans-serif;font-weight:600;font-size:14.5px;box-shadow:0 8px 24px rgba(191,161,106,0.35);transition:transform .15s ease,box-shadow .15s ease;}
+  .agent-join-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(191,161,106,0.45);}
+  .agent-join-btn:active{transform:translateY(0);}
+  .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
+  @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .agent-join-hint{margin-top:10px;font-size:11.5px;color:rgba(237,233,223,0.75);font-family:'IBM Plex Mono',monospace;text-align:center;}
+  .agent-captions{position:absolute;left:0;right:0;bottom:0;z-index:2;max-height:46%;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:14px 12px 12px;background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.75) 40%,rgba(5,8,16,0.92) 100%);scrollbar-width:thin;}
+  .agent-captions[hidden]{display:none;}
+  .agent-caption-line{max-width:82%;padding:7px 12px;border-radius:12px;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;animation:agent-caption-in .2s ease;word-wrap:break-word;}
+  @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .agent-caption-line.customer{align-self:flex-end;text-align:right;background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);color:#F5EEDD;border-bottom-right-radius:3px;}
+  .agent-caption-line.agent{align-self:flex-start;text-align:left;background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);color:#E7F7EF;border-bottom-left-radius:3px;}
+  @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
+  .agent-bubble{position:fixed;z-index:1010;width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;}
+  .agent-bubble[hidden]{display:none;}
+  .agent-bubble[data-corner="br"]{right:20px;bottom:20px;}
+  .agent-bubble[data-corner="bl"]{left:20px;bottom:20px;}
+  .agent-bubble[data-corner="tr"]{right:20px;top:88px;}
+  .agent-bubble[data-corner="tl"]{left:20px;top:88px;}
+  .agent-bubble-video{width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-dot{position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;background:#5B6479;border:2px solid #0B1220;}
+  .agent-bubble-dot.live{background:var(--green);}
+  .agent-reopen{position:fixed;right:20px;bottom:20px;z-index:1010;padding:12px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.14);display:flex;align-items:center;gap:8px;}
+  .agent-reopen[hidden]{display:none;}
+  .agent-reopen::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);}
+
+  /* ---------------- Assistant text-chat view (fallback / log, mirrors portal.html) ---------------- */
+  .chat-box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;height:480px;}
+  .chat-log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;}
+  .chat-msg{max-width:78%;padding:9px 13px;border-radius:12px;font-size:13.5px;line-height:1.5;}
+  .chat-msg.user{align-self:flex-end;background:var(--accent-dim);color:var(--accent-text);border-bottom-right-radius:3px;}
+  .chat-msg.bot{align-self:flex-start;background:var(--mint-dim);color:#8FEAC0;border-bottom-left-radius:3px;}
+  .chat-input-row{display:flex;gap:10px;padding:14px;border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1;}
+  .suggest-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px;}
+  .suggest-chip{background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;}
+  .suggest-chip:hover{color:var(--text);border-color:var(--accent);}
 </style>
 </head>
 <body>
 
-<header>
-  <a href="/" class="logo" aria-label="VERALIQ ana sayfa">
-    <img src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">
-    VERALIQ<span class="logo-sub">Admin</span>
-  </a>
-  <span class="badge">PROTOTİP / TEST ORTAMI</span>
-</header>
-
-<main>
-
-  <div id="loginView" class="login-wrap" hidden>
-    <div class="card">
-      <h1>Admin Girişi</h1>
-      <p class="sub">Şirket portalı yönetim paneline erişmek için şifre girin.</p>
-      <div class="field">
-        <label for="adminPass">Şifre</label>
-        <input type="password" id="adminPass" placeholder="••••••••" autocomplete="off">
-      </div>
-      <button class="btn-primary" id="loginBtn" style="width:100%;">Giriş Yap</button>
-      <div class="err" id="loginErr" style="display:none;">Şifre hatalı.</div>
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo"><img src="/assets/veraliq-mark.svg" alt="VERALIQ">VERALIQ Admin</div>
+    <p class="login-sub">Platform yönetim paneline erişmek için giriş yapın.</p>
+    <div class="field">
+      <label for="adminEmail">E-posta</label>
+      <input type="email" id="adminEmail" placeholder="admin@veraliq.com" value="admin@veraliq.com">
     </div>
+    <div class="field">
+      <label for="adminPass">Şifre</label>
+      <input type="password" id="adminPass" placeholder="••••••••" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="loginBtn" style="width:100%;">Giriş Yap</button>
+    <div class="err" id="loginErr" style="display:none;">Şifre hatalı.</div>
   </div>
+</div>
 
-  <div id="panelView" hidden>
-    <h1>Şirket Portalı Yönetimi</h1>
-    <p class="sub">Sisteme kayıtlı şirketleri, giriş bilgilerini ve projelerini buradan yönetin.</p>
-
-    <div class="notice">
-      Bu panel artık <b>gerçek bir backend'e</b> (Cloudflare D1 veritabanı + Worker API) bağlıdır — veriler sunucuda saklanır, herhangi bir cihazdan/tarayıcıdan aynı bilgilerle görülebilir. Parolalar hash'lenerek saklanır, düz metin olarak asla tutulmaz.
-    </div>
-
-    <div class="card">
-      <h2 style="margin-top:0;font-size:15px;">Yeni Şirket Ekle</h2>
-      <div class="row">
-        <div class="field">
-          <label for="cName">Şirket Adı</label>
-          <input type="text" id="cName" placeholder="Örn. ABC İnşaat">
-        </div>
-        <div class="field">
-          <label for="cUser">Kullanıcı Adı</label>
-          <input type="text" id="cUser" placeholder="Örn. abcinsaat">
-          <div class="muted mono" style="margin-top:4px;font-size:11px;">Tüm şirketler arasında benzersiz olmalı — giriş ekranı yalnızca bunu ve şifreyi sorar.</div>
-        </div>
+<div id="app">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="app-main">
+    <div class="topbar">
+      <button id="menuToggle" aria-label="Menü">☰</button>
+      <div>
+        <div class="topbar-title">VERALIQ Admin Paneli</div>
+        <div class="topbar-sub" id="topbarSub">platform yönetimi</div>
       </div>
-      <div class="row">
-        <div class="field">
-          <label for="cPass">Şifre</label>
-          <input type="text" id="cPass" placeholder="Örn. Abc12345!">
-        </div>
-        <div class="field" style="display:flex;align-items:flex-end;">
-          <button class="btn-primary" id="addCompanyBtn" style="width:100%;">Şirket Ekle</button>
-        </div>
-      </div>
-      <div class="err" id="companyErr" style="display:none;"></div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-ghost btn-sm" id="logoutBtn">Çıkış Yap</button>
     </div>
-
-    <div class="card">
-      <h2 style="margin-top:0;font-size:15px;">Kayıtlı Şirketler</h2>
-      <div id="companyTableWrap"></div>
-    </div>
-
-    <button class="btn-ghost btn-sm" id="logoutBtn">Çıkış Yap</button>
+    <div class="content" id="content"></div>
   </div>
-
-</main>
+</div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     Canlı AI Agent "VERALIQ Admin AI" — bkz. index.html'deki "Elif
+     Kaya" ile AYNI mimari (agent-core/widget-runtime.js), farklı
+     persona + farklı beyin (agent-core/admin-widget.js).
+     ============================================================ -->
+<div id="agentWindow" class="agent-window" data-state="corner" data-corner="br" hidden>
+  <div class="agent-header" id="agentHeader">
+    <div class="agent-header-id">
+      <span class="agent-dot" id="agentStatusDot"></span>
+      <span class="agent-name">VERALIQ Admin AI</span>
+    </div>
+    <div class="agent-controls">
+      <button type="button" class="agent-btn" id="agentHalfBtn" title="Yarım ekran" aria-label="Yarım ekran">▣</button>
+      <button type="button" class="agent-btn" id="agentFullBtn" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+      <button type="button" class="agent-btn" id="agentMinBtn" title="Küçült" aria-label="Küçült">–</button>
+      <button type="button" class="agent-btn agent-btn-close" id="agentCloseBtn" title="Kapat" aria-label="Kapat">✕</button>
+    </div>
+  </div>
+  <div class="agent-stage">
+    <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <div class="agent-loading" id="agentLoading">
+      <div class="agent-spinner"></div>
+      <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
+    </div>
+    <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
+      <p>Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (Asistan menüsü).</p>
+    </div>
+    <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
+    <div class="agent-captions" id="agentCaptions" hidden></div>
+    <div class="agent-join-gate" id="agentJoinGate" hidden>
+      <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
+      <div class="agent-join-hint">Mikrofonunuzu kullanmak için tıklayın</div>
+    </div>
+  </div>
+</div>
+<button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden aria-label="VERALIQ Admin AI'yı genişlet">
+  <video id="agentBubbleVideo" class="agent-bubble-video" autoplay playsinline muted></video>
+  <span class="agent-bubble-dot" id="agentBubbleDot"></span>
+</button>
+<button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Asistanı Aç</button>
 
 <script>
 (function(){
   "use strict";
-  // GERÇEK BACKEND: worker-portal/portal-api-worker.js (Cloudflare D1 +
-  // Durable Object). Bkz. docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md.
-  // Bu worker'ın ismi wrangler.toml'da "veraliq-portal-api" — Cloudflare
-  // Workers'ın hesap alt alan adı örüntüsüne göre (worker-spatius ile aynı
-  // örüntü: veraliq-spatius-session.veraliq-com.workers.dev) canlı adresi
-  // aşağıdaki gibi olacak. Siz `wrangler deploy` çalıştırdıktan sonra farklı
-  // bir adres dönerse (örn. hesabınızın alt alan adı farklıysa), bu satırı
-  // güncelleyin.
   var API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
   var TOKEN_KEY = 'veraliq_admin_jwt';
 
@@ -170,37 +312,31 @@
     return data;
   }
 
-  var loginView = document.getElementById('loginView');
-  var panelView = document.getElementById('panelView');
-  var toastEl = document.getElementById('toast');
-
-  function toast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
   }
-
-  function isAuthed(){ return !!getToken(); }
-
-  function render(){
-    if (!isAuthed()) {
-      loginView.hidden = false;
-      panelView.hidden = true;
-      return;
-    }
-    loginView.hidden = true;
-    panelView.hidden = false;
-    renderCompanies();
-  }
+  function money(n){ return Number(n||0).toLocaleString('tr-TR') + ' TL'; }
+  function fmtDate(s){ if(!s) return '-'; try { return new Date(s.replace(' ','T')+'Z').toLocaleDateString('tr-TR'); } catch(e){ return s; } }
 
   var ERROR_MESSAGES = {
     invalid_credentials: 'E-posta veya şifre hatalı.',
-    slug_taken: 'Bu şirket kısaltması (slug) zaten kullanılıyor — şirket adını biraz değiştirin.',
-    email_taken: 'Bu kullanıcı adı/e-posta zaten başka bir şirkette kayıtlı.',
+    slug_taken: 'Bu şirket kısaltması (slug) zaten kullanılıyor.',
+    email_taken: 'Bu e-posta zaten başka bir şirkette kayıtlı.',
     missing_fields: 'Lütfen tüm alanları doldurun.',
+    unauthorized: 'Oturumunuz sona ermiş, tekrar giriş yapın.',
+    no_fields: 'Değiştirilecek bir alan seçmediniz.',
   };
   function errMsg(err){
     return ERROR_MESSAGES[err && err.message] || 'Bir hata oluştu: ' + ((err && err.message) || 'bilinmeyen');
+  }
+
+  var toastEl = document.getElementById('toast');
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 2400);
   }
 
   function slugify(s){
@@ -209,68 +345,190 @@
       .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
-  async function renderCompanies(){
+  // ---------------- NAV / ROUTER ----------------
+  var NAV = [
+    { group: 'Genel', items: [ {id:'dashboard', label:'Dashboard'}, {id:'assistant', label:'AI Assistant'} ] },
+    { group: 'Platform', items: [ {id:'companies', label:'Şirketler'}, {id:'users', label:'Kullanıcılar'}, {id:'projects', label:'Projeler'}, {id:'subscriptions', label:'Abonelikler'} ] },
+    { group: 'Yapay Zekâ', items: [ {id:'agents', label:'Agents'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'} ] },
+    { group: 'Entegrasyon', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
+    { group: 'Sistem', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Audit Log'}, {id:'health', label:'Sistem Sağlığı'} ] },
+  ];
+  var VIEW_TITLES = {};
+  NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_TITLES[it.id] = it.label; }); });
+
+  var sidebarEl = document.getElementById('sidebar');
+  function renderSidebar(active){
+    var html = '<div class="sidebar-brand"><img src="/assets/veraliq-mark.svg" alt="VERALIQ"><span>VERALIQ</span><span class="tag">ADMIN</span></div>';
+    NAV.forEach(function(g){
+      html += '<div class="nav-group"><div class="nav-group-label">'+esc(g.group)+'</div>';
+      g.items.forEach(function(it){
+        html += '<div class="nav-item'+(it.id===active?' active':'')+'" data-view="'+it.id+'">'+esc(it.label)+'</div>';
+      });
+      html += '</div>';
+    });
+    sidebarEl.innerHTML = html;
+    sidebarEl.querySelectorAll('[data-view]').forEach(function(el){
+      el.addEventListener('click', function(){
+        navigate(el.getAttribute('data-view'));
+        sidebarEl.classList.remove('open');
+      });
+    });
+  }
+
+  var contentEl = document.getElementById('content');
+  var currentView = 'dashboard';
+  function viewHead(title, sub, actionsHtml){
+    return '<h1 class="view-title">'+esc(title)+'</h1><p class="view-sub">'+esc(sub||'')+'</p>'+(actionsHtml ? '<div class="view-actions">'+actionsHtml+'</div>' : '');
+  }
+  function statCard(label, value, cls){
+    return '<div class="stat-card'+(cls?' '+cls:'')+'"><div class="lbl">'+esc(label)+'</div><div class="val">'+esc(value)+'</div></div>';
+  }
+
+  var RENDERERS = {
+    dashboard: renderDashboard, assistant: renderAssistant,
+    companies: renderCompanies, users: renderUsers, projects: renderProjects, subscriptions: renderSubscriptions,
+    agents: renderAgents, 'ai-providers': renderAiProviders, 'avatar-providers': renderAvatarProviders, 'voice-providers': renderVoiceProviders,
+    // crm/erp/integrations are built via gapView() further down the file —
+    // wrapped in closures here so the lookup happens at CALL time (after the
+    // whole script has run and renderCrm/renderErp/renderIntegrations are
+    // assigned), not at RENDERERS-literal-construction time (which runs
+    // before those `var` assignments execute and would otherwise capture
+    // `undefined`).
+    crm: function(el){ renderCrm(el); }, erp: function(el){ renderErp(el); }, integrations: function(el){ renderIntegrations(el); },
+    security: renderSecurity, audit: renderAudit, health: renderHealth,
+  };
+  function navigate(view){
+    currentView = view;
+    document.getElementById('topbarSub').textContent = VIEW_TITLES[view] || view;
+    renderSidebar(view);
+    contentEl.innerHTML = '<div class="empty">Yükleniyor…</div>';
+    var fn = RENDERERS[view];
+    if (fn) fn(contentEl); else contentEl.innerHTML = '<div class="empty">Bu ekran bulunamadı.</div>';
+  }
+
+  // ---------------- DASHBOARD (madde 45 "Usage") ----------------
+  async function renderDashboard(el){
+    var stats;
+    try { stats = await api('/api/admin/stats'); }
+    catch(e){ el.innerHTML = viewHead('Dashboard','Platform genel bakış') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    var plansHtml = (stats.plans||[]).map(function(p){ return '<span class="pill pill-gold" style="margin-right:6px;">'+esc(p.plan)+': '+p.n+'</span>'; }).join('') || '<span class="muted">Kayıtlı şirket yok</span>';
+    el.innerHTML =
+      viewHead('Dashboard', 'Platform genelinde gerçek zamanlı özet — tüm şirketler.') +
+      '<div class="stat-grid">' +
+        statCard('Toplam Şirket', stats.total_companies, 'accent') +
+        statCard('Aktif Şirket', stats.active_companies) +
+        statCard('Toplam Kullanıcı', stats.total_users) +
+        statCard('Toplam Proje', stats.total_projects) +
+        statCard('Toplam Birim', stats.total_units) +
+        statCard('Satılan Birim', stats.total_sold, 'mint') +
+        statCard('Toplam Ciro', money(stats.total_revenue), 'mint') +
+        statCard('Bekleyen Onay', stats.pending_approvals) +
+      '</div>' +
+      '<div class="card"><h3 style="margin-top:0;">AI Ajan vs İnsan Temsilci — Sunum Dağılımı</h3>' +
+        '<p class="muted" style="font-size:13px;">Şu ana kadar <b style="color:var(--mint);">'+stats.ai_agent_presentations+'</b> sunum yapay zekâ ajanı, <b style="color:var(--accent-text);">'+stats.human_agent_presentations+'</b> sunum insan temsilci tarafından yapıldı (unit.presentation_lock audit kayıtlarından).</p>' +
+      '</div>' +
+      '<div class="card"><h3 style="margin-top:0;">Plan Dağılımı</h3><div>'+plansHtml+'</div></div>';
+  }
+
+  // ---------------- VERALIQ ADMIN AI — text chat (live avatarın yazılı yedeği) ----------------
+  var SUGGESTIONS = ['Platformda kaç şirket var?', 'Toplam satış ve ciro nedir?', 'Bekleyen onaylar var mı?', 'Toplam kullanıcı sayısı nedir?', 'AI mi insan mı daha çok sunum yaptı?'];
+  function renderAssistant(el){
+    el.innerHTML =
+      viewHead('AI Assistant', 'VERALIQ Admin AI — sağ altta canlı görüntülü/sesli olarak da konuşabilirsiniz. Bu ekran, aynı asistanın yazılı/metin sürümüdür (Zero Trust AI: yalnızca gerçek platform verisiyle cevap verir).') +
+      '<div class="chat-box">' +
+        '<div class="chat-log" id="chatLog"><div class="chat-msg bot">Merhaba, ben VERALIQ Admin Asistanı. Size nasıl yardımcı olabilirim?</div></div>' +
+        '<div class="suggest-row">' + SUGGESTIONS.map(function(s){ return '<button type="button" class="suggest-chip">'+esc(s)+'</button>'; }).join('') + '</div>' +
+        '<div class="chat-input-row"><input type="text" id="chatInput" placeholder="Bir soru yazın…"><button class="btn-primary btn-sm" id="chatSendBtn">Gönder</button></div>' +
+      '</div>';
+    var log = document.getElementById('chatLog');
+    function addMsg(role, text){
+      var d = document.createElement('div');
+      d.className = 'chat-msg ' + (role==='user'?'user':'bot');
+      d.textContent = text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+    }
+    async function ask(q){
+      if (!q || !q.trim()) return;
+      addMsg('user', q);
+      try {
+        var res = await api('/api/admin/assistant/query', { method:'POST', body:{ question: q } });
+        addMsg('bot', res.answer);
+      } catch(e) { addMsg('bot', errMsg(e)); }
+    }
+    document.getElementById('chatSendBtn').addEventListener('click', function(){
+      var input = document.getElementById('chatInput');
+      var v = input.value; input.value = '';
+      ask(v);
+    });
+    document.getElementById('chatInput').addEventListener('keydown', function(e){ if (e.key==='Enter') document.getElementById('chatSendBtn').click(); });
+    el.querySelectorAll('.suggest-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){ ask(chip.textContent); });
+    });
+  }
+
+  // ---------------- ŞİRKETLER (companies) ----------------
+  async function renderCompanies(el){
+    el.innerHTML =
+      viewHead('Şirketler', 'Sisteme kayıtlı şirketleri, giriş bilgilerini ve projelerini buradan yönetin.') +
+      '<div class="notice">Bu panel gerçek bir backend\'e (Cloudflare D1 + Worker API) bağlıdır — parolalar hash\'lenerek saklanır, düz metin olarak asla tutulmaz.</div>' +
+      '<div class="card"><h3 style="margin-top:0;font-size:15px;">Yeni Şirket Ekle</h3>' +
+        '<div class="row"><div class="field"><label for="cName">Şirket Adı</label><input type="text" id="cName" placeholder="Örn. ABC İnşaat"></div>' +
+        '<div class="field"><label for="cUser">Kullanıcı Adı (e-posta)</label><input type="text" id="cUser" placeholder="Örn. abcinsaat@veraliq.com"></div></div>' +
+        '<div class="row"><div class="field"><label for="cPass">Şifre</label><input type="text" id="cPass" placeholder="Örn. Abc12345!"></div>' +
+        '<div class="field" style="display:flex;align-items:flex-end;"><button class="btn-primary" id="addCompanyBtn" style="width:100%;">Şirket Ekle</button></div></div>' +
+        '<div class="err" id="companyErr" style="display:none;"></div></div>' +
+      '<div class="card"><h3 style="margin-top:0;font-size:15px;">Kayıtlı Şirketler</h3><div id="companyTableWrap"></div></div>';
+
+    document.getElementById('addCompanyBtn').addEventListener('click', async function(){
+      var name = document.getElementById('cName').value.trim();
+      var user = document.getElementById('cUser').value.trim();
+      var pass = document.getElementById('cPass').value.trim();
+      var errEl = document.getElementById('companyErr');
+      if (!name || !user || !pass) { errEl.textContent = 'Lütfen tüm alanları doldurun.'; errEl.style.display='block'; return; }
+      try {
+        await api('/api/companies', { method:'POST', body:{ name:name, slug:slugify(name)||user, owner_email:user, owner_password:pass } });
+        errEl.style.display = 'none';
+        toast('Şirket eklendi: ' + name);
+        renderCompanyTable();
+      } catch(e) { errEl.textContent = errMsg(e); errEl.style.display='block'; }
+    });
+    renderCompanyTable();
+  }
+
+  async function renderCompanyTable(){
     var wrap = document.getElementById('companyTableWrap');
+    if (!wrap) return;
     wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
     var list;
-    try {
-      list = await api('/api/companies');
-    } catch (e) {
-      if (e.status === 401) { clearToken(); render(); return; }
-      wrap.innerHTML = '<div class="empty">Şirketler yüklenemedi: ' + esc(errMsg(e)) + '</div>';
-      return;
-    }
+    try { list = await api('/api/companies'); }
+    catch(e){ wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
     var companies = list.companies || [];
-    if (!companies.length) {
-      wrap.innerHTML = '<div class="empty">Henüz kayıtlı şirket yok. Yukarıdan ekleyin.</div>';
-      return;
-    }
-    // Her şirketin proje listesini almak için detay uçlarını paralel çağır.
-    var details = await Promise.all(companies.map(function(c){
-      return api('/api/companies/' + c.id).catch(function(){ return { company: c, projects: [] }; });
-    }));
-
-    var html = '<table><thead><tr><th>Şirket</th><th>Kullanıcı Adı</th><th>Projeler</th><th>İşlem</th></tr></thead><tbody>';
+    if (!companies.length) { wrap.innerHTML = '<div class="empty">Henüz kayıtlı şirket yok. Yukarıdan ekleyin.</div>'; return; }
+    var details = await Promise.all(companies.map(function(c){ return api('/api/companies/'+c.id).catch(function(){ return { company:c, projects:[] }; }); }));
+    var html = '<table><thead><tr><th>Şirket</th><th>Plan / Durum</th><th>Projeler</th><th>İşlem</th></tr></thead><tbody>';
     details.forEach(function(d){
       var c = d.company;
-      var projHtml = '<ul class="proj-list">';
-      if (d.projects && d.projects.length) {
-        d.projects.forEach(function(p){
-          projHtml += '<li><b>'+esc(p.name)+'</b> — '+esc(p.status||'-')+'</li>';
-        });
-      } else {
-        projHtml += '<li>Henüz proje yok</li>';
-      }
-      projHtml += '</ul>';
-      html += '<tr>' +
-        '<td><b>'+esc(c.name)+'</b><div class="muted mono" style="margin-top:4px;">'+ (c.created_at ? new Date(c.created_at).toLocaleDateString('tr-TR') : '') +'</div></td>' +
-        '<td class="mono">şifre yalnızca oluşturma anında gösterilir<br><span class="muted">(hash olarak saklanır)</span></td>' +
+      var projHtml = '<ul style="margin:0;padding-left:0;list-style:none;">' + ((d.projects && d.projects.length) ? d.projects.map(function(p){ return '<li style="padding:4px 0;font-size:12.5px;color:var(--text-dim);"><b style="color:var(--text);">'+esc(p.name)+'</b> — '+esc(p.status||'-')+'</li>'; }).join('') : '<li style="color:var(--text-dim);font-size:12.5px;">Henüz proje yok</li>') + '</ul>';
+      html += '<tr><td><b>'+esc(c.name)+'</b><div class="muted mono" style="margin-top:4px;">'+fmtDate(c.created_at)+'</div></td>' +
+        '<td><span class="pill pill-gold">'+esc(c.plan)+'</span> <span class="pill '+(c.status==='active'?'pill-green':'pill-red')+'">'+esc(c.status)+'</span></td>' +
         '<td>'+projHtml+'</td>' +
-        '<td>' +
-          '<div class="actions">' +
-            '<button class="btn-ghost btn-sm" data-add-proj="'+c.id+'">Proje Ekle</button>' +
-            '<a class="btn-ghost btn-sm" href="/portal.html" target="_blank" style="text-decoration:none;display:inline-block;">Portala Git</a>' +
-            '<button class="btn-danger btn-sm" data-del="'+c.id+'">Sil</button>' +
-          '</div>' +
-          '<div class="inline-form" id="inline-'+c.id+'">' +
-            '<div class="field"><label>Proje Adı</label><input type="text" data-f="name" placeholder="Örn. Vadi Konutları 2"></div>' +
-            '<div class="field"><label>Konum</label><input type="text" data-f="location" placeholder="Örn. İstanbul / Ataşehir"></div>' +
-            '<div class="row">' +
-              '<div class="field"><label>Durum</label><select data-f="status"><option value="planning">Planlama</option><option value="construction">İnşaat</option><option value="selling" selected>Satışta</option><option value="completed">Tamamlandı</option></select></div>' +
-              '<div class="field" style="display:flex;align-items:flex-end;"><button class="btn-primary btn-sm" data-save-proj="'+c.id+'" style="width:100%;">Kaydet</button></div>' +
-            '</div>' +
-          '</div>' +
-        '</td>' +
-      '</tr>';
+        '<td><div class="actions">' +
+          '<button class="btn-ghost btn-sm" data-add-proj="'+c.id+'">Proje Ekle</button>' +
+          '<a class="btn-ghost btn-sm" href="/portal.html" target="_blank" style="text-decoration:none;display:inline-block;">Portala Git</a>' +
+          '<button class="btn-danger btn-sm" data-del="'+c.id+'">Sil</button>' +
+        '</div>' +
+        '<div class="inline-form" id="inline-'+c.id+'">' +
+          '<div class="field"><label>Proje Adı</label><input type="text" data-f="name" placeholder="Örn. Vadi Konutları 2"></div>' +
+          '<div class="field"><label>Konum</label><input type="text" data-f="location" placeholder="Örn. İstanbul / Ataşehir"></div>' +
+          '<div class="row"><div class="field"><label>Durum</label><select data-f="status"><option value="planning">Planlama</option><option value="construction">İnşaat</option><option value="selling" selected>Satışta</option><option value="completed">Tamamlandı</option></select></div>' +
+          '<div class="field" style="display:flex;align-items:flex-end;"><button class="btn-primary btn-sm" data-save-proj="'+c.id+'" style="width:100%;">Kaydet</button></div></div>' +
+        '</div></td></tr>';
     });
     html += '</tbody></table>';
     wrap.innerHTML = html;
-
     wrap.querySelectorAll('[data-add-proj]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var id = btn.getAttribute('data-add-proj');
-        document.getElementById('inline-'+id).classList.toggle('open');
-      });
+      btn.addEventListener('click', function(){ document.getElementById('inline-'+btn.getAttribute('data-add-proj')).classList.toggle('open'); });
     });
     wrap.querySelectorAll('[data-save-proj]').forEach(function(btn){
       btn.addEventListener('click', async function(){
@@ -280,83 +538,219 @@
         var location = formEl.querySelector('[data-f="location"]').value.trim();
         var status = formEl.querySelector('[data-f="status"]').value;
         if (!name) { toast('Proje adı gerekli.'); return; }
-        try {
-          await api('/api/projects', { method: 'POST', body: { company_id: cid, name: name, location: location, status: status } });
-          toast('Proje eklendi.');
-          renderCompanies();
-        } catch (e) {
-          toast(errMsg(e));
-        }
+        try { await api('/api/projects', { method:'POST', body:{ company_id:cid, name:name, location:location, status:status } }); toast('Proje eklendi.'); renderCompanyTable(); }
+        catch(e){ toast(errMsg(e)); }
       });
     });
     wrap.querySelectorAll('[data-del]').forEach(function(btn){
       btn.addEventListener('click', async function(){
         var id = btn.getAttribute('data-del');
         if (!confirm('Bu şirketi ve tüm projelerini silmek istediğinize emin misiniz?')) return;
-        try {
-          await api('/api/companies/' + id, { method: 'DELETE' });
-          toast('Şirket silindi.');
-          renderCompanies();
-        } catch (e) {
-          toast(errMsg(e));
-        }
+        try { await api('/api/companies/'+id, { method:'DELETE' }); toast('Şirket silindi.'); renderCompanyTable(); }
+        catch(e){ toast(errMsg(e)); }
       });
     });
   }
 
-  function esc(s){
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
-      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  // ---------------- KULLANICILAR (madde 45 "Users") ----------------
+  async function renderUsers(el){
+    el.innerHTML = viewHead('Kullanıcılar', 'Platformdaki tüm kullanıcılar (VERALIQ admin + tüm şirketlerin ekipleri).') + '<div id="usersWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    var wrap = document.getElementById('usersWrap');
+    try {
+      var data = await api('/api/admin/users');
+      if (!data.users.length) { wrap.innerHTML = '<div class="empty">Henüz kullanıcı yok.</div>'; return; }
+      var html = '<table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th>Şirket</th><th>Kayıt</th></tr></thead><tbody>';
+      data.users.forEach(function(u){
+        html += '<tr><td>'+esc(u.name||'-')+'</td><td class="mono">'+esc(u.email)+'</td>' +
+          '<td><span class="pill '+(u.role==='veraliq_admin'?'pill-gold':(u.role==='company_owner'?'pill-green':'pill-gray'))+'">'+esc(u.role)+'</span></td>' +
+          '<td>'+esc(u.company_name||'—')+'</td><td class="muted">'+fmtDate(u.created_at)+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch(e) { wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; }
+  }
+
+  // ---------------- PROJELER (madde 45 "Projects") ----------------
+  async function renderProjects(el){
+    el.innerHTML = viewHead('Projeler', 'Platformdaki tüm şirketlerin tüm inşaat/gayrimenkul projeleri.') + '<div id="projectsWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    var wrap = document.getElementById('projectsWrap');
+    try {
+      var data = await api('/api/admin/projects');
+      if (!data.projects.length) { wrap.innerHTML = '<div class="empty">Henüz proje yok.</div>'; return; }
+      var html = '<table><thead><tr><th>Proje</th><th>Şirket</th><th>Konum</th><th>Durum</th><th>Teslim</th></tr></thead><tbody>';
+      data.projects.forEach(function(p){
+        html += '<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.company_name)+'</td><td class="muted">'+esc(p.location||'-')+'</td>' +
+          '<td><span class="pill pill-gold">'+esc(p.status)+'</span></td><td class="muted">'+(p.delivery_date?esc(p.delivery_date):'-')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch(e) { wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; }
+  }
+
+  // ---------------- ABONELİKLER (madde 45 "Subscriptions") ----------------
+  async function renderSubscriptions(el){
+    el.innerHTML = viewHead('Abonelikler', 'Şirketlerin plan (trial/starter/pro/enterprise) ve durumlarını (aktif/askıya alınmış) buradan değiştirin.') + '<div id="subsWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    var wrap = document.getElementById('subsWrap');
+    var list;
+    try { list = await api('/api/companies'); } catch(e){ wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    if (!list.companies.length) { wrap.innerHTML = '<div class="empty">Henüz şirket yok.</div>'; return; }
+    var html = '<table><thead><tr><th>Şirket</th><th>Plan</th><th>Durum</th><th>Filigran Kaldır</th><th></th></tr></thead><tbody>';
+    list.companies.forEach(function(c){
+      html += '<tr data-row="'+c.id+'"><td><b>'+esc(c.name)+'</b></td>' +
+        '<td><select data-f="plan"><option value="trial"'+(c.plan==='trial'?' selected':'')+'>Trial</option><option value="starter"'+(c.plan==='starter'?' selected':'')+'>Starter</option><option value="pro"'+(c.plan==='pro'?' selected':'')+'>Pro</option><option value="enterprise"'+(c.plan==='enterprise'?' selected':'')+'>Enterprise</option></select></td>' +
+        '<td><select data-f="status"><option value="active"'+(c.status==='active'?' selected':'')+'>Aktif</option><option value="suspended"'+(c.status==='suspended'?' selected':'')+'>Askıya Alınmış</option></select></td>' +
+        '<td><select data-f="remove_branding"><option value="0"'+(!c.remove_branding?' selected':'')+'>Hayır</option><option value="1"'+(c.remove_branding?' selected':'')+'>Evet</option></select></td>' +
+        '<td><button class="btn-primary btn-sm" data-save="'+c.id+'">Kaydet</button></td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('[data-save]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var id = btn.getAttribute('data-save');
+        var row = wrap.querySelector('[data-row="'+id+'"]');
+        var plan = row.querySelector('[data-f="plan"]').value;
+        var status = row.querySelector('[data-f="status"]').value;
+        var removeBranding = Number(row.querySelector('[data-f="remove_branding"]').value);
+        try { await api('/api/companies/'+id, { method:'PATCH', body:{ plan:plan, status:status, remove_branding:removeBranding } }); toast('Abonelik güncellendi.'); }
+        catch(e){ toast(errMsg(e)); }
+      });
     });
   }
 
-  document.getElementById('loginBtn').addEventListener('click', async function(){
-    var val = document.getElementById('adminPass').value;
-    var errEl = document.getElementById('loginErr');
-    var emailVal = document.getElementById('adminEmail') ? document.getElementById('adminEmail').value.trim() : 'admin@veraliq.com';
+  // ---------------- AGENTS (madde 45 "Agents") ----------------
+  async function renderAgents(el){
+    var stats;
+    try { stats = await api('/api/admin/stats'); }
+    catch(e){ el.innerHTML = viewHead('Agents','AI vs İnsan temsilci performansı') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    var total = stats.ai_agent_presentations + stats.human_agent_presentations;
+    var aiPct = total ? Math.round(stats.ai_agent_presentations/total*100) : 0;
+    el.innerHTML = viewHead('Agents', 'Platform genelinde AI ajan (Elif Kaya / Spatius) ile insan temsilcilerin sunum performansı — audit_log kayıtlarından gerçek veri.') +
+      '<div class="stat-grid">' +
+        statCard('AI Ajan Sunumları', stats.ai_agent_presentations, 'mint') +
+        statCard('İnsan Temsilci Sunumları', stats.human_agent_presentations, 'accent') +
+        statCard('AI Payı', aiPct + '%') +
+        statCard('Toplam Sunum', total) +
+      '</div>' +
+      '<div class="card"><h3 style="margin-top:0;">Aktif Müşteri Satış Ajanı</h3><p class="muted" style="font-size:13px;">Persona: <b style="color:var(--text);">Elif Kaya</b> — Avatar: Spatius (Clara kütüphane avatarı) — index.html\'de tüm ziyaretçilere otomatik olarak gösteriliyor.</p></div>';
+  }
+
+  // ---------------- AI / AVATAR / VOICE PROVIDERS (informational — config.js yansıması) ----------------
+  function providerCard(title, rows, note){
+    var html = '<div class="card"><h3 style="margin-top:0;">'+esc(title)+'</h3><table><tbody>';
+    rows.forEach(function(r){ html += '<tr><td class="muted" style="width:220px;">'+esc(r[0])+'</td><td><b>'+esc(r[1])+'</b></td></tr>'; });
+    html += '</tbody></table>' + (note ? '<div class="note-gap" style="margin-top:14px;">'+note+'</div>' : '') + '</div>';
+    return html;
+  }
+  function renderAiProviders(el){
+    el.innerHTML = viewHead('AI Sağlayıcıları', 'agent-core/config.js — hangi "beyin" (LLM provider) nerede kullanılıyor. Bu ekran salt bilgilendirmedir; değiştirmek bir kod deploy\'u gerektirir.') +
+      providerCard('index.html (Müşteri Satış Ajanı — Elif Kaya)', [['LLM Provider','faq (FaqSalesBrainProvider)'],['Tip','Deterministik, API anahtarı gerektirmez'],['Diğer seçenekler','openai, anthropic (config.js\'te tanımlı, aktif değil)']]) +
+      providerCard('admin.html (VERALIQ Admin AI)', [['LLM Provider','adminAssistant (AdminAssistantBrainProvider)'],['Kaynak','POST /api/admin/assistant/query — platform genelinde salt-okunur']]) +
+      providerCard('portal.html (Şirket Yönetim Asistanı)', [['LLM Provider','companyAssistant (CompanyAssistantBrainProvider)'],['Kaynak','POST /api/assistant/query — JWT ile şirkete izole']],
+        'Zero Trust AI ilkesi: hiçbir LLM veritabanına doğrudan erişemez veya SQL üretemez — üç ajan da yalnızca sabit, deterministik sorgu fonksiyonlarını çağırır.');
+  }
+  function renderAvatarProviders(el){
+    el.innerHTML = viewHead('Avatar Sağlayıcıları', 'agent-core/config.js → avatarProvider. Tüm canlı asistanlar (Elif Kaya, VERALIQ Admin AI, Şirket Yönetim Asistanı) AYNI avatar motorunu paylaşır.') +
+      providerCard('Aktif Sağlayıcı', [['Provider','spatius (SpatiusAvatarProvider)'],['Persona / Görsel','Elif Kaya — Spatius\'un "Clara" kütüphane avatarı'],['Durum','Production\'da (2026-08-25, İmparator onayı)']],
+        'Diğer sağlayıcılar (mock, quicktalk, musetalk, anam) kod içinde tanımlı ama seçili değil. Gerçek bir self-hosted GPU avatarına (QuickTalk/MuseTalk) geçmek, agent-core/config.js\'teki tek bir satırı değiştirip yeniden deploy etmeyi gerektirir.');
+  }
+  function renderVoiceProviders(el){
+    el.innerHTML = viewHead('Ses Sağlayıcıları', 'agent-core/config.js → ttsProvider / sttProvider.') +
+      providerCard('Konuşma Sentezi (TTS)', [['Provider','googleTranslate (GoogleTranslateTTSProvider)'],['Kalite notu','Klasik/robotik — henüz "insan gibi" seviyede değil (İmparator onaylı, bilinen bir sınırlama)']]) +
+      providerCard('Konuşma Tanıma (STT)', [['Provider','webspeech (WebSpeechSTTProvider)'],['Tip','Tarayıcı-yerel, ücretsiz'],['Alternatif','whisper (kod içinde tanımlı, self-hosted sunucu gerektirir)']],
+        'Daha iyi/ücretsiz bir Türkçe TTS bulunduğunda yalnızca ttsProvider değişecek — avatarProvider aynı kalacak (İmparator\'ın bilinçli kararı).');
+  }
+
+  // ---------------- CRM / ERP / INTEGRATIONS — honest gap notices ----------------
+  function gapView(title, sub, note){
+    return function(el){ el.innerHTML = viewHead(title, sub) + '<div class="note-gap">'+note+'</div>'; };
+  }
+  var renderCrm = gapView('CRM', 'Harici CRM sistemleriyle (Salesforce, HubSpot, kendi CRM\'iniz) çift yönlü senkronizasyon.',
+    'Bu ekran henüz gerçek bir CRM entegrasyonu yapmıyor. Platformun kendi dahili "CRM"i zaten var — şirket portalındaki Leads/Customers/Sales ekranları (portal.html) gerçek D1 verisiyle çalışıyor. Harici bir CRM\'e senkronizasyon (webhook/OAuth) ayrı bir entegrasyon projesi gerektirir.');
+  var renderErp = gapView('ERP', 'Muhasebe/finans (ERP) sistemleriyle entegrasyon — fatura, tahsilat, cari hesap senkronizasyonu.',
+    'Bu ekran henüz gerçek bir ERP entegrasyonu yapmıyor. worker-portal/schema.sql\'de bu amaçla ayrılmış bir tablo henüz yok — bir sonraki fazda (Contract/Payment tabloları ile birlikte) eklenmesi planlanıyor.');
+  var renderIntegrations = gapView('Entegrasyonlar', 'WhatsApp Business API, e-posta, SMS ve üçüncü parti webhook entegrasyonları.',
+    'Bu ekran henüz gerçek bir entegrasyon yönetimi sunmuyor. Şu an platformda gerçekten çalışan tek dış entegrasyon, index.html\'deki canlı avatar/TTS altyapısıdır (Spatius). WhatsApp/e-posta/webhook entegrasyonları için ayrı bir API anahtarı + worker route\'u gerekecek.');
+
+  // ---------------- GÜVENLİK (madde 45 "Security") ----------------
+  async function renderSecurity(el){
+    el.innerHTML = viewHead('Güvenlik', 'RBAC, tenant izolasyonu ve hesap güvenliği durumu.') +
+      '<div class="card"><h3 style="margin-top:0;">Rol Tabanlı Erişim (RBAC)</h3>' +
+        '<table><tbody>' +
+        '<tr><td class="muted" style="width:220px;">veraliq_admin</td><td>Tüm şirketlere erişim, plan/durum değişikliği, şirket silme.</td></tr>' +
+        '<tr><td class="muted">company_owner</td><td>Kendi şirketinin tüm verisi + ekip yönetimi + onay verme.</td></tr>' +
+        '<tr><td class="muted">company_staff</td><td>Kendi şirketinin operasyonel verisi (onay/ekip yönetimi hariç).</td></tr>' +
+        '</tbody></table></div>' +
+      '<div class="card"><h3 style="margin-top:0;">Multi-Tenant İzolasyon</h3><p class="muted" style="font-size:13px;">Her sorgu, JWT içindeki company_id ile sunucu tarafında zorunlu kılınır (worker-portal/portal-api-worker.js → requireAuth()) — istemcinin gönderdiği hiçbir company_id parametresine güvenilmez. Bu, 41 otomatik testle (worker-portal/test/) doğrulanmış durumda.</p></div>' +
+      '<div class="note-gap">MFA, IP bazlı erişim kısıtlaması ve WAF kuralları uygulama kodu değil, Cloudflare hesap ayarlarıdır (Cloudflare Dashboard → Zero Trust / WAF) — bu panelden değiştirilemez, Cloudflare hesabınızdan yönetilmelidir.</div>';
+  }
+
+  // ---------------- AUDIT LOG (madde 45 "Audit Logs") ----------------
+  async function renderAudit(el){
+    el.innerHTML = viewHead('Audit Log', 'Platform genelinde son 200 işlem — GET /api/audit-log (gerçek veri).') + '<div id="auditWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    var wrap = document.getElementById('auditWrap');
     try {
-      var res = await api('/api/auth/admin/login', { method: 'POST', body: { email: emailVal, password: val } });
+      var data = await api('/api/audit-log');
+      if (!data.entries.length) { wrap.innerHTML = '<div class="empty">Henüz kayıt yok.</div>'; return; }
+      var html = '<table><thead><tr><th>Zaman</th><th>Aksiyon</th><th>Varlık</th><th>Şirket</th></tr></thead><tbody>';
+      data.entries.slice(0,100).forEach(function(e){
+        html += '<tr><td class="mono muted">'+fmtDate(e.created_at)+'</td><td>'+esc(e.action)+'</td><td class="mono muted">'+esc(e.entity_type||'-')+(e.entity_id?(' / '+esc(e.entity_id)):'')+'</td><td class="mono muted">'+esc(e.company_id||'—')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch(e) { wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; }
+  }
+
+  // ---------------- SİSTEM SAĞLIĞI (madde 45 "System Health") ----------------
+  async function renderHealth(el){
+    el.innerHTML = viewHead('Sistem Sağlığı', 'worker-portal API + D1 veritabanı canlı durumu (GET /api/health, kimlik doğrulama gerektirmez).') + '<div id="healthWrap" class="card"><div class="empty">Kontrol ediliyor…</div></div>';
+    var wrap = document.getElementById('healthWrap');
+    var t0 = performance.now();
+    try {
+      var resp = await fetch(API_BASE + '/api/health');
+      var data = await resp.json();
+      var ms = Math.round(performance.now() - t0);
+      wrap.innerHTML =
+        '<table><tbody>' +
+        '<tr><td class="muted" style="width:220px;">Worker</td><td class="mono">'+esc(data.worker||'—')+'</td></tr>' +
+        '<tr><td class="muted">Veritabanı (D1)</td><td><span class="pill '+(data.db==='ok'?'pill-green':'pill-red')+'">'+esc(data.db)+'</span></td></tr>' +
+        '<tr><td class="muted">Yanıt Süresi</td><td class="mono">'+ms+' ms</td></tr>' +
+        '<tr><td class="muted">Sunucu Zamanı</td><td class="mono">'+esc(data.time||'—')+'</td></tr>' +
+        '</tbody></table>';
+    } catch(e) {
+      wrap.innerHTML = '<div class="empty">API\'ye ulaşılamadı: '+esc(e.message)+'</div>';
+    }
+  }
+
+  // ---------------- LOGIN / LOGOUT / BOOT ----------------
+  function isAuthed(){ return !!getToken(); }
+  function showApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    navigate('dashboard');
+  }
+  function showLogin(){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').classList.remove('show');
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async function(){
+    var email = document.getElementById('adminEmail').value.trim();
+    var pass = document.getElementById('adminPass').value;
+    var errEl = document.getElementById('loginErr');
+    try {
+      var res = await api('/api/auth/admin/login', { method:'POST', body:{ email:email, password:pass } });
       setToken(res.token);
       errEl.style.display = 'none';
-      render();
-    } catch (e) {
-      errEl.textContent = errMsg(e);
-      errEl.style.display = 'block';
-    }
+      showApp();
+    } catch(e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
   });
-  document.getElementById('adminPass').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') document.getElementById('loginBtn').click();
-  });
-  document.getElementById('logoutBtn').addEventListener('click', function(){
-    clearToken();
-    render();
-  });
-  document.getElementById('addCompanyBtn').addEventListener('click', async function(){
-    var name = document.getElementById('cName').value.trim();
-    var user = document.getElementById('cUser').value.trim();
-    var pass = document.getElementById('cPass').value.trim();
-    var errEl = document.getElementById('companyErr');
-    if (!name || !user || !pass) {
-      errEl.textContent = 'Lütfen tüm alanları doldurun.';
-      errEl.style.display = 'block';
-      return;
-    }
-    try {
-      await api('/api/companies', { method: 'POST', body: { name: name, slug: slugify(name) || user, owner_email: user, owner_password: pass } });
-      errEl.style.display = 'none';
-      document.getElementById('cName').value = '';
-      document.getElementById('cUser').value = '';
-      document.getElementById('cPass').value = '';
-      toast('Şirket eklendi: ' + name);
-      renderCompanies();
-    } catch (e) {
-      errEl.textContent = errMsg(e);
-      errEl.style.display = 'block';
-    }
-  });
+  document.getElementById('adminPass').addEventListener('keydown', function(e){ if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+  document.getElementById('logoutBtn').addEventListener('click', function(){ clearToken(); showLogin(); });
+  document.getElementById('menuToggle').addEventListener('click', function(){ sidebarEl.classList.toggle('open'); });
 
-  render();
+  if (isAuthed()) showApp(); else showLogin();
 })();
 </script>
+<script type="module" src="agent-core/admin-widget.js?v=1"></script>
 </body>
 </html>

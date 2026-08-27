@@ -146,6 +146,56 @@ async function answerAssistantQuery(env, companyId, questionRaw) {
   return 'Bu soruyu şu an anlayamadım. Şunları sorabilirsiniz: "bugün kaç lead geldi", "bekleyen onaylar", "bugünkü satışlar", "<proje adı> kaç daire kaldı", "sunumda kaç birim var", "kaç birim rezerve".';
 }
 
+// VERALIQ Admin AI — platform-genelinde (tüm şirketler, company_id filtresi
+// YOK) deterministik niyet eşleştirme. Aynı Zero Trust AI ilkesi: hiçbir LLM
+// burada SQL üretmiyor, yalnızca bu sabit fonksiyonun eşleştirdiği GERÇEK
+// sorgular çalışıyor. Yalnızca veraliq_admin rolü bu uca erişebilir (bkz.
+// /api/admin/assistant/query route'u).
+async function answerAdminAssistantQuery(env, questionRaw) {
+  const q = questionRaw.toLocaleLowerCase('tr-TR');
+
+  if (/kaç şirket|şirket sayısı|toplam şirket/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM companies`).first();
+    const { a } = await env.DB.prepare(`SELECT COUNT(*) AS a FROM companies WHERE status = 'active'`).first();
+    return `Platformda toplam ${n} şirket kayıtlı, bunlardan ${a} tanesi aktif.`;
+  }
+  if (/bekleyen onay/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE status = 'pending'`).first();
+    return n > 0 ? `Platform genelinde ${n} bekleyen onay talebi var.` : 'Platform genelinde bekleyen onay talebi yok.';
+  }
+  if (/(kaç|toplam).*(kullanıcı)/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM users`).first();
+    return `Platformda toplam ${n} kullanıcı kayıtlı.`;
+  }
+  if (/(kaç|toplam).*(lead|müşteri)/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM leads`).first();
+    return `Platform genelinde toplam ${n} lead kayıtlı.`;
+  }
+  if (/(kaç|toplam).*(satış|satıldı|ciro)/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE status = 'SOLD'`).first();
+    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE status = 'SOLD'`).first();
+    return `Platform genelinde toplam ${n} birim satıldı, toplam ciro ${Number(total).toLocaleString('tr-TR')} TL.`;
+  }
+  if (/(proje sayısı|kaç proje)/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM projects`).first();
+    return `Platformda toplam ${n} proje kayıtlı.`;
+  }
+  if (/(ai|yapay zeka).*(sunum|görüşme)/.test(q) || /insan.*(sunum|görüşme)/.test(q)) {
+    const { n: ai } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unit.presentation_lock' AND json_extract(new_value, '$.agent_type') = 'ai'`).first();
+    const { n: hu } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unit.presentation_lock' AND json_extract(new_value, '$.agent_type') = 'human'`).first();
+    return `Şu ana kadar ${ai} sunum yapay zekâ ajanı tarafından, ${hu} sunum insan temsilci tarafından yapıldı.`;
+  }
+  if (/sistem sağlığı|health|çalışıyor mu/.test(q)) {
+    try {
+      await env.DB.prepare('SELECT 1').first();
+      return 'Sistem sağlıklı: veritabanı bağlantısı ve API normal çalışıyor.';
+    } catch (e) {
+      return 'Dikkat: veritabanı bağlantısında bir sorun tespit edildi.';
+    }
+  }
+  return 'Bu soruyu şu an anlayamadım. Şunları sorabilirsiniz: "kaç şirket var", "bekleyen onaylar", "toplam kullanıcı sayısı", "toplam lead sayısı", "toplam satış/ciro", "kaç proje var", "AI mi insan mı daha çok sunum yaptı", "sistem sağlığı nasıl".';
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -695,6 +745,74 @@ async function route(request, url, env) {
     }
     const { results } = await env.DB.prepare(query).bind(...params).all();
     return json({ entries: results });
+  }
+
+  // ---- ADMIN: platform-genelinde ekranlar (madde 45) ---------------------
+  if (path === '/api/admin/users' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { results } = await env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.role, u.company_id, c.name AS company_name, u.created_at
+       FROM users u LEFT JOIN companies c ON c.id = u.company_id
+       ORDER BY u.created_at DESC LIMIT 500`
+    ).all();
+    return json({ users: results });
+  }
+
+  if (path === '/api/admin/projects' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { results } = await env.DB.prepare(
+      `SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id ORDER BY p.created_at DESC LIMIT 500`
+    ).all();
+    return json({ projects: results });
+  }
+
+  if (path === '/api/admin/stats' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const [companies, activeCompanies, users, projects, units, sold, revenue, leads, pending, aiPres, humanPres, planRows] = await Promise.all([
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM companies`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM companies WHERE status = 'active'`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM users`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM projects`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM units`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE status = 'SOLD'`).first(),
+      env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE status = 'SOLD'`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM leads`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE status = 'pending'`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unit.presentation_lock' AND json_extract(new_value, '$.agent_type') = 'ai'`).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unit.presentation_lock' AND json_extract(new_value, '$.agent_type') = 'human'`).first(),
+      env.DB.prepare(`SELECT plan, COUNT(*) AS n FROM companies GROUP BY plan`).all(),
+    ]);
+    return json({
+      total_companies: companies.n, active_companies: activeCompanies.n, total_users: users.n,
+      total_projects: projects.n, total_units: units.n, total_sold: sold.n, total_revenue: revenue.total,
+      total_leads: leads.n, pending_approvals: pending.n,
+      ai_agent_presentations: aiPres.n, human_agent_presentations: humanPres.n,
+      plans: planRows.results,
+    });
+  }
+
+  if (path === '/api/admin/assistant/query' && method === 'POST') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { question } = await request.json();
+    if (!question || typeof question !== 'string') return json({ error: 'missing_fields' }, 400);
+    const answer = await answerAdminAssistantQuery(env, question);
+    await writeAudit(env, { user_id: auth.sub, action: 'admin_assistant.query', entity_type: 'admin_assistant', new_value: { question }, request });
+    return json({ answer });
+  }
+
+  // Herkese açık, JWT gerektirmez — worker/D1 canlı mı diye Admin Panel
+  // "System Health" ekranının kontrol ettiği hafif uç.
+  if (path === '/api/health' && method === 'GET') {
+    try {
+      await env.DB.prepare(`SELECT 1`).first();
+      return json({ ok: true, db: 'ok', worker: 'veraliq-portal-api', time: new Date().toISOString() });
+    } catch (e) {
+      return json({ ok: false, db: 'error', detail: String((e && e.message) || e) }, 503);
+    }
   }
 
   return json({ error: 'not_found' }, 404);

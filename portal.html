@@ -6,13 +6,13 @@
 <title>VERALIQ — Şirket Portalı</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="/assets/veraliq-mark.svg">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --panel-2:#1C2220; --line:#252C28;
     --text:#EDE9DF; --text-dim:#8A918C; --text-dim-soft:rgba(138,145,140,0.65);
     --accent:#BFA16A; --accent-text:#D4BB87; --accent-dim:rgba(191,161,106,0.14);
-    --accent-ink:#080A0A; --mint:#7EE0B2; --mint-dim:rgba(126,224,178,0.13); --mint-text:#8FEAC0;
+    --accent-ink:#080A0A; --mint:#7EE0B2; --mint-dim:rgba(126,224,178,0.13); --mint-text:#8FEAC0; --green:#7EE0B2;
     --red:#D93A40; --red-dim:rgba(217,58,64,0.12); --radius:10px; --sidebar-w:236px; --topbar-h:60px;
   }
   *{box-sizing:border-box;}
@@ -143,6 +143,91 @@
   @media(max-width:520px){
     .stat-grid{grid-template-columns:repeat(2,1fr);}
   }
+
+  /* ==================================================================
+     LIVE ŞİRKET YÖNETİM ASİSTANI — canlı görüntülü widget.
+     index.html'deki "Elif Kaya" ile AYNI window-chrome sistemi (bkz.
+     agent-core/widget-runtime.js). Tek fark: persona ve "beyin" — bkz.
+     agent-core/portal-widget.js (llmProvider:'companyAssistant', şirkete
+     özel/tenant-izole veri). CSS aynen index.html'den PORT edildi
+     (2026-08-27, İmparator: "şirket portalı içinde canlı asistan
+     baglayacaksın onuda unutma").
+     ================================================================== */
+  .agent-window{
+    position:fixed;z-index:1010;width:340px;height:480px;
+    background:#0B1220;border:1px solid rgba(255,255,255,0.10);
+    border-radius:14px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25),
+               0 0 0 1px rgba(126,224,178,0.06), 0 0 40px -8px rgba(126,224,178,0.16);
+    display:flex;flex-direction:column;
+    transition:width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
+               left .28s cubic-bezier(.2,.8,.2,1),right .28s cubic-bezier(.2,.8,.2,1),
+               top .28s cubic-bezier(.2,.8,.2,1),bottom .28s cubic-bezier(.2,.8,.2,1),
+               border-radius .28s ease,opacity .2s ease;
+  }
+  .agent-window[hidden]{display:none;}
+  .agent-window.dragging{transition:none;}
+  .agent-window[data-state="corner"][data-corner="br"]{right:20px;bottom:20px;left:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="bl"]{left:20px;bottom:20px;right:auto;top:auto;}
+  .agent-window[data-state="corner"][data-corner="tr"]{right:20px;top:88px;left:auto;bottom:auto;}
+  .agent-window[data-state="corner"][data-corner="tl"]{left:20px;top:88px;right:auto;bottom:auto;}
+  @media(max-width:480px){.agent-window[data-state="corner"]{width:calc(100vw - 24px);height:440px;left:12px !important;right:12px !important;}}
+  .agent-window[data-state="half"]{top:0;right:0;left:auto;bottom:auto;width:46vw;height:100vh;height:100dvh;border-radius:0;}
+  @media(max-width:760px){.agent-window[data-state="half"]{width:100vw;}}
+  .agent-window[data-state="fullscreen"]{top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;height:100dvh;border-radius:0;z-index:1600;}
+  .agent-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);cursor:grab;user-select:none;flex-shrink:0;}
+  .agent-header.grabbing{cursor:grabbing;}
+  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;}
+  .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
+  .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;}
+  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-controls{display:flex;gap:4px;flex-shrink:0;}
+  .agent-btn{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:#C6CCDB;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;}
+  .agent-btn:hover{background:rgba(255,255,255,0.10);color:#fff;}
+  .agent-btn-close:hover{background:rgba(217,58,64,0.25);color:#ff9098;}
+  .agent-stage{position:relative;flex:1;min-height:0;background:#050810;}
+  .agent-video{width:100%;height:100%;object-fit:cover;display:block;background:#050810;}
+  .agent-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0B1220;transition:opacity .3s ease;}
+  .agent-loading.hide{opacity:0;pointer-events:none;}
+  .agent-spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--accent);animation:agent-spin 0.85s linear infinite;}
+  @keyframes agent-spin{to{transform:rotate(360deg);}}
+  .agent-loading-text{font-size:12.5px;color:#9AA3B8;font-family:'IBM Plex Mono',monospace;}
+  .agent-mic-blocked{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(217,58,64,0.14);border:1px solid rgba(217,58,64,0.35);border-radius:8px;padding:10px 12px;}
+  .agent-mic-blocked p{margin:0;font-size:11.5px;line-height:1.5;color:#ffd7d9;}
+  .agent-indicator{position:absolute;left:14px;bottom:14px;display:flex;gap:3px;align-items:flex-end;height:16px;}
+  .agent-indicator span{width:3px;background:var(--green);border-radius:2px;animation:agent-bounce 0.9s ease-in-out infinite;}
+  .agent-indicator span:nth-child(1){height:6px;animation-delay:0s;}
+  .agent-indicator span:nth-child(2){height:14px;animation-delay:.15s;}
+  .agent-indicator span:nth-child(3){height:9px;animation-delay:.3s;}
+  @keyframes agent-bounce{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
+  .agent-join-gate{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;padding:0 16px 22px;background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.55) 65%,rgba(5,8,16,0.85) 100%);transition:opacity .25s ease;}
+  .agent-join-gate[hidden]{display:none;}
+  .agent-join-btn{display:flex;align-items:center;gap:9px;padding:13px 22px;border-radius:999px;border:none;cursor:pointer;background:var(--accent);color:var(--accent-ink);font-family:'Inter',sans-serif;font-weight:600;font-size:14.5px;box-shadow:0 8px 24px rgba(191,161,106,0.35);transition:transform .15s ease,box-shadow .15s ease;}
+  .agent-join-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(191,161,106,0.45);}
+  .agent-join-btn:active{transform:translateY(0);}
+  .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
+  @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .agent-join-hint{margin-top:10px;font-size:11.5px;color:rgba(237,233,223,0.75);font-family:'IBM Plex Mono',monospace;text-align:center;}
+  .agent-captions{position:absolute;left:0;right:0;bottom:0;z-index:2;max-height:46%;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:14px 12px 12px;background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.75) 40%,rgba(5,8,16,0.92) 100%);scrollbar-width:thin;}
+  .agent-captions[hidden]{display:none;}
+  .agent-caption-line{max-width:82%;padding:7px 12px;border-radius:12px;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;animation:agent-caption-in .2s ease;word-wrap:break-word;}
+  @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .agent-caption-line.customer{align-self:flex-end;text-align:right;background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);color:#F5EEDD;border-bottom-right-radius:3px;}
+  .agent-caption-line.agent{align-self:flex-start;text-align:left;background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);color:#E7F7EF;border-bottom-left-radius:3px;}
+  @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
+  .agent-bubble{position:fixed;z-index:1010;width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;}
+  .agent-bubble[hidden]{display:none;}
+  .agent-bubble[data-corner="br"]{right:20px;bottom:20px;}
+  .agent-bubble[data-corner="bl"]{left:20px;bottom:20px;}
+  .agent-bubble[data-corner="tr"]{right:20px;top:88px;}
+  .agent-bubble[data-corner="tl"]{left:20px;top:88px;}
+  .agent-bubble-video{width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-dot{position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;background:#5B6479;border:2px solid #0B1220;}
+  .agent-bubble-dot.live{background:var(--green);}
+  .agent-reopen{position:fixed;right:20px;bottom:20px;z-index:1010;padding:12px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.14);display:flex;align-items:center;gap:8px;}
+  .agent-reopen[hidden]{display:none;}
+  .agent-reopen::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);}
 </style>
 </head>
 <body>
@@ -955,5 +1040,51 @@
   if (getToken()) { showApp(); } else { showLogin(); }
 })();
 </script>
+
+<!-- ============================================================
+     Canlı AI Agent "Şirket Yönetim Asistanı" — bkz. index.html'deki
+     "Elif Kaya" ile AYNI mimari (agent-core/widget-runtime.js), farklı
+     persona + farklı beyin (agent-core/portal-widget.js). Tüm ekranlarda
+     (dashboard/inventory/leads/vb.) görünür — router yalnızca .content
+     alanını değiştirir, bu widget sayfa kabuğunun (#app dışında) bir
+     parçasıdır ve her zaman aynı kalır.
+     ============================================================ -->
+<div id="agentWindow" class="agent-window" data-state="corner" data-corner="br" hidden>
+  <div class="agent-header" id="agentHeader">
+    <div class="agent-header-id">
+      <span class="agent-dot" id="agentStatusDot"></span>
+      <span class="agent-name">Şirket Asistanı</span>
+    </div>
+    <div class="agent-controls">
+      <button type="button" class="agent-btn" id="agentHalfBtn" title="Yarım ekran" aria-label="Yarım ekran">▣</button>
+      <button type="button" class="agent-btn" id="agentFullBtn" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+      <button type="button" class="agent-btn" id="agentMinBtn" title="Küçült" aria-label="Küçült">–</button>
+      <button type="button" class="agent-btn agent-btn-close" id="agentCloseBtn" title="Kapat" aria-label="Kapat">✕</button>
+    </div>
+  </div>
+  <div class="agent-stage">
+    <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <div class="agent-loading" id="agentLoading">
+      <div class="agent-spinner"></div>
+      <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
+    </div>
+    <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
+      <p>Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Assistant menüsü).</p>
+    </div>
+    <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
+    <div class="agent-captions" id="agentCaptions" hidden></div>
+    <div class="agent-join-gate" id="agentJoinGate" hidden>
+      <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
+      <div class="agent-join-hint">Mikrofonunuzu kullanmak için tıklayın</div>
+    </div>
+  </div>
+</div>
+<button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden aria-label="Şirket Asistanı'nı genişlet">
+  <video id="agentBubbleVideo" class="agent-bubble-video" autoplay playsinline muted></video>
+  <span class="agent-bubble-dot" id="agentBubbleDot"></span>
+</button>
+<button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Asistanı Aç</button>
+
+<script type="module" src="agent-core/portal-widget.js?v=1"></script>
 </body>
 </html>

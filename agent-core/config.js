@@ -73,6 +73,12 @@ const LOADERS = {
     faq: () => import('./llm-providers/faq-sales-brain-provider.js').then((m) => m.FaqSalesBrainProvider),
     openai: () => import('./llm-providers/openai-provider.js').then((m) => m.OpenAIProvider),
     anthropic: () => import('./llm-providers/anthropic-provider.js').then((m) => m.AnthropicProvider),
+    // "VERALIQ Admin AI" (admin.html) — platform-genelinde, salt-okunur,
+    // deterministik worker-portal sorguları. Bkz. admin-widget.js.
+    adminAssistant: () => import('./llm-providers/admin-assistant-brain-provider.js').then((m) => m.AdminAssistantBrainProvider),
+    // "Şirket Yönetim Asistanı" (portal.html) — şirkete özel (JWT ile
+    // tenant-izole), deterministik worker-portal sorguları. Bkz. portal-widget.js.
+    companyAssistant: () => import('./llm-providers/company-assistant-brain-provider.js').then((m) => m.CompanyAssistantBrainProvider),
   },
 };
 

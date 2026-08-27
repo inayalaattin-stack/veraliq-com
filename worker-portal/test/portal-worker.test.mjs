@@ -42,8 +42,13 @@ class BoundStmt {
 class PrepStmt {
   constructor(db, sql) { this.db = db; this.sql = sql; }
   bind(...params) { return new BoundStmt(this.db, this.sql, params); }
-  // allow .run() with no bind (no params)
+  // allow .run()/.all()/.first() with no bind() call (no params) — real
+  // Cloudflare D1 supports calling these directly on prepare() when the
+  // query has no placeholders (see e.g. /api/admin/stats' parameterless
+  // COUNT(*) queries in portal-api-worker.js).
   async run() { return new BoundStmt(this.db, this.sql, []).run(); }
+  async all() { return new BoundStmt(this.db, this.sql, []).all(); }
+  async first() { return new BoundStmt(this.db, this.sql, []).first(); }
 }
 class D1Shim {
   constructor(db) { this.db = db; }
@@ -289,6 +294,42 @@ const run = async () => {
 
   r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'Abc12345!' }), env);
   check('login rejected with OLD password after change', r.status === 401);
+
+  // 16. Admin panel — cross-company platform views (madde 45)
+  r = await worker.fetch(req('GET', '/api/admin/users', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('admin can list all users across companies', r.status === 200 && Array.isArray(data.users) && data.users.length >= 3, data);
+
+  r = await worker.fetch(req('GET', '/api/admin/users', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('SECURITY: company_owner cannot call /api/admin/users (401)', r.status === 401);
+
+  r = await worker.fetch(req('GET', '/api/admin/projects', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('admin can list all projects across companies', r.status === 200 && data.projects.some(p => p.company_name === 'ABC İnşaat'), data);
+
+  r = await worker.fetch(req('GET', '/api/admin/stats', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('admin stats reports platform totals', r.status === 200 && data.total_companies >= 2 && data.total_sold === 2 && data.total_revenue === 10450000, data);
+
+  r = await worker.fetch(req('GET', '/api/admin/stats', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('SECURITY: company_owner cannot call /api/admin/stats (401)', r.status === 401);
+
+  // 17. VERALIQ Admin AI — platform-wide deterministic assistant
+  r = await worker.fetch(req('POST', '/api/admin/assistant/query', { question: 'Platformda kaç şirket var?' }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('admin assistant answers company-count question', r.status === 200 && /şirket kayıtlı/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/admin/assistant/query', { question: 'Toplam satış ve ciro nedir?' }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('admin assistant answers platform sales/revenue question', r.status === 200 && /10.450.000/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/admin/assistant/query', { question: 'kaç şirket var?' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('SECURITY: company_owner cannot call /api/admin/assistant/query (401)', r.status === 401);
+
+  // 18. Public health check (no auth required)
+  r = await worker.fetch(req('GET', '/api/health'), env);
+  data = await r.json();
+  check('health check reports ok with no auth', r.status === 200 && data.ok === true && data.db === 'ok', data);
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
