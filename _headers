@@ -36,6 +36,16 @@
 # kapsamlı bir CSP anahtar kelimesi (rastgele string->kod eval() çalıştırmayı
 # AÇMIYOR). script-src ve worker-src'ye eklendi.
 #
+# GÜNCELLEME (2026-08-27) — worker-portal eklendi: admin.html/portal.html
+# artık gerçek D1+Worker backend'ine (worker-portal/, bkz.
+# docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md) fetch() ile bağlanıyor.
+# `https://veraliq-portal-api.veraliq-com.workers.dev` connect-src'ye
+# eklenmezse tarayıcı isteği CSP seviyesinde sessizce engelliyor ve
+# fetch() "Failed to fetch" hatasıyla başarısız oluyor (CORS hatasından
+# AYRI bir mekanizma — worker'ın kendi CORS ayarları doğru olsa bile CSP
+# bloklarsa istek worker'a hiç ulaşmıyor). Bu, canlıda ilk test sırasında
+# tam olarak gözlemlendi ve bu satırla düzeltildi.
+#
 # GÜNCELLEME (2026-08-25) — gerçek CDN/API domain'leri bulundu: Claude'un
 # kendi Chrome oturumundan canlıya karşı otomatik test sırasında
 # window.fetch sarmalanarak SDK'nın GERÇEKTE hangi domain'lere istek attığı
@@ -53,7 +63,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(self), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://esm.sh https://*.spatius.ai https://*.spatialwalk.top https://*.spatialwalk.ai https://*.spatialwalk.cloud blob:; worker-src 'self' 'wasm-unsafe-eval' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://veraliq-spatius-session.veraliq-com.workers.dev https://esm.sh https://*.anam.ai wss://*.anam.ai https://*.spatius.ai wss://*.spatius.ai https://*.spatialwalk.top wss://*.spatialwalk.top https://*.spatialwalk.ai wss://*.spatialwalk.ai https://*.spatialwalk.cloud wss://*.spatialwalk.cloud; img-src 'self' data: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud https://*.spatialwalk.ai; media-src 'self' blob: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://esm.sh https://*.spatius.ai https://*.spatialwalk.top https://*.spatialwalk.ai https://*.spatialwalk.cloud blob:; worker-src 'self' 'wasm-unsafe-eval' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://veraliq-spatius-session.veraliq-com.workers.dev https://veraliq-portal-api.veraliq-com.workers.dev https://esm.sh https://*.anam.ai wss://*.anam.ai https://*.spatius.ai wss://*.spatius.ai https://*.spatialwalk.top wss://*.spatialwalk.top https://*.spatialwalk.ai wss://*.spatialwalk.ai https://*.spatialwalk.cloud wss://*.spatialwalk.cloud; img-src 'self' data: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud https://*.spatialwalk.ai; media-src 'self' blob: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
 
 # script.js changes frequently during active development; avoid the platform's
 # default long asset cache (previously 4h) causing stale JS on live visits.
