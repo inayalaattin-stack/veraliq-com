@@ -23,7 +23,7 @@ compatibility_date = "2026-08-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "veraliq-portal-db"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "64002d7d-4a33-4f4c-bddf-ca3302ff08ed"
 
 # ---------------------------------------------------------------------------
 # Presentation Lock — Durable Object (madde 33-35: gerçek, race-condition
