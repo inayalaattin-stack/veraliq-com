@@ -16,6 +16,7 @@ Kaynak: `worker-portal/portal-api-worker.js`. Tüm yanıtlar JSON. Auth: `Author
 | Method | Path | Rol | Açıklama |
 |---|---|---|---|
 | GET/PATCH | `/api/companies/me` | owner/staff | Kendi şirket bilgisi; PATCH yalnızca `name` (plan/status admin-only) |
+| GET | `/api/companies/me/export` | **yalnızca owner** | Şirketin TÜM verisinin (projeler/birimler/lead/müşteri/görüşme/onay/audit) tek JSON'da dışa aktarımı — madde 61-62, `password_hash` DAHİL EDİLMEZ, portal.html Settings ekranında "Tüm Verilerimi İndir" butonu |
 | GET | `/api/team` | owner/staff | Kendi şirketinin kullanıcı listesi |
 | POST | `/api/team` | owner | Yeni `company_staff` davet eder |
 | DELETE | `/api/team/:id` | owner | Kaldırır (owner kaldırılamaz) |

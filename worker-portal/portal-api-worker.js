@@ -339,6 +339,54 @@ async function route(request, url, env) {
     return json({ ok: true });
   }
 
+  // Şirket-başına TAM veri export'u (65 maddelik master promptun 61-62.
+  // maddesi: "her şirket kendi verisini istediği an dışa aktarabilmeli,
+  // VERALIQ'a veya herhangi bir provider'a kilitlenmemeli"). Yalnızca
+  // company_owner (company_staff DEĞİL — bu, tüm şirketin ham verisini tek
+  // seferde dışa aktaran hassas bir işlem, ekip üyesi değil şirket sahibinin
+  // yetkisinde olmalı). company_id JWT'den geliyor, hiçbir cross-tenant
+  // sızıntı riski yok (her sorgu WHERE company_id = ? ile scope'lu).
+  // password_hash gibi hassas alanlar KASITLI OLARAK export'a DAHİL EDİLMİYOR.
+  if (path === '/api/companies/me/export' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const cid = auth.company_id;
+    const all = async (sql) => (await env.DB.prepare(sql).bind(cid).all()).results;
+    const [
+      companyRow, users, projects, units, leads, customers, interests,
+      conversations, messages, summaries, approvals, documents, auditLog,
+    ] = await Promise.all([
+      env.DB.prepare(`SELECT id, name, slug, plan, status, remove_branding, created_at FROM companies WHERE id = ?`).bind(cid).first(),
+      all(`SELECT id, email, name, role, created_at FROM users WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT * FROM projects WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT * FROM units WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT * FROM leads WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT * FROM customers WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT ci.* FROM customer_interests ci JOIN customers c ON c.id = ci.customer_id WHERE c.company_id = ? ORDER BY ci.created_at ASC`),
+      all(`SELECT * FROM conversations WHERE company_id = ? ORDER BY started_at ASC`),
+      all(`SELECT cm.* FROM conversation_messages cm JOIN conversations co ON co.id = cm.conversation_id WHERE co.company_id = ? ORDER BY cm.created_at ASC`),
+      all(`SELECT cs.* FROM conversation_summaries cs JOIN conversations co ON co.id = cs.conversation_id WHERE co.company_id = ? ORDER BY cs.created_at ASC`),
+      all(`SELECT * FROM approval_requests WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT id, project_id, filename, file_type, category, created_at FROM documents WHERE company_id = ? ORDER BY created_at ASC`),
+      all(`SELECT * FROM audit_log WHERE company_id = ? ORDER BY created_at DESC LIMIT 5000`),
+    ]);
+    if (!companyRow) return json({ error: 'not_found' }, 404);
+    await writeAudit(env, { company_id: cid, user_id: auth.sub, action: 'company.data_export', entity_type: 'company', entity_id: cid, request });
+    return json({
+      exported_at: new Date().toISOString(),
+      export_version: 1,
+      company: companyRow,
+      users, projects, units, leads, customers,
+      customer_interests: interests,
+      conversations,
+      conversation_messages: messages,
+      conversation_summaries: summaries,
+      approval_requests: approvals,
+      documents,
+      audit_log: auditLog,
+    });
+  }
+
   // ---- TEAM (madde 18 "Team") — company_owner kendi şirketinin kullanıcılarını yönetir ----
   if (path === '/api/team' && method === 'GET') {
     const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);

@@ -1009,7 +1009,14 @@
         '<div class="row"><div class="field"><label>Mevcut Şifre</label><input type="password" id="curPass"></div><div class="field"><label>Yeni Şifre</label><input type="password" id="newPass"></div></div>' +
         '<button class="btn btn-primary btn-sm" id="changePassBtn">Şifreyi Değiştir</button>' +
         '<div class="err-msg" id="passErr" style="display:none;"></div>' +
-      '</div>';
+      '</div>' +
+      (owner ?
+      '<div class="card">' +
+        '<div class="stat-label" style="margin-bottom:12px;">Verilerinizi Dışa Aktarın</div>' +
+        '<div class="hint" style="margin-bottom:12px;">Şirketinize ait TÜM veriler (projeler, birimler, lead\'ler, müşteriler, görüşme geçmişi, onaylar, denetim kaydı) tek bir JSON dosyası olarak indirilir. VERALIQ\'a veya herhangi bir sağlayıcıya bağımlı kalmadan verinizin her zaman sizin olduğunu garanti eder.</div>' +
+        '<button class="btn btn-ghost btn-sm" id="exportDataBtn">Tüm Verilerimi İndir (.json)</button>' +
+        '<div class="err-msg" id="exportErr" style="display:none;"></div>' +
+      '</div>' : '');
     if (owner) {
       document.getElementById('saveCompanyBtn').addEventListener('click', async function(){
         var name = document.getElementById('stCompanyName').value.trim();
@@ -1032,6 +1039,29 @@
         toast('Şifreniz güncellendi.');
       } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
     });
+    var exportBtn = document.getElementById('exportDataBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', async function(){
+        var errEl = document.getElementById('exportErr');
+        var originalLabel = exportBtn.textContent;
+        exportBtn.disabled = true; exportBtn.textContent = 'Hazırlanıyor…';
+        try {
+          var data = await api('/api/companies/me/export');
+          var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          var stamp = (data.exported_at || '').replace(/[:.]/g, '-');
+          var slug = (data.company && data.company.slug) || 'sirket';
+          a.href = url;
+          a.download = 'veraliq-export-' + slug + '-' + stamp + '.json';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+          errEl.style.display = 'none';
+          toast('Verileriniz indirildi.');
+        } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+        exportBtn.disabled = false; exportBtn.textContent = originalLabel;
+      });
+    }
   }
 
   // ============================================================

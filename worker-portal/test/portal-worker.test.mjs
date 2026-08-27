@@ -478,6 +478,43 @@ const run = async () => {
   data = await r.json();
   check('SECURITY: bozuk JSON body 400 döner (500 çökmesi/detay sızıntısı değil)', r.status === 400 && data.error === 'invalid_json' && data.detail === undefined, data);
 
+  // ---------------------------------------------------------------------
+  // Şirket-başına tam veri export'u (65 maddelik master promptun 61-62.
+  // maddesi — "hiçbir şirket VERALIQ'a veya bir provider'a kilitlenmemeli,
+  // kendi verisini istediği an dışa aktarabilmeli").
+  // ---------------------------------------------------------------------
+  r = await worker.fetch(req('GET', '/api/companies/me/export', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check(
+    'company_owner tam veri export\'u alabilir (200, tüm bölümler mevcut)',
+    r.status === 200 && data.company && Array.isArray(data.projects) && Array.isArray(data.units) &&
+      Array.isArray(data.leads) && Array.isArray(data.customers) && Array.isArray(data.conversations) &&
+      Array.isArray(data.conversation_messages) && Array.isArray(data.conversation_summaries) &&
+      Array.isArray(data.approval_requests) && Array.isArray(data.documents) && Array.isArray(data.audit_log) &&
+      Array.isArray(data.users),
+    data
+  );
+  check('export: bu testte oluşturulan ≥2 müşteri (sqliCustomerId dahil) export\'ta görünüyor', data.customers.length >= 2, data.customers.map(c => c.id));
+  check('export: en az 1 görüşme (conversationId) export\'ta görünüyor', data.conversations.some(c => c.id === conversationId), data.conversations);
+  check('SECURITY(export): password_hash hiçbir kullanıcı kaydında YOK (users listesi sızdırmıyor)', data.users.every(u => !('password_hash' in u)), data.users);
+
+  r = await worker.fetch(req('GET', '/api/companies/me/export', null, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  check('TENANT ISOLATION(export): XYZ\'in export\'unda ABC\'nin hiçbir müşteri/görüşme kaydı YOK', !data.customers.some(c => c.id === sqliCustomerId) && !data.conversations.some(c => c.id === conversationId), data);
+
+  // company_staff (owner DEĞİL) tam export'u ÇEKEMEMELİ — bu, şirketin TÜM
+  // ham verisini tek seferde dışa aktaran hassas bir işlem, yalnızca
+  // company_owner yetkisinde olmalı.
+  r = await worker.fetch(req('POST', '/api/team', { email: 'export-test-staff@veraliq.com', password: 'Staff123!', name: 'Test Staff' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const exportTestStaffId = data.id;
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'export-test-staff@veraliq.com', password: 'Staff123!' }), env);
+  data = await r.json();
+  const exportTestStaffToken = data.token;
+  r = await worker.fetch(req('GET', '/api/companies/me/export', null, { Authorization: 'Bearer ' + exportTestStaffToken }), env);
+  check('SECURITY(export): company_staff (owner değil) tam export çekemez (401)', r.status === 401);
+  await worker.fetch(req('DELETE', `/api/team/${exportTestStaffId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };
