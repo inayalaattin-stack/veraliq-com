@@ -48,12 +48,19 @@ bash scripts/create-full-backup.sh
 
 ## 5. Şifreleme
 
-⚠️ EKSİK: `wrangler d1 export` şifrelenmemiş bir `.sql` dosyası üretir. Bütünlük (`sha256sum`) kontrol ediliyor ama İÇERİK şifrelenmiyor. Şifreleme isterseniz: `gpg --symmetric --cipher-algo AES256 backup.sql` (yerel bir parola ile) — bu da scripte tek satır olarak eklenebilir, şu an eklenmedi çünkü parola yönetimi kararı (nerede saklanacak) size ait olmalı.
+✅ GERÇEK, ÇALIŞIYOR (2026-08-27 eklendi) — `scripts/backup-d1.sh` artık `VERALIQ_BACKUP_PASSPHRASE` ortam değişkeni SETLİYSE (veya interaktif çalıştırıldığında sorulduğunda bir parola girilirse) yedeği AES-256-CBC + PBKDF2 ile (openssl, ek bağımlılık yok) şifreliyor:
+
+```powershell
+$env:VERALIQ_BACKUP_PASSPHRASE = "kendi-güçlü-parolanız"
+bash scripts/backup-d1.sh
+```
+
+**Şifreleme HER SEFERİNDE hemen bir deşifre-geri-okuma testiyle doğrulanıyor** — bu tur geçmezse şifreli dosya silinir, düz metin yedek korunur (asla "açılamayan şifreli yedek" ile baş başa kalmazsınız). Doğrulama geçerse düz metin `.sql` silinir, yalnızca `.sql.enc` + `.sql.enc.sha256` kalır. Restore: `scripts/restore-d1.sh` artık `.enc` uzantısını otomatik tanıyor, aynı parolayla (env değişkeni veya sorulduğunda) önce deşifre edip sonra geri yüklüyor; yanlış parola temiz bir hatayla reddediliyor. Parola KESİNLİKLE script içine yazılmıyor veya bir dosyaya kaydedilmiyor — yalnızca ortam değişkeninden okunuyor ya da bir kere gizli girdi (`read -s`) olarak soruluyor. Bu mantık, sandbox'ta gerçek `openssl enc`/`openssl enc -d` çağrılarıyla uçtan uca test edildi (doğru parola → byte-byte eşleşen geri okuma; yanlış parola → temiz, öngörülebilir hata) — canlı `wrangler d1 export` çağrısı sandbox'tan yapılamadığı için o kısım sahte bir `wrangler` ile simüle edildi, ŞİFRELEME MANTIĞININ KENDİSİ gerçek openssl ile test edildi.
 
 ## 6. Versiyonlu yedekler
 
 ✅ KISMEN VAR: her `backup-d1.sh` çalıştırması dosya adına saat damgası (`<tarih>-<saat>`) ekliyor, hiçbir dosyanın üzerine yazmıyor — yani doğal olarak versiyonlu. Retention policy (eski yedekleri N gün sonra silme) henüz YOK.
 
-## 7. Şirket bazlı export (madde 28 — "Company Data Export")
+## 7. Şirket bazlı export (madde 28, 61-62 — "Company Data Export")
 
-⚠️ EKSİK: şu an tek bir şirketin verisini (customers/leads/projects/inventory/documents/conversations/sales) tek başına dışa aktaran bir API ucu YOK — `wrangler d1 export` TÜM veritabanını (tüm şirketler) dışa aktarıyor. Şirket-bazlı export için `worker-portal/portal-api-worker.js`'e yeni bir `GET /api/companies/me/export` ucu eklenmesi gerekir (yalnızca `company_owner`, JSON formatında kendi şirketinin tüm tablolarını döndürür) — bu, bir sonraki geliştirme turunda eklenebilir.
+✅ GERÇEK, ÇALIŞIYOR (2026-08-27 eklendi) — `GET /api/companies/me/export` (yalnızca `company_owner`) şirketin TÜM verisini (projects/units/leads/customers/customer_interests/conversations/conversation_messages/conversation_summaries/approval_requests/documents-metadata/audit_log, `password_hash` HARİÇ) tek bir JSON olarak döndürüyor. portal.html'in Settings ekranında "Tüm Verilerimi İndir (.json)" butonuyla tarayıcıdan doğrudan indirilebiliyor. 6 test ile doğrulandı (tam içerik, tenant izolasyonu, password_hash sızmadığı, yalnızca owner'ın erişebildiği) — bkz. API_DOCUMENTATION.md.
