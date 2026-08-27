@@ -713,12 +713,23 @@ async function route(request, url, env) {
     const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
     if (!auth) return json({ error: 'unauthorized' }, 401);
     const body = await request.json();
+    // leads.customer_id (2026-08-27, madde 61-62 — leads/customers bağlantısı,
+    // bkz. migrations/0002). company_id İSTEMCİDEN gelen customer_id'ye
+    // GÜVENMEDEN doğrulanıyor — başka bir şirketin müşterisine bağlamayı
+    // denemek sessizce yok sayılır (null olarak kalır), 400 değil, çünkü bu
+    // "isteğin biçimi bozuk" değil "verilen id bu şirkete ait değil" anlamına
+    // gelir ve lead oluşturmayı engellememesi daha iyi bir UX.
+    let customerId = null;
+    if (body.customer_id) {
+      const c = await env.DB.prepare(`SELECT id FROM customers WHERE id = ? AND company_id = ?`).bind(body.customer_id, auth.company_id).first();
+      if (c) customerId = c.id;
+    }
     const id = generateId('lead');
     await env.DB.prepare(
-      `INSERT INTO leads (id, company_id, project_id, name, phone, email, budget, interest, source, assigned_type, status, notes, ai_summary, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, datetime('now'), datetime('now'))`
+      `INSERT INTO leads (id, company_id, project_id, customer_id, name, phone, email, budget, interest, source, assigned_type, status, notes, ai_summary, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, datetime('now'), datetime('now'))`
     ).bind(
-      id, auth.company_id, body.project_id || null, body.name || '', body.phone || null, body.email || null,
+      id, auth.company_id, body.project_id || null, customerId, body.name || '', body.phone || null, body.email || null,
       body.budget ?? null, body.interest || '', body.source || 'manual', body.assigned_type || 'HUMAN',
       body.notes || '', body.ai_summary || ''
     ).run();
@@ -737,6 +748,15 @@ async function route(request, url, env) {
       const fields = ['name', 'phone', 'email', 'budget', 'interest', 'assigned_to', 'assigned_type', 'status', 'notes', 'ai_summary'];
       const sets = [], vals = [];
       for (const f of fields) if (f in body) { sets.push(`${f} = ?`); vals.push(body[f]); }
+      if ('customer_id' in body) {
+        if (body.customer_id === null) {
+          sets.push('customer_id = ?'); vals.push(null);
+        } else {
+          const c = await env.DB.prepare(`SELECT id FROM customers WHERE id = ? AND company_id = ?`).bind(body.customer_id, auth.company_id).first();
+          if (!c) return json({ error: 'invalid_customer_id' }, 400);
+          sets.push('customer_id = ?'); vals.push(c.id);
+        }
+      }
       if (!sets.length) return json({ error: 'no_fields' }, 400);
       sets.push(`updated_at = datetime('now')`);
       vals.push(leadId);
@@ -785,7 +805,10 @@ async function route(request, url, env) {
          WHERE ci.customer_id = ? ORDER BY ci.created_at DESC`
       ).bind(customerId).all();
       const conversations = await env.DB.prepare(`SELECT * FROM conversations WHERE customer_id = ? ORDER BY started_at DESC LIMIT 50`).bind(customerId).all();
-      return json({ customer, interests: interests.results, conversations: conversations.results });
+      // leads.customer_id (madde 61-62, bkz. migrations/0002): bu müşteriye
+      // bağlı dahili CRM lead kayıtları da (varsa) müşteri detayında görünsün.
+      const leads = await env.DB.prepare(`SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC`).bind(customerId).all();
+      return json({ customer, interests: interests.results, conversations: conversations.results, leads: leads.results });
     }
     const body = await request.json();
     const fields = ['name', 'phone', 'email', 'budget', 'preferences', 'sales_status', 'consent_status', 'notes'];

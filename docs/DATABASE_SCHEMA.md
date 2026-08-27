@@ -32,7 +32,7 @@ YALNIZCA metadata (`filename`, `file_type`, `category`, `r2_key`). Gerçek dosya
 ### `leads`
 Dahili minimal CRM. `source` (website_agent/manual), `assigned_type` (AI/HUMAN), `status` (new/qualified/presentation/negotiating/won/lost), `ai_summary` (ajanın ürettiği yapılandırılmış özet metni).
 
-**Not (65 maddelik yeni promptun 4. maddesi ile karşılaştırma)**: bu tablo, istenen tam "Customer Memory" şemasının (interested_projects/interested_units/previous_presentations/previous_conversations/consent_status/appointments gibi çoklu-ilişkili alanlar) yalnızca BİR KISMINI karşılıyor — `leads` tek bir `project_id`'ye bağlanabiliyor, çoklu proje/birim ilgisi veya geçmiş sunum/görüşme listesi ayrı tablolar olarak YOK. Bu, bir sonraki migration'ın konusu.
+**Güncelleme (2026-08-27, `migrations/0002_leads_customer_link.sql`)**: `leads.customer_id` eklendi — dahili minimal CRM (`leads`) artık zengin, yapılandırılmış müşteri kaydına (`customers`, aşağıda) bağlanabiliyor. `POST/PATCH /api/leads` `customer_id` kabul ediyor (başka bir şirketin müşterisine bağlama denemesi sessizce reddediliyor/null kalıyor — tenant izolasyonu), `GET /api/customers/:id` artık bağlı lead'leri de (`leads` alanı) döndürüyor. Bu, istenen tam "Customer Memory" şemasının eksik parçasını kapatıyor — çoklu proje/birim ilgisi zaten `customer_interests` ile, görüşme geçmişi `conversations`/`conversation_messages`/`conversation_summaries` ile karşılanıyordu, eksik olan tek şey dahili CRM (`leads`) ile bu yeni tablolar arasındaki köprüydü.
 
 ### `approval_requests`
 Onay motoru (temel versiyon). `type` (discount/payment_plan/reservation/contract/other), `requested_by` ('AI' veya user_id), `status` (pending/approved/rejected). Yalnızca `company_owner` onaylayabilir/reddedebilir.

@@ -515,6 +515,44 @@ const run = async () => {
   check('SECURITY(export): company_staff (owner değil) tam export çekemez (401)', r.status === 401);
   await worker.fetch(req('DELETE', `/api/team/${exportTestStaffId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
 
+  // ---------------------------------------------------------------------
+  // leads.customer_id — leads/customers bağlantısı (madde 61-62, migrations/0002)
+  // ---------------------------------------------------------------------
+  r = await worker.fetch(req('POST', '/api/leads', { name: 'Mehmet Öztürk', phone: '5559998877', customer_id: sqliCustomerId }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('lead oluştururken geçerli bir customer_id\'ye bağlanabilir', r.status === 201 && !!data.id, data);
+  const linkedLeadId = data.id;
+
+  r = await worker.fetch(req('GET', `/api/leads/${linkedLeadId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('lead detayı customer_id\'yi doğru şekilde geri döndürür', data.lead.customer_id === sqliCustomerId, data);
+
+  r = await worker.fetch(req('GET', `/api/customers/${sqliCustomerId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('müşteri detayında bağlı lead artık görünüyor', Array.isArray(data.leads) && data.leads.some(l => l.id === linkedLeadId), data);
+
+  // SECURITY(tenant izolasyonu): XYZ'in bir müşterisine ABC bir lead bağlamayı
+  // DENERSE (customer_id başka şirkete ait) — sessizce yok sayılmalı (null
+  // kalır), cross-tenant bir bağlantı ASLA oluşmamalı.
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'XYZ Müşterisi' }, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  const xyzCustomerId = data.id;
+  r = await worker.fetch(req('POST', '/api/leads', { name: 'Cross-tenant deneme', customer_id: xyzCustomerId }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('TENANT ISOLATION(leads.customer_id): başka şirketin customer_id\'sine bağlama denemesi sessizce reddedilir (null kalır)', r.status === 201 && data.id, data);
+  r = await worker.fetch(req('GET', `/api/leads/${data.id}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  const crossTenantLeadData = await r.json();
+  check('TENANT ISOLATION(leads.customer_id): lead.customer_id GERÇEKTEN null kaldı, XYZ\'in id\'si sızmadı', crossTenantLeadData.lead.customer_id === null, crossTenantLeadData);
+
+  // PATCH ile bağlama/kaldırma — geçersiz customer_id 400, geçerli olan uygulanır, null ile kaldırılabilir.
+  r = await worker.fetch(req('PATCH', `/api/leads/${linkedLeadId}`, { customer_id: xyzCustomerId }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('SECURITY(leads.customer_id PATCH): başka şirketin customer_id\'sine bağlama 400 döner', r.status === 400);
+  r = await worker.fetch(req('PATCH', `/api/leads/${linkedLeadId}`, { customer_id: null }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('leads.customer_id PATCH ile null\'a çekilerek bağlantı kaldırılabilir', r.status === 200);
+  r = await worker.fetch(req('GET', `/api/leads/${linkedLeadId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('bağlantı kaldırma sonrası lead.customer_id gerçekten null', data.lead.customer_id === null, data);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };

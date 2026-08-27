@@ -59,8 +59,8 @@ Not (güncellendi): bu uçlar artık `agent-core/orchestrator.js` tarafından `a
 
 | Method | Path | Rol | Açıklama |
 |---|---|---|---|
-| GET/POST | `/api/leads` | owner/staff | |
-| PATCH | `/api/leads/:id` | owner/staff | |
+| GET/POST | `/api/leads` | owner/staff | POST artık opsiyonel `customer_id` kabul ediyor (başka şirkete aitse sessizce null kalır) |
+| PATCH | `/api/leads/:id` | owner/staff | `customer_id` ile bağlama/kaldırma (geçersiz id → 400) |
 | GET/POST | `/api/approvals` | owner/staff (POST) | |
 | PATCH | `/api/approvals/:id` | owner | `{status}` onay/red kararı |
 | GET | `/api/audit-log` | owner/admin | owner kendi şirketi, admin tümü (son 200) |

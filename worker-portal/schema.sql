@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS leads (
   id            TEXT PRIMARY KEY,
   company_id    TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   project_id    TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  customer_id   TEXT REFERENCES customers(id) ON DELETE SET NULL,  -- 2026-08-27: leads/customers bağlantısı (bkz. migrations/0002). Var olan bir kuruluma bu sütun ALTER TABLE ile eklenir (bkz. migration dosyası) — yeni kurulumlarda zaten burada.
   name          TEXT NOT NULL DEFAULT '',
   phone         TEXT,
   email         TEXT,
@@ -150,6 +151,7 @@ CREATE TABLE IF NOT EXISTS leads (
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_leads_company ON leads(company_id);
+CREATE INDEX IF NOT EXISTS idx_leads_customer ON leads(customer_id);
 
 -- ---------------------------------------------------------------------------
 -- approval_requests — madde 42-43: Approval Engine (temel versiyon).
