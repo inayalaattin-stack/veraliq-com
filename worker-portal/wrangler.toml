@@ -35,4 +35,4 @@ class_name = "PresentationLock"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["PresentationLock"]
+new_sqlite_classes = ["PresentationLock"]
