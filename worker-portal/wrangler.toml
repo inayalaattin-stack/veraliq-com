@@ -1,0 +1,38 @@
+name = "veraliq-portal-api"
+main = "portal-api-worker.js"
+compatibility_date = "2026-08-01"
+
+# ---------------------------------------------------------------------------
+# D1 veritabanı bağlantısı.
+#
+# ÖNEMLİ — SİZİN ÇALIŞTIRMANIZ GEREKEN ADIMLAR (worker-portal/README.md'de
+# ayrıntılı anlatıldı, özet burada):
+#   1. `npx wrangler d1 create veraliq-portal-db`
+#      Bu komut bir `database_id` üretir — aşağıdaki "REPLACE_WITH_YOUR_D1_ID"
+#      yerine o id'yi yapıştırın.
+#   2. `npx wrangler d1 execute veraliq-portal-db --remote --file=schema.sql`
+#      (şemayı canlı veritabanına uygular)
+#   3. `npx wrangler deploy` (bu klasörden)
+#   4. `npx wrangler secret put JWT_SECRET` (rastgele, uzun bir metin girin)
+#   5. `npx wrangler secret put AGENT_SHARED_SECRET` (agent<->worker arası
+#      presentation-lock çağrıları için ayrı bir sır — JWT_SECRET'tan FARKLI
+#      olmalı)
+#   6. `npx wrangler d1 execute veraliq-portal-db --remote --file=seed.sql`
+#      (VERALIQ admin kullanıcısını ve örnek "ABC İnşaat" şirketini oluşturur)
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "veraliq-portal-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+
+# ---------------------------------------------------------------------------
+# Presentation Lock — Durable Object (madde 33-35: gerçek, race-condition
+# korumalı, server-side kilit; bkz. presentation-lock-do.js).
+# ---------------------------------------------------------------------------
+[[durable_objects.bindings]]
+name = "PRESENTATION_LOCK"
+class_name = "PresentationLock"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["PresentationLock"]

@@ -78,8 +78,8 @@
       <h1>Şirket Girişi</h1>
       <p class="sub">Size verilen kullanıcı adı ve şifre ile giriş yapın.</p>
       <div class="field">
-        <label for="pUser">Kullanıcı Adı</label>
-        <input type="text" id="pUser" placeholder="Örn. abcinsaat" autocomplete="off">
+        <label for="pUser">E-posta</label>
+        <input type="text" id="pUser" placeholder="Örn. abcinsaat@veraliq.com" autocomplete="off">
       </div>
       <div class="field">
         <label for="pPass">Şifre</label>
@@ -100,7 +100,7 @@
     </div>
 
     <div class="notice">
-      Bu portal şu an <b>prototip/test amaçlıdır</b>: veriler yalnızca bu tarayıcıda (localStorage) saklanır, sunucuya kaydedilmez.
+      Bu portal artık <b>gerçek bir backend'e</b> (Cloudflare D1 veritabanı + Worker API) bağlıdır — projeleriniz ve birimleriniz sunucuda saklanır, herhangi bir cihazdan aynı bilgilerle görülebilir.
     </div>
 
     <div class="card">
@@ -114,12 +114,18 @@
           <div class="field"><label>Konum</label><input type="text" id="npLocation" placeholder="Örn. İstanbul / Ataşehir"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Birim Sayısı</label><input type="number" id="npUnitCount" placeholder="Örn. 80"></div>
+          <div class="field"><label>Teslim Tarihi</label><input type="date" id="npDelivery"></div>
           <div class="field"><label>Durum</label>
-            <select id="npStatus"><option>Planlama</option><option>İnşaat</option><option selected>Satışta</option><option>Tamamlandı</option></select>
+            <select id="npStatus">
+              <option value="planning">Planlama</option>
+              <option value="construction">İnşaat</option>
+              <option value="selling" selected>Satışta</option>
+              <option value="completed">Tamamlandı</option>
+            </select>
           </div>
         </div>
         <button class="btn-primary btn-sm" id="saveProjBtn">Kaydet</button>
+        <div class="err" id="projErr" style="display:none;"></div>
       </div>
     </div>
 
@@ -133,25 +139,74 @@
 <script>
 (function(){
   "use strict";
-  var DB_KEY = 'veraliq_portal_db';
-  var SESSION_KEY = 'veraliq_portal_company_id';
+  // GERÇEK BACKEND: worker-portal/portal-api-worker.js (Cloudflare D1 +
+  // Durable Object). Bkz. docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md ve
+  // admin.html'deki aynı desen. `wrangler deploy` sonrası adres farklıysa
+  // bu satırı güncelleyin.
+  var API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
+  var TOKEN_KEY = 'veraliq_company_jwt';
+  var COMPANY_KEY = 'veraliq_company_info';
 
-  function loadDb(){
-    try {
-      var raw = localStorage.getItem(DB_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch(e){}
-    return { companies: [] };
+  function getToken(){ return sessionStorage.getItem(TOKEN_KEY); }
+  function setToken(t){ sessionStorage.setItem(TOKEN_KEY, t); }
+  function clearToken(){ sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(COMPANY_KEY); }
+  function getCompanyInfo(){
+    try { return JSON.parse(sessionStorage.getItem(COMPANY_KEY) || 'null'); } catch(e){ return null; }
   }
-  function saveDb(db){
-    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e){}
+  function setCompanyInfo(c){ sessionStorage.setItem(COMPANY_KEY, JSON.stringify(c || {})); }
+
+  async function api(path, opts){
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    var token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var resp = await fetch(API_BASE + path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    var data = null;
+    try { data = await resp.json(); } catch(e){}
+    if (!resp.ok) {
+      var err = new Error((data && data.error) || ('http_' + resp.status));
+      err.status = resp.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
   }
-  function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
+
   function esc(s){
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
       return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
     });
   }
+
+  var ERROR_MESSAGES = {
+    invalid_credentials: 'E-posta veya şifre hatalı.',
+    company_inactive: 'Şirket hesabı pasif durumda — VERALIQ ile iletişime geçin.',
+    missing_fields: 'Lütfen tüm alanları doldurun.',
+    company_id_required: 'Şirket bilgisi bulunamadı — lütfen tekrar giriş yapın.',
+  };
+  function errMsg(err){
+    return ERROR_MESSAGES[err && err.message] || 'Bir hata oluştu: ' + ((err && err.message) || 'bilinmeyen');
+  }
+
+  // units.status (backend state machine) -> ekranda gösterilecek Türkçe
+  // etiket + renk sınıfı. Sıra: AVAILABLE -> PRESENTATION -> HOLD ->
+  // RESERVED -> DEPOSIT_PAID -> CONTRACT -> SOLD (bkz. portal-api-worker.js
+  // ALLOWED_TRANSITIONS).
+  var STATUS_LABELS = {
+    AVAILABLE: 'Boşta', PRESENTATION: 'Sunumda', HOLD: 'Tutuldu',
+    RESERVED: 'Rezerve', DEPOSIT_PAID: 'Kapora Alındı', CONTRACT: 'Sözleşmede', SOLD: 'Satıldı',
+  };
+  var STATUS_CLASSES = {
+    AVAILABLE: 'unit-boş', PRESENTATION: 'unit-rezerve', HOLD: 'unit-rezerve',
+    RESERVED: 'unit-rezerve', DEPOSIT_PAID: 'unit-rezerve', CONTRACT: 'unit-rezerve', SOLD: 'unit-satıldı',
+  };
+  var PROJECT_STATUS_LABELS = {
+    planning: 'Planlama', construction: 'İnşaat', selling: 'Satışta', completed: 'Tamamlandı',
+  };
 
   var loginView = document.getElementById('loginView');
   var dashView = document.getElementById('dashView');
@@ -163,42 +218,58 @@
     setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
   }
 
-  function currentCompanyId(){ return sessionStorage.getItem(SESSION_KEY); }
+  function isAuthed(){ return !!getToken(); }
 
   function render(){
-    var cid = currentCompanyId();
-    var db = loadDb();
-    var company = cid && db.companies.find(function(c){ return c.id === cid; });
-    if (!company) {
-      sessionStorage.removeItem(SESSION_KEY);
+    if (!isAuthed()) {
       loginView.hidden = false;
       dashView.hidden = true;
       return;
     }
     loginView.hidden = true;
     dashView.hidden = false;
-    document.getElementById('companyName').textContent = company.name;
-    renderProjects(company);
+    var company = getCompanyInfo();
+    document.getElementById('companyName').textContent = (company && company.name) || 'Şirketim';
+    renderProjects();
   }
 
-  function renderProjects(company){
+  async function renderProjects(){
     var wrap = document.getElementById('projectsWrap');
-    var projects = company.projects || [];
+    wrap.innerHTML = '<div class="card"><div class="empty">Yükleniyor…</div></div>';
+    var list;
+    try {
+      list = await api('/api/projects');
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) { clearToken(); render(); return; }
+      wrap.innerHTML = '<div class="card"><div class="empty">Projeler yüklenemedi: ' + esc(errMsg(e)) + '</div></div>';
+      return;
+    }
+    var projects = list.projects || [];
     if (!projects.length) {
       wrap.innerHTML = '<div class="card"><div class="empty">Henüz proje eklenmedi. Yukarıdan "+ Proje Ekle" ile başlayın.</div></div>';
       return;
     }
+    // Her projenin birim (envanter) listesini almak için paralel çağır.
+    var withUnits = await Promise.all(projects.map(function(p){
+      return api('/api/projects/' + p.id + '/units').then(function(r){
+        return { project: p, units: (r && r.units) || [] };
+      }).catch(function(){ return { project: p, units: [] }; });
+    }));
+
     var html = '<div class="proj-grid">';
-    projects.forEach(function(p){
+    withUnits.forEach(function(item){
+      var p = item.project, units = item.units;
       html += '<div class="proj-card">' +
         '<h3>'+esc(p.name)+'</h3>' +
-        '<div class="proj-meta">'+esc(p.location||'-')+' · '+ (p.unitCount||0) +' birim</div>' +
-        '<span class="status-pill">'+esc(p.status||'-')+'</span>';
-      if (p.units && p.units.length) {
+        '<div class="proj-meta">'+esc(p.location||'-')+' · '+ units.length +' birim</div>' +
+        '<span class="status-pill">'+esc(PROJECT_STATUS_LABELS[p.status] || p.status || '-')+'</span>';
+      if (units.length) {
         html += '<ul class="unit-list">';
-        p.units.forEach(function(u){
-          var cls = u.status === 'Satıldı' ? 'unit-satıldı' : (u.status === 'Rezerve' ? 'unit-rezerve' : 'unit-boş');
-          html += '<li><span>'+esc(u.no)+'</span><span class="'+cls+'">'+esc(u.status)+'</span></li>';
+        units.forEach(function(u){
+          var cls = STATUS_CLASSES[u.status] || 'unit-boş';
+          var label = STATUS_LABELS[u.status] || u.status;
+          var no = (u.block ? u.block + '-' : '') + u.unit_no;
+          html += '<li><span>'+esc(no)+'</span><span class="'+cls+'">'+esc(label)+'</span></li>';
         });
         html += '</ul>';
       }
@@ -208,17 +279,18 @@
     wrap.innerHTML = html;
   }
 
-  document.getElementById('loginBtn').addEventListener('click', function(){
+  document.getElementById('loginBtn').addEventListener('click', async function(){
     var user = document.getElementById('pUser').value.trim();
     var pass = document.getElementById('pPass').value;
     var errEl = document.getElementById('loginErr');
-    var db = loadDb();
-    var company = db.companies.find(function(c){ return c.username === user && c.password === pass; });
-    if (company) {
-      sessionStorage.setItem(SESSION_KEY, company.id);
+    try {
+      var res = await api('/api/auth/company/login', { method: 'POST', body: { email: user, password: pass } });
+      setToken(res.token);
+      setCompanyInfo(res.company);
       errEl.style.display = 'none';
       render();
-    } else {
+    } catch (e) {
+      errEl.textContent = errMsg(e);
       errEl.style.display = 'block';
     }
   });
@@ -226,31 +298,32 @@
     if (e.key === 'Enter') document.getElementById('loginBtn').click();
   });
   document.getElementById('logoutBtn').addEventListener('click', function(){
-    sessionStorage.removeItem(SESSION_KEY);
+    clearToken();
     render();
   });
   document.getElementById('toggleAddProj').addEventListener('click', function(){
     document.getElementById('addProjForm').classList.toggle('open');
   });
-  document.getElementById('saveProjBtn').addEventListener('click', function(){
+  document.getElementById('saveProjBtn').addEventListener('click', async function(){
     var name = document.getElementById('npName').value.trim();
     var location = document.getElementById('npLocation').value.trim();
-    var unitCount = parseInt(document.getElementById('npUnitCount').value, 10) || 0;
+    var delivery = document.getElementById('npDelivery').value || null;
     var status = document.getElementById('npStatus').value;
+    var errEl = document.getElementById('projErr');
     if (!name) { toast('Proje adı gerekli.'); return; }
-    var cid = currentCompanyId();
-    var db = loadDb();
-    var company = db.companies.find(function(c){ return c.id === cid; });
-    if (!company) return;
-    company.projects = company.projects || [];
-    company.projects.push({ id: uid('proj'), name: name, location: location, unitCount: unitCount, status: status, createdAt: new Date().toISOString(), units: [] });
-    saveDb(db);
-    document.getElementById('npName').value = '';
-    document.getElementById('npLocation').value = '';
-    document.getElementById('npUnitCount').value = '';
-    document.getElementById('addProjForm').classList.remove('open');
-    toast('Proje eklendi.');
-    render();
+    try {
+      await api('/api/projects', { method: 'POST', body: { name: name, location: location, delivery_date: delivery, status: status } });
+      errEl.style.display = 'none';
+      document.getElementById('npName').value = '';
+      document.getElementById('npLocation').value = '';
+      document.getElementById('npDelivery').value = '';
+      document.getElementById('addProjForm').classList.remove('open');
+      toast('Proje eklendi.');
+      renderProjects();
+    } catch (e) {
+      errEl.textContent = errMsg(e);
+      errEl.style.display = 'block';
+    }
   });
 
   render();

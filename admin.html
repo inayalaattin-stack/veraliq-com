@@ -91,7 +91,7 @@
     <p class="sub">Sisteme kayıtlı şirketleri, giriş bilgilerini ve projelerini buradan yönetin.</p>
 
     <div class="notice">
-      Bu panel şu an <b>prototip/test amaçlıdır</b>: veriler sunucuya değil, yalnızca bu tarayıcının yerel deposuna (localStorage) kaydedilir. Başka bir cihazdan veya tarayıcıdan görünmez, gerçek üretim verisi olarak kullanılmamalıdır.
+      Bu panel artık <b>gerçek bir backend'e</b> (Cloudflare D1 veritabanı + Worker API) bağlıdır — veriler sunucuda saklanır, herhangi bir cihazdan/tarayıcıdan aynı bilgilerle görülebilir. Parolalar hash'lenerek saklanır, düz metin olarak asla tutulmaz.
     </div>
 
     <div class="card">
@@ -104,6 +104,7 @@
         <div class="field">
           <label for="cUser">Kullanıcı Adı</label>
           <input type="text" id="cUser" placeholder="Örn. abcinsaat">
+          <div class="muted mono" style="margin-top:4px;font-size:11px;">Tüm şirketler arasında benzersiz olmalı — giriş ekranı yalnızca bunu ve şifreyi sorar.</div>
         </div>
       </div>
       <div class="row">
@@ -133,59 +134,41 @@
 <script>
 (function(){
   "use strict";
-  // NOT: Bu, gerçek bir kimlik doğrulama sistemi DEĞİLDİR — VERALIQ şu an
-  // ticari faaliyette olmayan bir prototiptir (bkz. anasayfa altbilgisi).
-  // Şifre burada sabit kodlanmıştır ve sadece Imparator'un kendi
-  // denemeleri/testleri içindir. Gerçek çok-kiracılı (multi-tenant) bir
-  // admin paneli PRD.md Faz 3 kapsamındadır ve sunucu taraflı bir backend
-  // (KV/D1 + gerçek parola hash'leme) gerektirir.
-  var ADMIN_PASSWORD = 'veraliq-admin-2026';
-  var DB_KEY = 'veraliq_portal_db';
-  var SESSION_KEY = 'veraliq_admin_auth';
+  // GERÇEK BACKEND: worker-portal/portal-api-worker.js (Cloudflare D1 +
+  // Durable Object). Bkz. docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md.
+  // Bu worker'ın ismi wrangler.toml'da "veraliq-portal-api" — Cloudflare
+  // Workers'ın hesap alt alan adı örüntüsüne göre (worker-spatius ile aynı
+  // örüntü: veraliq-spatius-session.veraliq-com.workers.dev) canlı adresi
+  // aşağıdaki gibi olacak. Siz `wrangler deploy` çalıştırdıktan sonra farklı
+  // bir adres dönerse (örn. hesabınızın alt alan adı farklıysa), bu satırı
+  // güncelleyin.
+  var API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
+  var TOKEN_KEY = 'veraliq_admin_jwt';
 
-  function loadDb(){
-    try {
-      var raw = localStorage.getItem(DB_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch(e){}
-    return seedDb();
+  function getToken(){ return sessionStorage.getItem(TOKEN_KEY); }
+  function setToken(t){ sessionStorage.setItem(TOKEN_KEY, t); }
+  function clearToken(){ sessionStorage.removeItem(TOKEN_KEY); }
+
+  async function api(path, opts){
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    var token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var resp = await fetch(API_BASE + path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    var data = null;
+    try { data = await resp.json(); } catch(e){}
+    if (!resp.ok) {
+      var err = new Error((data && data.error) || ('http_' + resp.status));
+      err.status = resp.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
   }
-  function seedDb(){
-    var db = {
-      companies: [
-        {
-          id: 'abc-insaat',
-          name: 'ABC İnşaat',
-          username: 'abcinsaat',
-          password: 'Abc12345!',
-          createdAt: new Date().toISOString(),
-          projects: [
-            {
-              id: 'abc-proj-1',
-              name: 'ABC Vadi Konutları',
-              location: 'İstanbul / Başakşehir',
-              unitCount: 120,
-              status: 'Satışta',
-              createdAt: new Date().toISOString(),
-              units: [
-                { no: 'A-101', status: 'Satıldı' },
-                { no: 'A-102', status: 'Rezerve' },
-                { no: 'A-103', status: 'Boş' },
-                { no: 'B-201', status: 'Boş' },
-                { no: 'B-202', status: 'Satıldı' }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-    saveDb(db);
-    return db;
-  }
-  function saveDb(db){
-    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e){}
-  }
-  function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
 
   var loginView = document.getElementById('loginView');
   var panelView = document.getElementById('panelView');
@@ -197,7 +180,7 @@
     setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
   }
 
-  function isAuthed(){ return sessionStorage.getItem(SESSION_KEY) === '1'; }
+  function isAuthed(){ return !!getToken(); }
 
   function render(){
     if (!isAuthed()) {
@@ -210,27 +193,58 @@
     renderCompanies();
   }
 
-  function renderCompanies(){
-    var db = loadDb();
+  var ERROR_MESSAGES = {
+    invalid_credentials: 'E-posta veya şifre hatalı.',
+    slug_taken: 'Bu şirket kısaltması (slug) zaten kullanılıyor — şirket adını biraz değiştirin.',
+    email_taken: 'Bu kullanıcı adı/e-posta zaten başka bir şirkette kayıtlı.',
+    missing_fields: 'Lütfen tüm alanları doldurun.',
+  };
+  function errMsg(err){
+    return ERROR_MESSAGES[err && err.message] || 'Bir hata oluştu: ' + ((err && err.message) || 'bilinmeyen');
+  }
+
+  function slugify(s){
+    var map = {'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','Ç':'c','Ğ':'g','İ':'i','Ö':'o','Ş':'s','Ü':'u'};
+    return String(s).replace(/[çğıöşüÇĞİÖŞÜ]/g, function(c){ return map[c] || c; })
+      .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  async function renderCompanies(){
     var wrap = document.getElementById('companyTableWrap');
-    if (!db.companies.length) {
+    wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+    var list;
+    try {
+      list = await api('/api/companies');
+    } catch (e) {
+      if (e.status === 401) { clearToken(); render(); return; }
+      wrap.innerHTML = '<div class="empty">Şirketler yüklenemedi: ' + esc(errMsg(e)) + '</div>';
+      return;
+    }
+    var companies = list.companies || [];
+    if (!companies.length) {
       wrap.innerHTML = '<div class="empty">Henüz kayıtlı şirket yok. Yukarıdan ekleyin.</div>';
       return;
     }
-    var html = '<table><thead><tr><th>Şirket</th><th>Giriş Bilgisi</th><th>Projeler</th><th>İşlem</th></tr></thead><tbody>';
-    db.companies.forEach(function(c){
+    // Her şirketin proje listesini almak için detay uçlarını paralel çağır.
+    var details = await Promise.all(companies.map(function(c){
+      return api('/api/companies/' + c.id).catch(function(){ return { company: c, projects: [] }; });
+    }));
+
+    var html = '<table><thead><tr><th>Şirket</th><th>Kullanıcı Adı</th><th>Projeler</th><th>İşlem</th></tr></thead><tbody>';
+    details.forEach(function(d){
+      var c = d.company;
       var projHtml = '<ul class="proj-list">';
-      if (c.projects && c.projects.length) {
-        c.projects.forEach(function(p){
-          projHtml += '<li><b>'+esc(p.name)+'</b> — '+esc(p.location||'-')+' · '+ (p.unitCount||0) +' birim · '+esc(p.status||'-')+'</li>';
+      if (d.projects && d.projects.length) {
+        d.projects.forEach(function(p){
+          projHtml += '<li><b>'+esc(p.name)+'</b> — '+esc(p.status||'-')+'</li>';
         });
       } else {
         projHtml += '<li>Henüz proje yok</li>';
       }
       projHtml += '</ul>';
       html += '<tr>' +
-        '<td><b>'+esc(c.name)+'</b><div class="muted mono" style="margin-top:4px;">'+ (c.createdAt ? new Date(c.createdAt).toLocaleDateString('tr-TR') : '') +'</div></td>' +
-        '<td class="mono">kullanıcı: '+esc(c.username)+'<br>şifre: '+esc(c.password)+'</td>' +
+        '<td><b>'+esc(c.name)+'</b><div class="muted mono" style="margin-top:4px;">'+ (c.created_at ? new Date(c.created_at).toLocaleDateString('tr-TR') : '') +'</div></td>' +
+        '<td class="mono">şifre yalnızca oluşturma anında gösterilir<br><span class="muted">(hash olarak saklanır)</span></td>' +
         '<td>'+projHtml+'</td>' +
         '<td>' +
           '<div class="actions">' +
@@ -242,10 +256,9 @@
             '<div class="field"><label>Proje Adı</label><input type="text" data-f="name" placeholder="Örn. Vadi Konutları 2"></div>' +
             '<div class="field"><label>Konum</label><input type="text" data-f="location" placeholder="Örn. İstanbul / Ataşehir"></div>' +
             '<div class="row">' +
-              '<div class="field"><label>Birim Sayısı</label><input type="number" data-f="unitCount" placeholder="Örn. 80"></div>' +
-              '<div class="field"><label>Durum</label><select data-f="status"><option>Planlama</option><option>İnşaat</option><option selected>Satışta</option><option>Tamamlandı</option></select></div>' +
+              '<div class="field"><label>Durum</label><select data-f="status"><option value="planning">Planlama</option><option value="construction">İnşaat</option><option value="selling" selected>Satışta</option><option value="completed">Tamamlandı</option></select></div>' +
+              '<div class="field" style="display:flex;align-items:flex-end;"><button class="btn-primary btn-sm" data-save-proj="'+c.id+'" style="width:100%;">Kaydet</button></div>' +
             '</div>' +
-            '<button class="btn-primary btn-sm" data-save-proj="'+c.id+'">Kaydet</button>' +
           '</div>' +
         '</td>' +
       '</tr>';
@@ -256,38 +269,37 @@
     wrap.querySelectorAll('[data-add-proj]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = btn.getAttribute('data-add-proj');
-        var el = document.getElementById('inline-'+id);
-        el.classList.toggle('open');
+        document.getElementById('inline-'+id).classList.toggle('open');
       });
     });
     wrap.querySelectorAll('[data-save-proj]').forEach(function(btn){
-      btn.addEventListener('click', function(){
+      btn.addEventListener('click', async function(){
         var cid = btn.getAttribute('data-save-proj');
         var formEl = document.getElementById('inline-'+cid);
         var name = formEl.querySelector('[data-f="name"]').value.trim();
         var location = formEl.querySelector('[data-f="location"]').value.trim();
-        var unitCount = parseInt(formEl.querySelector('[data-f="unitCount"]').value, 10) || 0;
         var status = formEl.querySelector('[data-f="status"]').value;
         if (!name) { toast('Proje adı gerekli.'); return; }
-        var db = loadDb();
-        var company = db.companies.find(function(c){ return c.id === cid; });
-        if (!company) return;
-        company.projects = company.projects || [];
-        company.projects.push({ id: uid('proj'), name: name, location: location, unitCount: unitCount, status: status, createdAt: new Date().toISOString(), units: [] });
-        saveDb(db);
-        toast('Proje eklendi.');
-        renderCompanies();
+        try {
+          await api('/api/projects', { method: 'POST', body: { company_id: cid, name: name, location: location, status: status } });
+          toast('Proje eklendi.');
+          renderCompanies();
+        } catch (e) {
+          toast(errMsg(e));
+        }
       });
     });
     wrap.querySelectorAll('[data-del]').forEach(function(btn){
-      btn.addEventListener('click', function(){
+      btn.addEventListener('click', async function(){
         var id = btn.getAttribute('data-del');
-        var db = loadDb();
         if (!confirm('Bu şirketi ve tüm projelerini silmek istediğinize emin misiniz?')) return;
-        db.companies = db.companies.filter(function(c){ return c.id !== id; });
-        saveDb(db);
-        toast('Şirket silindi.');
-        renderCompanies();
+        try {
+          await api('/api/companies/' + id, { method: 'DELETE' });
+          toast('Şirket silindi.');
+          renderCompanies();
+        } catch (e) {
+          toast(errMsg(e));
+        }
       });
     });
   }
@@ -298,14 +310,17 @@
     });
   }
 
-  document.getElementById('loginBtn').addEventListener('click', function(){
+  document.getElementById('loginBtn').addEventListener('click', async function(){
     var val = document.getElementById('adminPass').value;
     var errEl = document.getElementById('loginErr');
-    if (val === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, '1');
+    var emailVal = document.getElementById('adminEmail') ? document.getElementById('adminEmail').value.trim() : 'admin@veraliq.com';
+    try {
+      var res = await api('/api/auth/admin/login', { method: 'POST', body: { email: emailVal, password: val } });
+      setToken(res.token);
       errEl.style.display = 'none';
       render();
-    } else {
+    } catch (e) {
+      errEl.textContent = errMsg(e);
       errEl.style.display = 'block';
     }
   });
@@ -313,10 +328,10 @@
     if (e.key === 'Enter') document.getElementById('loginBtn').click();
   });
   document.getElementById('logoutBtn').addEventListener('click', function(){
-    sessionStorage.removeItem(SESSION_KEY);
+    clearToken();
     render();
   });
-  document.getElementById('addCompanyBtn').addEventListener('click', function(){
+  document.getElementById('addCompanyBtn').addEventListener('click', async function(){
     var name = document.getElementById('cName').value.trim();
     var user = document.getElementById('cUser').value.trim();
     var pass = document.getElementById('cPass').value.trim();
@@ -326,24 +341,20 @@
       errEl.style.display = 'block';
       return;
     }
-    var db = loadDb();
-    if (db.companies.some(function(c){ return c.username === user; })) {
-      errEl.textContent = 'Bu kullanıcı adı zaten kayıtlı.';
+    try {
+      await api('/api/companies', { method: 'POST', body: { name: name, slug: slugify(name) || user, owner_email: user, owner_password: pass } });
+      errEl.style.display = 'none';
+      document.getElementById('cName').value = '';
+      document.getElementById('cUser').value = '';
+      document.getElementById('cPass').value = '';
+      toast('Şirket eklendi: ' + name);
+      renderCompanies();
+    } catch (e) {
+      errEl.textContent = errMsg(e);
       errEl.style.display = 'block';
-      return;
     }
-    db.companies.push({ id: uid('co'), name: name, username: user, password: pass, createdAt: new Date().toISOString(), projects: [] });
-    saveDb(db);
-    errEl.style.display = 'none';
-    document.getElementById('cName').value = '';
-    document.getElementById('cUser').value = '';
-    document.getElementById('cPass').value = '';
-    toast('Şirket eklendi: ' + name);
-    renderCompanies();
   });
 
-  // Seed on first load if nothing stored yet.
-  loadDb();
   render();
 })();
 </script>
