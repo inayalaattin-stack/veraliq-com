@@ -209,6 +209,15 @@ export default {
       const body = await resp.text();
       return new Response(body, { status: resp.status, headers: { ...headers, ...Object.fromEntries(resp.headers) } });
     } catch (err) {
+      // GÜVENLİK DÜZELTMESİ (2026-08-27, gerçek testle bulundu): bozuk/geçersiz
+      // JSON body gönderen bir istemci (ör. `{not valid json`) `request.json()`
+      // içinde bir SyntaxError'a çarpıyordu ve bu buraya kadar yükselip
+      // "internal_error" (500) olarak dönüyordu — hâlbuki bu SUNUCU hatası
+      // değil, tamamen normal bir İSTEMCİ hatası (400). Ayrıca eski davranış
+      // ham JSON.parse hata mesajını (`detail`) istemciye sızdırıyordu.
+      if (err instanceof SyntaxError) {
+        return json({ error: 'invalid_json' }, 400, headers);
+      }
       return json({ error: 'internal_error', detail: String(err && err.message || err) }, 500, headers);
     }
   },

@@ -91,19 +91,29 @@ export async function verifyJWT(token, secret) {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   const [headerB64, bodyB64, sigB64] = parts;
-  const key = await hmacKey(secret);
-  const valid = await crypto.subtle.verify(
-    'HMAC', key, fromBase64Url(sigB64), new TextEncoder().encode(headerB64 + '.' + bodyB64)
-  );
-  if (!valid) return null;
-  let payload;
+  // GÜVENLİK DÜZELTMESİ (2026-08-27, gerçek bir Playwright/test-suite testiyle
+  // bulundu): rastgele/bozuk bir token (ör. "completely.garbage.token") 3
+  // parçaya bölünüyor (uzunluk kontrolünü geçiyor) ama parçalar GEÇERLİ
+  // base64url değil — fromBase64Url() içindeki atob() bu durumda
+  // InvalidCharacterError FIRLATIYORDU, bu da try/catch'siz olduğu için
+  // portal-api-worker.js'in en dıştaki genel catch'ine kadar yükseliyor ve
+  // "unauthorized" (401) yerine "internal_error" (500) döndürüyordu — hem
+  // yanlış HTTP anlamı (kimlik doğrulama hatası bir sunucu çökmesi değildir)
+  // hem de gereksiz hata-izleme/log gürültüsü (bot/tarayıcı gönderdiği her
+  // bozuk token 500 olarak görünürdü). Şimdi tüm decode/verify adımı
+  // try/catch içinde — herhangi bir hata sessizce null (→ 401) döndürür.
   try {
-    payload = JSON.parse(new TextDecoder().decode(fromBase64Url(bodyB64)));
+    const key = await hmacKey(secret);
+    const valid = await crypto.subtle.verify(
+      'HMAC', key, fromBase64Url(sigB64), new TextEncoder().encode(headerB64 + '.' + bodyB64)
+    );
+    if (!valid) return null;
+    const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(bodyB64)));
+    if (typeof payload.exp === 'number' && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
   } catch (e) {
     return null;
   }
-  if (typeof payload.exp === 'number' && payload.exp < Math.floor(Date.now() / 1000)) return null;
-  return payload;
 }
 
 export function generateId(prefix) {
