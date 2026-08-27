@@ -41,6 +41,10 @@ Hiçbir LLM/AI ajanı veritabanına doğrudan erişemiyor veya SQL üretmiyor. �
 
 MFA (Cloudflare Zero Trust ile), WAF kuralları, IP bazlı erişim kısıtlaması, DDoS koruması — bunlar `admin.html`'den veya bu koddan yönetilemez, Cloudflare Dashboard'dan yapılandırılmalıdır.
 
+## ⚠️ Bilinen bir tuzak — incelendi ve KASITLI OLARAK kaçınıldı: AGENT_SHARED_SECRET'ı public sayfaya gömmek
+
+2026-08-27'de, index.html'in ("Elif Kaya") canlı görüşmelerini de `/api/conversations`'a bağlamak değerlendirildi ama YAPILMADI, çünkü tek mevcut kimlik doğrulama yolu (`X-Agent-Key` / `AGENT_SHARED_SECRET`) index.html'in PUBLIC/anonim ziyaretçi context'inde GÜVENLİ DEĞİL: bu değer sunucu tarafı bir sır olarak tasarlandı, herkese açık bir sayfanın JS'ine gömülürse `view-source` ile HERKESİN okuyabileceği bir sır olur — ve dual-auth deseninde agent-key yoluyla gelen istekler `company_id`'yi client body'sinden aldığı için, sızan bir agent-key ile herhangi biri herhangi bir şirkete sahte görüşme kaydı enjekte edebilirdi. Bu yüzden index.html BİLİNÇLİ OLARAK bağlanmadı — bkz. PROJECT_ARCHITECTURE.md §4. **Gelecekte (Codex dahil) kim bu bağlantıyı kurmaya çalışırsa**: `AGENT_SHARED_SECRET`'ı asla bir `<script>`'e/public dosyaya gömmeyin — yalnızca sunucu-taraflı kod (worker→worker, ya da giriş yapmış bir oturumun arkasındaki kod) bu header'ı kullanmalı.
+
 ## Secret yönetimi
 
 `JWT_SECRET` ve `AGENT_SHARED_SECRET` yalnızca Cloudflare Worker secret olarak saklanıyor (`wrangler secret put`), hiçbir zaman kaynak koduna veya frontend'e yazılmıyor. Git repo'sunda `.env` veya benzeri bir dosya YOK — secret'lar yalnızca kullanıcının kendi terminalinden, tek seferlik olarak girildi.
