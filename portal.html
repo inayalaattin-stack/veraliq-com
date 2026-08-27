@@ -235,18 +235,21 @@
 <!-- ============ LOGIN ============ -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
-    <div class="login-logo"><img src="/assets/veraliq-mark.svg" alt="VERALIQ">VERALIQ Şirket Portalı</div>
+    <div class="login-logo" style="justify-content:space-between;">
+      <span style="display:flex;align-items:center;gap:9px;"><img src="/assets/veraliq-mark.svg" alt="VERALIQ">VERALIQ Şirket Portalı</span>
+      <select class="lang-switcher-select" style="background:var(--ink-2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12px;"></select>
+    </div>
     <div class="field">
-      <label for="pUser">E-posta</label>
+      <label for="pUser" id="loginEmailLabel">E-posta</label>
       <input type="text" id="pUser" placeholder="ornek@sirketiniz.com" autocomplete="username">
     </div>
     <div class="field">
-      <label for="pPass">Şifre</label>
+      <label for="pPass" id="loginPassLabel">Şifre</label>
       <input type="password" id="pPass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn btn-primary btn-block" id="loginBtn">Giriş Yap</button>
     <div class="err-msg" id="loginErr" style="display:none;"></div>
-    <div class="hint">Bu portal Cloudflare D1 üzerinde çalışan gerçek bir backend'e bağlıdır — verileriniz sunucuda saklanır.</div>
+    <div class="hint" id="loginHint">Bu portal Cloudflare D1 üzerinde çalışan gerçek bir backend'e bağlıdır — verileriniz sunucuda saklanır.</div>
   </div>
 </div>
 
@@ -266,6 +269,7 @@
         <span class="topbar-view-label" id="topbarView"></span>
       </div>
       <div class="topbar-right">
+        <select class="icon-btn btn-sm lang-switcher-select" style="padding:7px 6px;"></select>
         <button class="icon-btn" id="assistantQuickBtn" title="AI Asistan">✦ AI
           <span class="badge-dot" id="approvalBadge" style="display:none;">0</span>
         </button>
@@ -278,9 +282,26 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="portal-i18n.js"></script>
 <script>
 (function(){
   "use strict";
+
+  // ============================================================
+  // ÇOKLU DİL — bkz. portal-i18n.js. Varsayılan: Türkçe (öncelik).
+  // İngilizce/Rusça tercihe bağlı, localStorage'da saklanır
+  // (İmparator, 2026-08-27: "türkçe önceligimiz olsun sadece
+  // ingilizce rusça ekleyelim tercihe baglı şekilde").
+  // ============================================================
+  var PI18N = window.VERALIQ_PORTAL_I18N || { defaultLang:'tr', languages:[{code:'tr',name:'Türkçe'}], dict:{tr:{}} };
+  var LANG_KEY = 'veraliq_portal_lang';
+  var currentLang = localStorage.getItem(LANG_KEY) || PI18N.defaultLang;
+  if (!PI18N.dict[currentLang]) currentLang = PI18N.defaultLang;
+  function T(key){
+    var d = PI18N.dict[currentLang] || PI18N.dict.tr;
+    if (d && Object.prototype.hasOwnProperty.call(d, key)) return d[key];
+    return (PI18N.dict.tr && PI18N.dict.tr[key]) || key;
+  }
 
   // ============================================================
   // GERÇEK BACKEND — worker-portal/portal-api-worker.js (Cloudflare
@@ -330,18 +351,22 @@
   function money(n){ return Number(n || 0).toLocaleString('tr-TR') + ' ₺'; }
   function fmtDate(s){ if (!s) return '—'; try { return new Date(s.replace(' ', 'T') + 'Z').toLocaleDateString('tr-TR'); } catch(e){ return s; } }
 
-  var ERROR_MESSAGES = {
-    invalid_credentials: 'E-posta veya şifre hatalı.',
-    company_inactive: 'Şirket hesabı pasif durumda — VERALIQ ile iletişime geçin.',
-    missing_fields: 'Lütfen tüm alanları doldurun.',
-    email_taken: 'Bu e-posta zaten kullanılıyor.',
-    password_too_short: 'Şifre en az 8 karakter olmalı.',
-    forbidden: 'Bu işlem için yetkiniz yok.',
-    cannot_remove_owner: 'Şirket sahibi hesabı kaldırılamaz.',
-    invalid_status_transition: 'Bu durum geçişine izin verilmiyor.',
-    already_decided: 'Bu talep zaten karara bağlanmış.',
+  var ERROR_KEY_MAP = {
+    invalid_credentials: 'error.invalidCredentials',
+    company_inactive: 'error.companyInactive',
+    missing_fields: 'error.missingFields',
+    email_taken: 'error.emailTaken',
+    password_too_short: 'error.passwordTooShort',
+    forbidden: 'error.forbidden',
+    cannot_remove_owner: 'error.cannotRemoveOwner',
+    invalid_status_transition: 'error.invalidStatusTransition',
+    already_decided: 'error.alreadyDecided',
   };
-  function errMsg(e){ return ERROR_MESSAGES[e && e.message] || 'Bir hata oluştu: ' + ((e && e.message) || 'bilinmeyen'); }
+  function errMsg(e){
+    var k = e && e.message && ERROR_KEY_MAP[e.message];
+    if (k) return T(k);
+    return T('common.genericErrorPrefix') + ((e && e.message) || 'bilinmeyen');
+  }
 
   var toastEl = document.getElementById('toast');
   function toast(msg){
@@ -351,45 +376,51 @@
   }
 
   // ---------------- Status labels (real state machine, bkz. portal-api-worker.js) ----------------
-  var STATUS_LABEL = { AVAILABLE:'Boşta', PRESENTATION:'Sunumda', HOLD:'Tutuldu', RESERVED:'Rezerve', DEPOSIT_PAID:'Kapora Alındı', CONTRACT:'Sözleşmede', SOLD:'Satıldı' };
+  // Diller arası tutarlılık için T()'den DİNAMİK üretilir — bkz. rebuildLangDicts(),
+  // her navigate() ve setLang() çağrısından önce çalışır, o an aktif dile göre günceller.
+  var STATUS_LABEL = {}, PROJECT_STATUS_LABEL = {}, LEAD_STATUS_LABEL = {};
   var STATUS_PILL = { AVAILABLE:'pill-gray', PRESENTATION:'pill-mint', HOLD:'pill-gold', RESERVED:'pill-gold', DEPOSIT_PAID:'pill-gold', CONTRACT:'pill-gold', SOLD:'pill-mint' };
-  var PROJECT_STATUS_LABEL = { planning:'Planlama', construction:'İnşaat', selling:'Satışta', completed:'Tamamlandı' };
-  var LEAD_STATUS_LABEL = { new:'Yeni', qualified:'Nitelikli', presentation:'Sunum', negotiating:'Müzakere', won:'Kazanıldı', lost:'Kaybedildi' };
+  function rebuildLangDicts(){
+    STATUS_LABEL = { AVAILABLE:T('status.unit.AVAILABLE'), PRESENTATION:T('status.unit.PRESENTATION'), HOLD:T('status.unit.HOLD'), RESERVED:T('status.unit.RESERVED'), DEPOSIT_PAID:T('status.unit.DEPOSIT_PAID'), CONTRACT:T('status.unit.CONTRACT'), SOLD:T('status.unit.SOLD') };
+    PROJECT_STATUS_LABEL = { planning:T('status.project.planning'), construction:T('status.project.construction'), selling:T('status.project.selling'), completed:T('status.project.completed') };
+    LEAD_STATUS_LABEL = { new:T('status.lead.new'), qualified:T('status.lead.qualified'), presentation:T('status.lead.presentation'), negotiating:T('status.lead.negotiating'), won:T('status.lead.won'), lost:T('status.lead.lost') };
+  }
+  rebuildLangDicts();
 
   // ============================================================
   // NAV — madde 13/18: Company Portal Menü (tam liste, gruplu).
   // ============================================================
   var NAV = [
-    { group: 'Genel', items: [
-      { id: 'dashboard', label: 'Panel' },
-      { id: 'assistant', label: 'AI Asistan' },
+    { groupKey: 'nav.group.general', items: [
+      { id: 'dashboard' },
+      { id: 'assistant' },
     ]},
-    { group: 'Operasyon', items: [
-      { id: 'projects', label: 'Projeler' },
-      { id: 'inventory', label: 'Envanter' },
-      { id: 'presentations', label: 'Sunumlar' },
-      { id: 'reservations', label: 'Rezervasyonlar' },
+    { groupKey: 'nav.group.operations', items: [
+      { id: 'projects' },
+      { id: 'inventory' },
+      { id: 'presentations' },
+      { id: 'reservations' },
     ]},
-    { group: 'Satış & Müşteri', items: [
-      { id: 'leads', label: 'Lead\'ler' },
-      { id: 'customers', label: 'Müşteriler' },
-      { id: 'sales', label: 'Satışlar' },
-      { id: 'crm', label: 'CRM' },
+    { groupKey: 'nav.group.salesCustomer', items: [
+      { id: 'leads' },
+      { id: 'customers' },
+      { id: 'sales' },
+      { id: 'crm' },
     ]},
-    { group: 'Finans & Belge', items: [
-      { id: 'payments', label: 'Ödemeler' },
-      { id: 'contracts', label: 'Sözleşmeler' },
-      { id: 'documents', label: 'Belgeler' },
+    { groupKey: 'nav.group.financeDoc', items: [
+      { id: 'payments' },
+      { id: 'contracts' },
+      { id: 'documents' },
     ]},
-    { group: 'Planlama', items: [
-      { id: 'calendar', label: 'Takvim' },
-      { id: 'reports', label: 'Raporlar' },
+    { groupKey: 'nav.group.planning', items: [
+      { id: 'calendar' },
+      { id: 'reports' },
     ]},
-    { group: 'Sistem', items: [
-      { id: 'agents', label: 'Agent\'lar' },
-      { id: 'team', label: 'Ekip' },
-      { id: 'integrations', label: 'Entegrasyonlar' },
-      { id: 'settings', label: 'Ayarlar' },
+    { groupKey: 'nav.group.system', items: [
+      { id: 'agents' },
+      { id: 'team' },
+      { id: 'integrations' },
+      { id: 'settings' },
     ]},
   ];
 
@@ -405,7 +436,7 @@
   function showApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').classList.add('show');
-    document.getElementById('topbarCompany').textContent = (getCompany() || {}).name || 'Şirketim';
+    document.getElementById('topbarCompany').textContent = (getCompany() || {}).name || T('common.myCompanyDefault');
     buildNav();
     refreshApprovalBadge();
     navigate(state.view);
@@ -415,7 +446,7 @@
     var email = document.getElementById('pUser').value.trim();
     var pass = document.getElementById('pPass').value;
     var errEl = document.getElementById('loginErr');
-    if (!email || !pass) { errEl.textContent = 'E-posta ve şifre gerekli.'; errEl.style.display='block'; return; }
+    if (!email || !pass) { errEl.textContent = T('login.errRequired'); errEl.style.display='block'; return; }
     try {
       var res = await api('/api/auth/company/login', { method: 'POST', body: { email: email, password: pass } });
       setSession(res.token, res.user, res.company);
@@ -430,6 +461,63 @@
   document.getElementById('logoutBtn').addEventListener('click', function(){ clearSession(); showLogin(); });
   document.getElementById('menuToggle').addEventListener('click', function(){ document.getElementById('sidebar').classList.toggle('open'); });
   document.getElementById('assistantQuickBtn').addEventListener('click', function(){ navigate('assistant'); });
+
+  // ============================================================
+  // DİL SEÇİCİ — Türkçe varsayılan/öncelikli, EN/RU tercihe bağlı.
+  // ============================================================
+  function applyStaticI18n(){
+    document.documentElement.setAttribute('lang', currentLang);
+    var loginEmailLabel = document.getElementById('loginEmailLabel'); if (loginEmailLabel) loginEmailLabel.textContent = T('common.emailLabel');
+    var loginPassLabel = document.getElementById('loginPassLabel'); if (loginPassLabel) loginPassLabel.textContent = T('common.passwordLabel');
+    var loginBtnEl = document.getElementById('loginBtn'); if (loginBtnEl) loginBtnEl.textContent = T('login.loginBtn');
+    var loginHintEl = document.getElementById('loginHint'); if (loginHintEl) loginHintEl.textContent = T('login.hint');
+    var logoutBtnEl = document.getElementById('logoutBtn'); if (logoutBtnEl) logoutBtnEl.textContent = T('common.logout');
+    var assistantBtnEl = document.getElementById('assistantQuickBtn'); if (assistantBtnEl) assistantBtnEl.title = T('nav.item.assistant');
+    var sidebarFootEl = document.getElementById('sidebarFoot'); if (sidebarFootEl) sidebarFootEl.textContent = T('common.sidebarFooter');
+    // Canlı AI Agent widget'ının statik kabuğu (agent-core/portal-widget.js'in kendi
+    // JS'ine DOKUNULMADI — sadece portal.html'deki sabit HTML metinleri çevrildi).
+    var agentNameEl = document.getElementById('agentNameLabel'); if (agentNameEl) agentNameEl.textContent = T('agentWidget.title');
+    var agentHalfBtn = document.getElementById('agentHalfBtn'); if (agentHalfBtn) { agentHalfBtn.title = T('agentWidget.halfScreen'); agentHalfBtn.setAttribute('aria-label', T('agentWidget.halfScreen')); }
+    var agentFullBtn = document.getElementById('agentFullBtn'); if (agentFullBtn) { agentFullBtn.title = T('agentWidget.fullScreen'); agentFullBtn.setAttribute('aria-label', T('agentWidget.fullScreen')); }
+    var agentMinBtn = document.getElementById('agentMinBtn'); if (agentMinBtn) { agentMinBtn.title = T('agentWidget.minimize'); agentMinBtn.setAttribute('aria-label', T('agentWidget.minimize')); }
+    var agentCloseBtn = document.getElementById('agentCloseBtn'); if (agentCloseBtn) { agentCloseBtn.title = T('agentWidget.close'); agentCloseBtn.setAttribute('aria-label', T('agentWidget.close')); }
+    var agentLoadingText = document.getElementById('agentLoadingText'); if (agentLoadingText) agentLoadingText.textContent = T('agentWidget.preparing');
+    var agentMicBlockedText = document.getElementById('agentMicBlockedText'); if (agentMicBlockedText) agentMicBlockedText.textContent = T('agentWidget.micBlocked');
+    var agentJoinBtn = document.getElementById('agentJoinBtn'); if (agentJoinBtn) agentJoinBtn.innerHTML = '<span class="dot"></span>' + esc(T('agentWidget.joinBtn'));
+    var agentJoinHint = document.getElementById('agentJoinHint'); if (agentJoinHint) agentJoinHint.textContent = T('agentWidget.joinHint');
+    var agentReopenBtn = document.getElementById('agentReopenBtn'); if (agentReopenBtn) agentReopenBtn.textContent = T('agentWidget.reopenBtn');
+    var agentBubbleEl = document.getElementById('agentBubble'); if (agentBubbleEl) agentBubbleEl.setAttribute('aria-label', T('agentWidget.expandAria'));
+  }
+
+  function populateLangSwitcher(){
+    document.querySelectorAll('.lang-switcher-select').forEach(function(sel){
+      sel.innerHTML = (PI18N.languages || []).map(function(l){
+        return '<option value="' + l.code + '"' + (l.code === currentLang ? ' selected' : '') + '>' + esc(l.code.toUpperCase()) + '</option>';
+      }).join('');
+      sel.title = T('lang.switcherLabel');
+    });
+  }
+
+  function setLang(lang){
+    if (!PI18N.dict[lang]) return;
+    currentLang = lang;
+    localStorage.setItem(LANG_KEY, lang);
+    rebuildLangDicts();
+    applyStaticI18n();
+    populateLangSwitcher();
+    if (document.getElementById('app').classList.contains('show')) {
+      buildNav();
+      navigate(state.view);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    applyStaticI18n();
+    populateLangSwitcher();
+    document.querySelectorAll('.lang-switcher-select').forEach(function(sel){
+      sel.addEventListener('change', function(){ setLang(sel.value); });
+    });
+  });
 
   async function refreshApprovalBadge(){
     try {
@@ -447,9 +535,9 @@
     var nav = document.getElementById('sidebarNav');
     var html = '';
     NAV.forEach(function(g){
-      html += '<div class="nav-group"><div class="nav-group-label">' + esc(g.group) + '</div>';
+      html += '<div class="nav-group"><div class="nav-group-label">' + esc(T(g.groupKey)) + '</div>';
       g.items.forEach(function(it){
-        html += '<button class="nav-item" data-view="' + it.id + '"><span class="dot"></span>' + esc(it.label) + '</button>';
+        html += '<button class="nav-item" data-view="' + it.id + '"><span class="dot"></span>' + esc(T('nav.item.' + it.id)) + '</button>';
       });
       html += '</div>';
     });
@@ -458,9 +546,6 @@
       btn.addEventListener('click', function(){ navigate(btn.getAttribute('data-view')); document.getElementById('sidebar').classList.remove('open'); });
     });
   }
-
-  var VIEW_LABELS = {};
-  NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_LABELS[it.id] = it.label; }); });
 
   var RENDERERS = {
     dashboard: renderDashboard, assistant: renderAssistant, projects: renderProjects,
@@ -473,12 +558,13 @@
 
   function navigate(view){
     state.view = view;
+    rebuildLangDicts();
     document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === view); });
-    document.getElementById('topbarView').textContent = VIEW_LABELS[view] || '';
+    document.getElementById('topbarView').textContent = T('nav.item.' + view) || '';
     var content = document.getElementById('content');
-    content.innerHTML = '<div class="empty">Yükleniyor…</div>';
+    content.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
     var fn = RENDERERS[view];
-    if (fn) fn(content); else content.innerHTML = '<div class="empty">Ekran bulunamadı.</div>';
+    if (fn) fn(content); else content.innerHTML = '<div class="empty">' + esc(T('common.viewNotFound')) + '</div>';
   }
 
   function viewHead(container, title, sub, actionsHtml){
@@ -495,32 +581,32 @@
   // DASHBOARD (madde 19: Company Dashboard)
   // ============================================================
   async function renderDashboard(container){
-    var body = viewHead(container, 'Panel', 'Gerçek zamanlı satış, envanter ve operasyon özeti.');
+    var body = viewHead(container, T('nav.item.dashboard'), T('dashboard.sub'));
     try {
       var d = await api('/api/dashboard');
       var html = '<div class="stat-grid">' +
-        statCard('Toplam Lead', d.total_leads) +
-        statCard('Bugünkü Lead', d.today_leads, 'mint') +
-        statCard('Sunumda', d.presentations, 'mint') +
-        statCard('Tutulan', d.holds) +
-        statCard('Rezerve', d.reservations, 'gold') +
-        statCard('Kapora Alındı', d.deposits, 'gold') +
-        statCard('Sözleşmede', d.contracts, 'gold') +
-        statCard('Satış', d.sales, 'gold') +
-        statCard('Ciro', money(d.revenue), 'gold') +
-        statCard('Aktif Stok (Boşta)', d.active_stock) +
-        statCard('Bekleyen Onay', d.pending_approvals, d.pending_approvals > 0 ? 'gold' : '') +
+        statCard(T('dashboard.stat.totalLeads'), d.total_leads) +
+        statCard(T('dashboard.stat.todayLeads'), d.today_leads, 'mint') +
+        statCard(T('dashboard.stat.presentations'), d.presentations, 'mint') +
+        statCard(T('dashboard.stat.holds'), d.holds) +
+        statCard(T('dashboard.stat.reservations'), d.reservations, 'gold') +
+        statCard(T('dashboard.stat.deposits'), d.deposits, 'gold') +
+        statCard(T('dashboard.stat.contracts'), d.contracts, 'gold') +
+        statCard(T('dashboard.stat.sales'), d.sales, 'gold') +
+        statCard(T('dashboard.stat.revenue'), money(d.revenue), 'gold') +
+        statCard(T('dashboard.stat.activeStock'), d.active_stock) +
+        statCard(T('dashboard.stat.pendingApproval'), d.pending_approvals, d.pending_approvals > 0 ? 'gold' : '') +
       '</div>';
       html += '<div class="card" style="margin-top:16px;">' +
-        '<div class="stat-label" style="margin-bottom:12px;">AI Agent Performance / Human Sales Performance <span class="muted" style="text-transform:none;letter-spacing:0;">— gerçek sunum kilidi (presentation lock) kayıtlarından</span></div>' +
+        '<div class="stat-label" style="margin-bottom:12px;">' + esc(T('dashboard.performanceTitle')) + ' <span class="muted" style="text-transform:none;letter-spacing:0;">' + esc(T('dashboard.performanceNote')) + '</span></div>' +
         '<div class="row">' +
-          '<div><div class="pill pill-mint" style="margin-bottom:6px;">AI Agent</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12px;">başlatılan sunum</div></div>' +
-          '<div><div class="pill pill-gold" style="margin-bottom:6px;">İnsan Temsilci</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12px;">başlatılan sunum</div></div>' +
+          '<div><div class="pill pill-mint" style="margin-bottom:6px;">' + esc(T('common.aiAgent')) + '</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12px;">' + esc(T('dashboard.presentationsStarted')) + '</div></div>' +
+          '<div><div class="pill pill-gold" style="margin-bottom:6px;">' + esc(T('common.humanAgent')) + '</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12px;">' + esc(T('dashboard.presentationsStarted')) + '</div></div>' +
         '</div></div>';
       body.innerHTML = html;
       refreshApprovalBadge();
     } catch (e) {
-      body.innerHTML = '<div class="empty">Dashboard yüklenemedi: ' + esc(errMsg(e)) + '</div>';
+      body.innerHTML = '<div class="empty">' + esc(T('dashboard.loadFailed')) + esc(errMsg(e)) + '</div>';
     }
   }
 
@@ -529,8 +615,8 @@
   // ============================================================
   function renderAssistant(container){
     container.innerHTML =
-      '<div class="view-head"><div><h1 class="view-title">AI Asistan</h1>' +
-      '<p class="view-sub">Şirket yöneticisi asistanı — gerçek veritabanı verisiyle cevap verir, müşteriye satış yapan agent DEĞİLDİR.</p></div></div>' +
+      '<div class="view-head"><div><h1 class="view-title">' + esc(T('nav.item.assistant')) + '</h1>' +
+      '<p class="view-sub">' + esc(T('assistant.sub')) + '</p></div></div>' +
       '<div class="card">' +
         '<div class="suggest-row" id="assistantSuggest">' +
           '<button class="suggest-chip" data-q="Bugün kaç lead geldi?">Bugün kaç lead geldi?</button>' +
@@ -546,7 +632,7 @@
           '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="note" style="margin-top:14px;">v1: Bu asistan, promptun Zero Trust AI ilkesine uygun olarak (madde 41/56) serbest metin SQL üretmez — sabit, önceden tanımlı ve parametreli sorgu kalıplarıyla çalışır. Cevaplar her zaman gerçek veritabanı değerleridir, asla uydurma değildir.</div>';
+      '<div class="note" style="margin-top:14px;">' + esc(T('assistant.note')) + '</div>';
 
     var log = document.getElementById('chatLog');
     function addMsg(role, text, tag){
@@ -579,25 +665,25 @@
   // PROJECTS (madde 21: Proje Yönetimi)
   // ============================================================
   async function renderProjects(container){
-    var body = viewHead(container, 'Projeler', 'Projeleriniz ve temel bilgileri.',
-      '<button class="btn btn-primary btn-sm" id="toggleAddProj">+ Proje Ekle</button>');
+    var body = viewHead(container, T('nav.item.projects'), T('projects.sub'),
+      '<button class="btn btn-primary btn-sm" id="toggleAddProj">' + esc(T('projects.addBtn')) + '</button>');
     var formHtml =
       '<div class="card inline-form" id="addProjForm">' +
         '<div class="row">' +
-          '<div class="field"><label>Proje Adı *</label><input id="npName" placeholder="Örn. Vadi Konutları 2"></div>' +
-          '<div class="field"><label>Konum</label><input id="npLocation" placeholder="Örn. İstanbul / Ataşehir"></div>' +
+          '<div class="field"><label>' + esc(T('projects.nameLabel')) + '</label><input id="npName" placeholder="' + esc(T('projects.namePlaceholder')) + '"></div>' +
+          '<div class="field"><label>' + esc(T('common.locationLabel')) + '</label><input id="npLocation" placeholder="' + esc(T('projects.locationPlaceholder')) + '"></div>' +
         '</div>' +
         '<div class="row3">' +
-          '<div class="field"><label>Ada</label><input id="npAda"></div>' +
-          '<div class="field"><label>Parsel</label><input id="npParsel"></div>' +
-          '<div class="field"><label>Pafta</label><input id="npPafta"></div>' +
+          '<div class="field"><label>' + esc(T('projects.adaLabel')) + '</label><input id="npAda"></div>' +
+          '<div class="field"><label>' + esc(T('projects.parselLabel')) + '</label><input id="npParsel"></div>' +
+          '<div class="field"><label>' + esc(T('projects.paftaLabel')) + '</label><input id="npPafta"></div>' +
         '</div>' +
         '<div class="row">' +
-          '<div class="field"><label>Teslim Tarihi</label><input type="date" id="npDelivery"></div>' +
-          '<div class="field"><label>Durum</label><select id="npStatus"><option value="planning">Planlama</option><option value="construction">İnşaat</option><option value="selling" selected>Satışta</option><option value="completed">Tamamlandı</option></select></div>' +
+          '<div class="field"><label>' + esc(T('common.deliveryDateLabel')) + '</label><input type="date" id="npDelivery"></div>' +
+          '<div class="field"><label>' + esc(T('common.statusLabel')) + '</label><select id="npStatus"><option value="planning">' + esc(T('status.project.planning')) + '</option><option value="construction">' + esc(T('status.project.construction')) + '</option><option value="selling" selected>' + esc(T('status.project.selling')) + '</option><option value="completed">' + esc(T('status.project.completed')) + '</option></select></div>' +
         '</div>' +
-        '<div class="field"><label>Açıklama</label><textarea id="npDesc" rows="2"></textarea></div>' +
-        '<button class="btn btn-primary btn-sm" id="saveProjBtn">Kaydet</button>' +
+        '<div class="field"><label>' + esc(T('common.descriptionLabel')) + '</label><textarea id="npDesc" rows="2"></textarea></div>' +
+        '<button class="btn btn-primary btn-sm" id="saveProjBtn">' + esc(T('common.save')) + '</button>' +
         '<div class="err-msg" id="projErr" style="display:none;"></div>' +
       '</div><div id="projList" style="margin-top:16px;"></div>';
     body.innerHTML = formHtml;
@@ -606,7 +692,7 @@
     document.getElementById('saveProjBtn').addEventListener('click', async function(){
       var name = document.getElementById('npName').value.trim();
       var errEl = document.getElementById('projErr');
-      if (!name) { errEl.textContent = 'Proje adı gerekli.'; errEl.style.display='block'; return; }
+      if (!name) { errEl.textContent = T('projects.nameRequired'); errEl.style.display='block'; return; }
       try {
         await api('/api/projects', { method: 'POST', body: {
           name: name, location: document.getElementById('npLocation').value.trim(),
@@ -619,7 +705,7 @@
         }});
         errEl.style.display = 'none';
         document.getElementById('addProjForm').classList.remove('open');
-        toast('Proje eklendi.');
+        toast(T('projects.added'));
         loadProjectList();
       } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
     });
@@ -628,11 +714,11 @@
 
     async function loadProjectList(){
       var wrap = document.getElementById('projList');
-      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      wrap.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
       try {
         var res = await api('/api/projects');
         state.projectsCache = res.projects;
-        if (!res.projects.length) { wrap.innerHTML = '<div class="card"><div class="empty">Henüz proje eklenmedi.</div></div>'; return; }
+        if (!res.projects.length) { wrap.innerHTML = '<div class="card"><div class="empty">' + esc(T('projects.noProjects')) + '</div></div>'; return; }
         var withUnits = await Promise.all(res.projects.map(function(p){
           return api('/api/projects/' + p.id + '/units').then(function(r){ return { p: p, units: r.units || [] }; }).catch(function(){ return { p: p, units: [] }; });
         }));
@@ -642,10 +728,10 @@
           var sold = units.filter(function(u){ return u.status === 'SOLD'; }).length;
           html += '<div class="card">' +
             '<div class="toolbar"><div><b>' + esc(p.name) + '</b> <span class="pill pill-gray">' + esc(PROJECT_STATUS_LABEL[p.status] || p.status) + '</span></div>' +
-            '<span class="muted mono">' + units.length + ' birim · ' + sold + ' satıldı</span></div>' +
+            '<span class="muted mono">' + units.length + ' ' + esc(T('common.unitsWord')) + ' · ' + sold + ' ' + esc(T('common.soldWord')) + '</span></div>' +
             '<div class="muted" style="font-size:12.5px;margin-top:6px;">' + esc(p.location || '—') +
-            (p.ada ? ' · Ada ' + esc(p.ada) : '') + (p.parsel ? ' / Parsel ' + esc(p.parsel) : '') +
-            (p.delivery_date ? ' · Teslim: ' + esc(p.delivery_date) : '') + '</div>' +
+            (p.ada ? ' · ' + esc(T('projects.adaLabel')) + ' ' + esc(p.ada) : '') + (p.parsel ? ' / ' + esc(T('projects.parselLabel')) + ' ' + esc(p.parsel) : '') +
+            (p.delivery_date ? ' · ' + esc(T('projects.deliveryPrefix')) + ' ' + esc(p.delivery_date) : '') + '</div>' +
             (p.description ? '<div class="muted" style="font-size:12.5px;margin-top:6px;">' + esc(p.description) + '</div>' : '') +
           '</div>';
         });
@@ -667,7 +753,7 @@
 
   function unitsTable(units, opts){
     opts = opts || {};
-    if (!units.length) return '<div class="empty">Kayıt yok.</div>';
+    if (!units.length) return '<div class="empty">' + esc(T('common.noRecords')) + '</div>';
     var rows = units.map(function(u){
       var actions = '';
       if (opts.allowTransition) {
@@ -682,8 +768,8 @@
         (opts.allowTransition ? '<td>' + actions + '</td>' : '') +
       '</tr>';
     }).join('');
-    return '<div class="table-wrap"><table><thead><tr><th>Proje</th><th>Birim</th><th>Tip</th><th>Fiyat</th><th>Durum</th><th>Güncelleme</th>' +
-      (opts.allowTransition ? '<th>İşlem</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    return '<div class="table-wrap"><table><thead><tr><th>' + esc(T('table.colProject')) + '</th><th>' + esc(T('table.colUnit')) + '</th><th>' + esc(T('table.colType')) + '</th><th>' + esc(T('table.colPrice')) + '</th><th>' + esc(T('table.colStatus')) + '</th><th>' + esc(T('table.colUpdated')) + '</th>' +
+      (opts.allowTransition ? '<th>' + esc(T('table.colAction')) + '</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function wireTransitionButtons(container, onDone){
@@ -692,7 +778,7 @@
         var parts = btn.getAttribute('data-transition').split('|');
         try {
           await api('/api/units/' + parts[0], { method: 'PATCH', body: { status: parts[1] } });
-          toast('Durum güncellendi: ' + STATUS_LABEL[parts[1]]);
+          toast(T('common.statusUpdatedPrefix') + STATUS_LABEL[parts[1]]);
           onDone();
         } catch (e) { toast(errMsg(e)); }
       });
@@ -703,17 +789,17 @@
   // INVENTORY (madde 26/32: Real-Time Inventory)
   // ============================================================
   async function renderInventory(container){
-    var body = viewHead(container, 'Envanter', 'Tüm projelerdeki gerçek zamanlı birim envanteri.');
+    var body = viewHead(container, T('nav.item.inventory'), T('inventory.sub'));
     var statuses = ['', 'AVAILABLE', 'PRESENTATION', 'HOLD', 'RESERVED', 'DEPOSIT_PAID', 'CONTRACT', 'SOLD'];
     var current = '';
     body.innerHTML = '<div class="filter-tabs" id="invTabs"></div><div id="invTable" class="card"></div>';
     var tabsEl = document.getElementById('invTabs');
     tabsEl.innerHTML = statuses.map(function(s){
-      return '<button class="filter-tab' + (s === current ? ' active' : '') + '" data-status="' + s + '">' + (s ? esc(STATUS_LABEL[s]) : 'Tümü') + '</button>';
+      return '<button class="filter-tab' + (s === current ? ' active' : '') + '" data-status="' + s + '">' + (s ? esc(STATUS_LABEL[s]) : esc(T('common.all'))) + '</button>';
     }).join('');
     async function load(status){
       var tableEl = document.getElementById('invTable');
-      tableEl.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      tableEl.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
       try {
         var units = await fetchUnits(status);
         tableEl.innerHTML = unitsTable(units, { allowTransition: true });
@@ -732,40 +818,40 @@
   }
 
   async function renderPresentations(container){
-    var body = viewHead(container, 'Sunumlar', 'Şu anda sunum halinde olan birimler — presentation lock ile korunur, iki agent aynı birimi aynı anda sunamaz.');
+    var body = viewHead(container, T('nav.item.presentations'), T('presentations.sub'));
     try { body.innerHTML = unitsTable(await fetchUnits('PRESENTATION')); }
     catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
   async function renderReservations(container){
-    var body = viewHead(container, 'Rezervasyonlar', 'Rezerve edilmiş ve kaporası alınmış birimler.');
+    var body = viewHead(container, T('nav.item.reservations'), T('reservations.sub'));
     try {
       var reserved = await fetchUnits('RESERVED');
       var deposit = await fetchUnits('DEPOSIT_PAID');
-      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">Rezerve</div>' + unitsTable(reserved, { allowTransition: true }) + '</div>' +
-        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">Kapora Alındı</div>' + unitsTable(deposit, { allowTransition: true }) + '</div>';
+      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">' + esc(T('status.unit.RESERVED')) + '</div>' + unitsTable(reserved, { allowTransition: true }) + '</div>' +
+        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">' + esc(T('status.unit.DEPOSIT_PAID')) + '</div>' + unitsTable(deposit, { allowTransition: true }) + '</div>';
       wireTransitionButtons(body, function(){ renderReservations(container); });
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
   async function renderSales(container){
-    var body = viewHead(container, 'Satışlar', 'Satışı tamamlanmış birimler (units.status = SOLD).');
+    var body = viewHead(container, T('nav.item.sales'), T('sales.sub'));
     try {
       var units = await fetchUnits('SOLD');
       var total = units.reduce(function(s,u){ return s + (u.price || 0); }, 0);
-      body.innerHTML = '<div class="stat-grid" style="margin-bottom:14px;">' + statCard('Toplam Satış', units.length) + statCard('Toplam Ciro', money(total), 'gold') + '</div>' +
+      body.innerHTML = '<div class="stat-grid" style="margin-bottom:14px;">' + statCard(T('sales.totalSales'), units.length) + statCard(T('sales.totalRevenue'), money(total), 'gold') + '</div>' +
         '<div class="card">' + unitsTable(units) + '</div>';
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
   async function renderContracts(container){
-    var body = viewHead(container, 'Sözleşmeler', 'Sözleşme aşamasındaki ve tamamlanmış satışlar.');
+    var body = viewHead(container, T('nav.item.contracts'), T('contracts.sub'));
     try {
       var contract = await fetchUnits('CONTRACT');
       var sold = await fetchUnits('SOLD');
-      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">Sözleşmede</div>' + unitsTable(contract, { allowTransition: true }) + '</div>' +
-        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">Tamamlanan (Satıldı)</div>' + unitsTable(sold) + '</div>' +
-        '<div class="note-gap" style="margin-top:14px;">Sözleşme <b>şablonu yükleme ve e-imza</b> altyapısı henüz bağlı değil — bu, ayrı bir e-imza sağlayıcı hesabı gerektiriyor (madde 36). Şu an bu ekran sözleşme AŞAMASINDAKİ gerçek birimleri gösteriyor.</div>';
+      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">' + esc(T('status.unit.CONTRACT')) + '</div>' + unitsTable(contract, { allowTransition: true }) + '</div>' +
+        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">' + esc(T('contracts.completed')) + '</div>' + unitsTable(sold) + '</div>' +
+        '<div class="note-gap" style="margin-top:14px;">' + T('contracts.note') + '</div>';
       wireTransitionButtons(body, function(){ renderContracts(container); });
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
@@ -774,21 +860,21 @@
   // LEADS / CUSTOMERS / CRM (madde 30 mobilden CRM + genel CRM)
   // ============================================================
   async function renderLeads(container){
-    var body = viewHead(container, 'Lead\'ler', 'Tüm potansiyel müşteri kayıtları.',
-      '<button class="btn btn-primary btn-sm" id="toggleAddLead">+ Lead Ekle</button>');
+    var body = viewHead(container, T('nav.item.leads'), T('leads.sub'),
+      '<button class="btn btn-primary btn-sm" id="toggleAddLead">' + esc(T('leads.addBtn')) + '</button>');
     body.innerHTML =
       '<div class="card inline-form" id="addLeadForm">' +
-        '<div class="row"><div class="field"><label>Ad Soyad</label><input id="nlName"></div><div class="field"><label>Telefon</label><input id="nlPhone"></div></div>' +
-        '<div class="row"><div class="field"><label>E-posta</label><input id="nlEmail"></div><div class="field"><label>Bütçe (TRY)</label><input type="number" id="nlBudget"></div></div>' +
-        '<div class="field"><label>İlgi / Not</label><textarea id="nlInterest" rows="2"></textarea></div>' +
-        '<button class="btn btn-primary btn-sm" id="saveLeadBtn">Kaydet</button>' +
+        '<div class="row"><div class="field"><label>' + esc(T('common.nameLabel')) + '</label><input id="nlName"></div><div class="field"><label>' + esc(T('common.phoneLabel')) + '</label><input id="nlPhone"></div></div>' +
+        '<div class="row"><div class="field"><label>' + esc(T('common.emailLabel')) + '</label><input id="nlEmail"></div><div class="field"><label>' + esc(T('leads.budgetLabel')) + '</label><input type="number" id="nlBudget"></div></div>' +
+        '<div class="field"><label>' + esc(T('leads.interestLabel')) + '</label><textarea id="nlInterest" rows="2"></textarea></div>' +
+        '<button class="btn btn-primary btn-sm" id="saveLeadBtn">' + esc(T('common.save')) + '</button>' +
         '<div class="err-msg" id="leadErr" style="display:none;"></div>' +
       '</div><div id="leadList" style="margin-top:16px;" class="card"></div>';
     document.getElementById('toggleAddLead').addEventListener('click', function(){ document.getElementById('addLeadForm').classList.toggle('open'); });
     document.getElementById('saveLeadBtn').addEventListener('click', async function(){
       var name = document.getElementById('nlName').value.trim();
       var errEl = document.getElementById('leadErr');
-      if (!name) { errEl.textContent = 'Ad soyad gerekli.'; errEl.style.display='block'; return; }
+      if (!name) { errEl.textContent = T('leads.nameRequired'); errEl.style.display='block'; return; }
       try {
         await api('/api/leads', { method: 'POST', body: {
           name: name, phone: document.getElementById('nlPhone').value.trim(), email: document.getElementById('nlEmail').value.trim(),
@@ -796,16 +882,16 @@
         }});
         errEl.style.display = 'none';
         document.getElementById('addLeadForm').classList.remove('open');
-        toast('Lead eklendi.'); loadLeads();
+        toast(T('leads.added')); loadLeads();
       } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
     });
     await loadLeads();
     async function loadLeads(){
       var wrap = document.getElementById('leadList');
-      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      wrap.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
       try {
         var res = await api('/api/leads');
-        if (!res.leads.length) { wrap.innerHTML = '<div class="empty">Henüz lead yok.</div>'; return; }
+        if (!res.leads.length) { wrap.innerHTML = '<div class="empty">' + esc(T('leads.noLeads')) + '</div>'; return; }
         var rows = res.leads.map(function(l){
           var opts = Object.keys(LEAD_STATUS_LABEL).map(function(k){ return '<option value="'+k+'"'+(k===l.status?' selected':'')+'>'+LEAD_STATUS_LABEL[k]+'</option>'; }).join('');
           return '<tr><td>' + esc(l.name) + '</td><td class="mono">' + esc(l.phone || l.email || '—') + '</td>' +
@@ -813,10 +899,10 @@
             '<td><select class="lead-status" data-id="' + l.id + '" style="padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-size:12px;">' + opts + '</select></td>' +
             '<td class="mono muted">' + fmtDate(l.created_at) + '</td></tr>';
         }).join('');
-        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Ad</th><th>İletişim</th><th>Bütçe</th><th>Kaynak</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>' + esc(T('table.colName')) + '</th><th>' + esc(T('table.colContact')) + '</th><th>' + esc(T('table.colBudget')) + '</th><th>' + esc(T('table.colSource')) + '</th><th>' + esc(T('table.colStatus')) + '</th><th>' + esc(T('table.colDate')) + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
         wrap.querySelectorAll('.lead-status').forEach(function(sel){
           sel.addEventListener('change', async function(){
-            try { await api('/api/leads/' + sel.getAttribute('data-id'), { method: 'PATCH', body: { status: sel.value } }); toast('Lead durumu güncellendi.'); }
+            try { await api('/api/leads/' + sel.getAttribute('data-id'), { method: 'PATCH', body: { status: sel.value } }); toast(T('leads.statusUpdated')); }
             catch (e) { toast(errMsg(e)); }
           });
         });
@@ -825,27 +911,27 @@
   }
 
   async function renderCustomers(container){
-    var body = viewHead(container, 'Müşteriler', 'Satışı kazanılmış (won) lead\'lerden oluşan müşteri listesi.');
+    var body = viewHead(container, T('nav.item.customers'), T('customers.sub'));
     try {
       var res = await api('/api/leads');
       var won = res.leads.filter(function(l){ return l.status === 'won'; });
-      if (!won.length) { body.innerHTML = '<div class="empty">Henüz "kazanıldı" durumunda müşteri yok.</div>'; return; }
+      if (!won.length) { body.innerHTML = '<div class="empty">' + esc(T('customers.noCustomers')) + '</div>'; return; }
       var rows = won.map(function(l){
         return '<tr><td>' + esc(l.name) + '</td><td class="mono">' + esc(l.phone || l.email || '—') + '</td><td>' + (l.budget ? money(l.budget) : '—') + '</td><td class="mono muted">' + fmtDate(l.updated_at) + '</td></tr>';
       }).join('');
-      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>Ad</th><th>İletişim</th><th>Bütçe</th><th>Müşteri Olma Tarihi</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>' + esc(T('table.colName')) + '</th><th>' + esc(T('table.colContact')) + '</th><th>' + esc(T('table.colBudget')) + '</th><th>' + esc(T('table.colCustomerSince')) + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
   async function renderCrm(container){
-    var body = viewHead(container, 'CRM', 'Satış hunisi — lead durumlarına göre gerçek zamanlı dağılım.');
+    var body = viewHead(container, T('nav.item.crm'), T('crm.sub'));
     try {
       var res = await api('/api/leads');
       var counts = { new:0, qualified:0, presentation:0, negotiating:0, won:0, lost:0 };
       res.leads.forEach(function(l){ if (counts[l.status] !== undefined) counts[l.status]++; });
       var html = '<div class="stat-grid">';
       Object.keys(LEAD_STATUS_LABEL).forEach(function(k){ html += statCard(LEAD_STATUS_LABEL[k], counts[k], k === 'won' ? 'mint' : (k === 'lost' ? '' : 'gold')); });
-      html += '</div><div class="note-gap" style="margin-top:16px;">Harici CRM senkronu (HubSpot/Salesforce/Zoho/Dynamics/Webhook) henüz bağlı değil — bu, ilgili sağlayıcının API anahtarını gerektiriyor (madde 29). Bu ekran şu an VERALIQ\'ın kendi dahili CRM verisini (leads tablosu) gösteriyor.</div>';
+      html += '</div><div class="note-gap" style="margin-top:16px;">' + esc(T('crm.note')) + '</div>';
       body.innerHTML = html;
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
@@ -854,7 +940,7 @@
   // PAYMENTS (approval_requests üzerinden — gerçek onay akışı)
   // ============================================================
   async function renderPayments(container){
-    var body = viewHead(container, 'Ödemeler', 'İndirim / ödeme planı onay talepleri (approval engine).');
+    var body = viewHead(container, T('nav.item.payments'), T('payments.sub'));
     await loadApprovals(body, ['discount', 'payment_plan']);
   }
   async function renderTeamPlaceholder(){} // (unused, kept for symmetry)
@@ -863,22 +949,22 @@
     try {
       var res = await api('/api/approvals');
       var list = res.approvals.filter(function(a){ return !types || types.indexOf(a.type) !== -1; });
-      if (!list.length) { body.innerHTML = '<div class="empty">Kayıt yok.</div>'; return; }
+      if (!list.length) { body.innerHTML = '<div class="empty">' + esc(T('common.noRecords')) + '</div>'; return; }
       var owner = isOwner();
       var rows = list.map(function(a){
         var actions = (a.status === 'pending' && owner)
-          ? '<button class="btn btn-mint btn-sm" data-decide="' + a.id + '|approved" style="margin-right:6px;">Onayla</button><button class="btn btn-danger btn-sm" data-decide="' + a.id + '|rejected">Reddet</button>'
+          ? '<button class="btn btn-mint btn-sm" data-decide="' + a.id + '|approved" style="margin-right:6px;">' + esc(T('payments.approve')) + '</button><button class="btn btn-danger btn-sm" data-decide="' + a.id + '|rejected">' + esc(T('payments.reject')) + '</button>'
           : '';
         var pillCls = a.status === 'approved' ? 'pill-mint' : (a.status === 'rejected' ? 'pill-red' : 'pill-gold');
         return '<tr><td>' + esc(a.type) + '</td><td>' + (a.amount ? money(a.amount) : '—') + '</td><td>' + esc(a.notes || '—') + '</td>' +
           '<td><span class="pill ' + pillCls + '">' + esc(a.status) + '</span></td><td class="mono muted">' + fmtDate(a.created_at) + '</td><td>' + actions + '</td></tr>';
       }).join('');
-      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>Tip</th><th>Tutar</th><th>Not</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-        (owner ? '' : '<div class="note-gap" style="margin-top:12px;">Onaylama yetkisi yalnızca şirket sahibi (company_owner) hesabındadır.</div>');
+      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>' + esc(T('table.colType')) + '</th><th>' + esc(T('table.colAmount')) + '</th><th>' + esc(T('table.colNote')) + '</th><th>' + esc(T('table.colStatus')) + '</th><th>' + esc(T('table.colDate')) + '</th><th>' + esc(T('table.colAction')) + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        (owner ? '' : '<div class="note-gap" style="margin-top:12px;">' + esc(T('payments.ownerOnlyNote')) + '</div>');
       body.querySelectorAll('[data-decide]').forEach(function(btn){
         btn.addEventListener('click', async function(){
           var parts = btn.getAttribute('data-decide').split('|');
-          try { await api('/api/approvals/' + parts[0] + '/decide', { method: 'POST', body: { decision: parts[1] } }); toast('Karar kaydedildi.'); loadApprovals(body, types); }
+          try { await api('/api/approvals/' + parts[0] + '/decide', { method: 'POST', body: { decision: parts[1] } }); toast(T('payments.decided')); loadApprovals(body, types); }
           catch (e) { toast(errMsg(e)); }
         });
       });
@@ -889,31 +975,31 @@
   // DOCUMENTS / CALENDAR / INTEGRATIONS — dürüst altyapı notları
   // ============================================================
   function renderDocuments(container){
-    var body = viewHead(container, 'Belgeler', 'Proje ve sözleşme belgeleri.');
-    body.innerHTML = '<div class="note-gap"><b>Bu ekran henüz dosya yükleme yapamıyor.</b> Veritabanı şemasında belge METADATA\'sı için bir tablo hazır (worker-portal/schema.sql → documents), ancak gerçek dosya depolama (Cloudflare R2 bucket) bu şirket hesabında henüz kurulmadı. Bu, sahte bir "yükle" butonu koymak yerine (madde 49 "mockup yasağı") dürüst bir şekilde burada belirtiliyor — R2 bucket\'ı kurulduğunda bu ekran gerçek yükleme/indirme ile çalışacak şekilde bağlanacak.</div>';
+    var body = viewHead(container, T('nav.item.documents'), T('documents.sub'));
+    body.innerHTML = '<div class="note-gap">' + T('documents.note') + '</div>';
   }
   function renderCalendar(container){
-    var body = viewHead(container, 'Takvim', 'Randevu ve takvim yönetimi.');
-    body.innerHTML = '<div class="note-gap"><b>Randevu/takvim altyapısı henüz kurulmadı.</b> Veritabanında bir randevu tablosu yok — bu, ayrı bir geliştirme fazı (yeni bir tablo + API uçları) gerektiriyor. Sahte randevu göstermek yerine bu gerçek durumu belirtiyoruz.</div>';
+    var body = viewHead(container, T('nav.item.calendar'), T('calendar.sub'));
+    body.innerHTML = '<div class="note-gap">' + T('calendar.note') + '</div>';
   }
   function renderIntegrations(container){
-    var body = viewHead(container, 'Entegrasyonlar', 'Harici CRM/ERP ve diğer servis bağlantıları.');
-    body.innerHTML = '<div class="note-gap"><b>Harici entegrasyon (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/ödeme sağlayıcısı) henüz bağlı değil.</b> Bunların her biri kendi API anahtarınızı/hesabınızı gerektiriyor (madde 29/35). VERALIQ mimarisi provider-agnostic tasarlandığı için (agent-core/providers.js) bu servisler siz hazır olduğunuzda mevcut mimariye eklenebilir.</div>';
+    var body = viewHead(container, T('nav.item.integrations'), T('integrations.sub'));
+    body.innerHTML = '<div class="note-gap">' + T('integrations.note') + '</div>';
   }
 
   // ============================================================
   // REPORTS (madde 38 — gerçek veriden PDF/Excel yerine CSV export v1)
   // ============================================================
   async function renderReports(container){
-    var body = viewHead(container, 'Raporlar', 'Gerçek verilerden anlık rapor ve dışa aktarma.',
-      '<button class="btn btn-ghost btn-sm" id="exportCsvBtn">CSV İndir</button>');
+    var body = viewHead(container, T('nav.item.reports'), T('reports.sub'),
+      '<button class="btn btn-ghost btn-sm" id="exportCsvBtn">' + esc(T('reports.downloadCsv')) + '</button>');
     try {
       var d = await api('/api/dashboard');
       body.innerHTML = '<div class="stat-grid">' +
-        statCard('Toplam Lead', d.total_leads) + statCard('Bugünkü Lead', d.today_leads) +
-        statCard('Satış', d.sales, 'gold') + statCard('Ciro', money(d.revenue), 'gold') +
-        statCard('Aktif Stok', d.active_stock) + statCard('Bekleyen Onay', d.pending_approvals) +
-      '</div><div class="note-gap" style="margin-top:14px;">v1: rapor verisi CSV olarak indirilebilir. PDF export + şirket logosu/filigranı (madde 38) ayrı bir geliştirme adımı.</div>';
+        statCard(T('dashboard.stat.totalLeads'), d.total_leads) + statCard(T('dashboard.stat.todayLeads'), d.today_leads) +
+        statCard(T('dashboard.stat.sales'), d.sales, 'gold') + statCard(T('dashboard.stat.revenue'), money(d.revenue), 'gold') +
+        statCard(T('dashboard.stat.activeStock'), d.active_stock) + statCard(T('dashboard.stat.pendingApproval'), d.pending_approvals) +
+      '</div><div class="note-gap" style="margin-top:14px;">' + esc(T('reports.note')) + '</div>';
       document.getElementById('exportCsvBtn').addEventListener('click', function(){
         var csv = 'metrik,değer\n' + Object.keys(d).map(function(k){ return k + ',' + d[k]; }).join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -928,13 +1014,13 @@
   // AGENTS (AI vs Human — gerçek audit log verisinden)
   // ============================================================
   async function renderAgents(container){
-    var body = viewHead(container, 'Agent\'lar', 'AI ve insan satış temsilcilerinin gerçek sunum performansı.');
+    var body = viewHead(container, T('nav.item.agents'), T('agents.sub'));
     try {
       var d = await api('/api/dashboard');
       body.innerHTML = '<div class="row">' +
-        '<div class="card"><div class="pill pill-mint" style="margin-bottom:8px;">AI Agent</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">gerçekleştirdiği sunum (presentation lock kayıtları)</div></div>' +
-        '<div class="card"><div class="pill pill-gold" style="margin-bottom:8px;">İnsan Temsilci</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">gerçekleştirdiği sunum (presentation lock kayıtları)</div></div>' +
-      '</div><div class="note-gap" style="margin-top:14px;">Bu sayılar audit_log tablosundaki gerçek "unit.presentation_lock" kayıtlarından hesaplanır — tahmini/uydurma bir performans skoru değildir.</div>';
+        '<div class="card"><div class="pill pill-mint" style="margin-bottom:8px;">' + esc(T('common.aiAgent')) + '</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">' + esc(T('agents.presentationNote')) + '</div></div>' +
+        '<div class="card"><div class="pill pill-gold" style="margin-bottom:8px;">' + esc(T('common.humanAgent')) + '</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">' + esc(T('agents.presentationNote')) + '</div></div>' +
+      '</div><div class="note-gap" style="margin-top:14px;">' + esc(T('agents.note')) + '</div>';
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
@@ -943,24 +1029,24 @@
   // ============================================================
   async function renderTeam(container){
     var owner = isOwner();
-    var body = viewHead(container, 'Ekip', 'Portala erişimi olan kullanıcılar.',
-      owner ? '<button class="btn btn-primary btn-sm" id="toggleAddTeam">+ Üye Ekle</button>' : '');
+    var body = viewHead(container, T('nav.item.team'), T('team.sub'),
+      owner ? '<button class="btn btn-primary btn-sm" id="toggleAddTeam">' + esc(T('team.addBtn')) + '</button>' : '');
     var ROLE_LABELS = {
-      company_owner: 'Sahip', company_staff: 'Personel', company_manager: 'Yönetici',
-      company_sales_manager: 'Satış Müdürü', company_sales_agent: 'Satış Temsilcisi', company_viewer: 'İzleyici (salt-okunur)',
+      company_owner: T('role.owner'), company_staff: T('role.staff'), company_manager: T('role.manager'),
+      company_sales_manager: T('role.salesManager'), company_sales_agent: T('role.salesAgent'), company_viewer: T('role.viewer'),
     };
     var formHtml = owner ? (
       '<div class="card inline-form" id="addTeamForm">' +
-        '<div class="row"><div class="field"><label>Ad Soyad</label><input id="ntName"></div><div class="field"><label>E-posta</label><input id="ntEmail"></div></div>' +
-        '<div class="row"><div class="field"><label>Geçici Şifre</label><input id="ntPass" placeholder="En az 8 karakter"></div>' +
-        '<div class="field"><label>Rol</label><select id="ntRole">' +
-          '<option value="company_staff">Personel (tam erişim)</option>' +
-          '<option value="company_manager">Yönetici (+ onay yetkisi)</option>' +
-          '<option value="company_sales_manager">Satış Müdürü</option>' +
-          '<option value="company_sales_agent">Satış Temsilcisi</option>' +
-          '<option value="company_viewer">İzleyici (yalnızca görüntüleme)</option>' +
+        '<div class="row"><div class="field"><label>' + esc(T('common.nameLabel')) + '</label><input id="ntName"></div><div class="field"><label>' + esc(T('common.emailLabel')) + '</label><input id="ntEmail"></div></div>' +
+        '<div class="row"><div class="field"><label>' + esc(T('team.tempPasswordLabel')) + '</label><input id="ntPass" placeholder="' + esc(T('team.tempPasswordPlaceholder')) + '"></div>' +
+        '<div class="field"><label>' + esc(T('team.roleLabel')) + '</label><select id="ntRole">' +
+          '<option value="company_staff">' + esc(T('role.staffFullAccess')) + '</option>' +
+          '<option value="company_manager">' + esc(T('role.managerApproval')) + '</option>' +
+          '<option value="company_sales_manager">' + esc(T('role.salesManager')) + '</option>' +
+          '<option value="company_sales_agent">' + esc(T('role.salesAgent')) + '</option>' +
+          '<option value="company_viewer">' + esc(T('role.viewerOnly')) + '</option>' +
         '</select></div></div>' +
-        '<button class="btn btn-primary btn-sm" id="saveTeamBtn">Ekle</button>' +
+        '<button class="btn btn-primary btn-sm" id="saveTeamBtn">' + esc(T('common.add')) + '</button>' +
         '<div class="err-msg" id="teamErr" style="display:none;"></div>' +
       '</div>') : '';
     body.innerHTML = formHtml + '<div id="teamList" class="card" style="margin-top:16px;"></div>';
@@ -970,18 +1056,18 @@
         var name = document.getElementById('ntName').value.trim(), email = document.getElementById('ntEmail').value.trim(), pass = document.getElementById('ntPass').value;
         var role = document.getElementById('ntRole').value;
         var errEl = document.getElementById('teamErr');
-        if (!name || !email || !pass) { errEl.textContent = 'Tüm alanlar gerekli.'; errEl.style.display='block'; return; }
+        if (!name || !email || !pass) { errEl.textContent = T('team.allFieldsRequired'); errEl.style.display='block'; return; }
         try {
           await api('/api/team', { method: 'POST', body: { name: name, email: email, password: pass, role: role } });
           errEl.style.display = 'none'; document.getElementById('addTeamForm').classList.remove('open');
-          toast('Ekip üyesi eklendi.'); loadTeam();
+          toast(T('team.added')); loadTeam();
         } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
       });
     }
     await loadTeam();
     async function loadTeam(){
       var wrap = document.getElementById('teamList');
-      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      wrap.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
       try {
         var res = await api('/api/team');
         var rows = res.team.map(function(u){
@@ -989,13 +1075,13 @@
           var roleLabel = ROLE_LABELS[u.role] || u.role;
           return '<tr><td>' + esc(u.name) + '</td><td class="mono">' + esc(u.email) + '</td>' +
             '<td><span class="pill ' + (u.role === 'company_owner' ? 'pill-gold' : 'pill-gray') + '">' + esc(roleLabel) + '</span></td>' +
-            '<td>' + (canRemove ? '<button class="btn btn-danger btn-sm" data-remove="' + u.id + '">Kaldır</button>' : '—') + '</td></tr>';
+            '<td>' + (canRemove ? '<button class="btn btn-danger btn-sm" data-remove="' + u.id + '">' + esc(T('common.remove')) + '</button>' : '—') + '</td></tr>';
         }).join('');
-        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>' + esc(T('table.colName')) + '</th><th>' + esc(T('table.colEmail')) + '</th><th>' + esc(T('table.colRole')) + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
         wrap.querySelectorAll('[data-remove]').forEach(function(btn){
           btn.addEventListener('click', async function(){
-            if (!confirm('Bu kullanıcıyı ekipten kaldırmak istediğinize emin misiniz?')) return;
-            try { await api('/api/team/' + btn.getAttribute('data-remove'), { method: 'DELETE' }); toast('Kaldırıldı.'); loadTeam(); }
+            if (!confirm(T('team.confirmRemove'))) return;
+            try { await api('/api/team/' + btn.getAttribute('data-remove'), { method: 'DELETE' }); toast(T('team.removed')); loadTeam(); }
             catch (e) { toast(errMsg(e)); }
           });
         });
@@ -1008,26 +1094,26 @@
   // ============================================================
   async function renderSettings(container){
     var owner = isOwner();
-    var body = viewHead(container, 'Ayarlar', 'Şirket bilgileri ve hesap ayarları.');
+    var body = viewHead(container, T('nav.item.settings'), T('settings.sub'));
     var company = getCompany() || {};
     body.innerHTML =
       '<div class="card">' +
-        '<div class="stat-label" style="margin-bottom:12px;">Şirket Bilgileri</div>' +
-        '<div class="field"><label>Şirket Adı</label><input id="stCompanyName" value="' + esc(company.name || '') + '" ' + (owner ? '' : 'disabled') + '></div>' +
-        (owner ? '<button class="btn btn-primary btn-sm" id="saveCompanyBtn">Kaydet</button><div class="err-msg" id="companyErr" style="display:none;"></div>' :
-          '<div class="hint">Şirket bilgilerini yalnızca şirket sahibi değiştirebilir.</div>') +
+        '<div class="stat-label" style="margin-bottom:12px;">' + esc(T('settings.companyInfo')) + '</div>' +
+        '<div class="field"><label>' + esc(T('settings.companyNameLabel')) + '</label><input id="stCompanyName" value="' + esc(company.name || '') + '" ' + (owner ? '' : 'disabled') + '></div>' +
+        (owner ? '<button class="btn btn-primary btn-sm" id="saveCompanyBtn">' + esc(T('common.save')) + '</button><div class="err-msg" id="companyErr" style="display:none;"></div>' :
+          '<div class="hint">' + esc(T('settings.ownerOnlyHint')) + '</div>') +
       '</div>' +
       '<div class="card">' +
-        '<div class="stat-label" style="margin-bottom:12px;">Şifre Değiştir</div>' +
-        '<div class="row"><div class="field"><label>Mevcut Şifre</label><input type="password" id="curPass"></div><div class="field"><label>Yeni Şifre</label><input type="password" id="newPass"></div></div>' +
-        '<button class="btn btn-primary btn-sm" id="changePassBtn">Şifreyi Değiştir</button>' +
+        '<div class="stat-label" style="margin-bottom:12px;">' + esc(T('settings.changePasswordTitle')) + '</div>' +
+        '<div class="row"><div class="field"><label>' + esc(T('settings.currentPasswordLabel')) + '</label><input type="password" id="curPass"></div><div class="field"><label>' + esc(T('settings.newPasswordLabel')) + '</label><input type="password" id="newPass"></div></div>' +
+        '<button class="btn btn-primary btn-sm" id="changePassBtn">' + esc(T('settings.changePasswordBtn')) + '</button>' +
         '<div class="err-msg" id="passErr" style="display:none;"></div>' +
       '</div>' +
       (owner ?
       '<div class="card">' +
-        '<div class="stat-label" style="margin-bottom:12px;">Verilerinizi Dışa Aktarın</div>' +
-        '<div class="hint" style="margin-bottom:12px;">Şirketinize ait TÜM veriler (projeler, birimler, lead\'ler, müşteriler, görüşme geçmişi, onaylar, denetim kaydı) tek bir JSON dosyası olarak indirilir. VERALIQ\'a veya herhangi bir sağlayıcıya bağımlı kalmadan verinizin her zaman sizin olduğunu garanti eder.</div>' +
-        '<button class="btn btn-ghost btn-sm" id="exportDataBtn">Tüm Verilerimi İndir (.json)</button>' +
+        '<div class="stat-label" style="margin-bottom:12px;">' + esc(T('settings.exportTitle')) + '</div>' +
+        '<div class="hint" style="margin-bottom:12px;">' + esc(T('settings.exportHint')) + '</div>' +
+        '<button class="btn btn-ghost btn-sm" id="exportDataBtn">' + esc(T('settings.exportBtn')) + '</button>' +
         '<div class="err-msg" id="exportErr" style="display:none;"></div>' +
       '</div>' : '');
     if (owner) {
@@ -1038,18 +1124,18 @@
           await api('/api/companies/me', { method: 'PATCH', body: { name: name } });
           var c = getCompany(); c.name = name; sessionStorage.setItem(COMPANY_KEY, JSON.stringify(c));
           document.getElementById('topbarCompany').textContent = name;
-          errEl.style.display = 'none'; toast('Şirket bilgileri güncellendi.');
+          errEl.style.display = 'none'; toast(T('settings.companyUpdated'));
         } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
       });
     }
     document.getElementById('changePassBtn').addEventListener('click', async function(){
       var cur = document.getElementById('curPass').value, next = document.getElementById('newPass').value;
       var errEl = document.getElementById('passErr');
-      if (!cur || !next) { errEl.textContent = 'Her iki alan da gerekli.'; errEl.style.display='block'; return; }
+      if (!cur || !next) { errEl.textContent = T('settings.bothFieldsRequired'); errEl.style.display='block'; return; }
       try {
         await api('/api/auth/change-password', { method: 'POST', body: { current_password: cur, new_password: next } });
         errEl.style.display = 'none'; document.getElementById('curPass').value=''; document.getElementById('newPass').value='';
-        toast('Şifreniz güncellendi.');
+        toast(T('settings.passwordUpdated'));
       } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
     });
     var exportBtn = document.getElementById('exportDataBtn');
@@ -1057,7 +1143,7 @@
       exportBtn.addEventListener('click', async function(){
         var errEl = document.getElementById('exportErr');
         var originalLabel = exportBtn.textContent;
-        exportBtn.disabled = true; exportBtn.textContent = 'Hazırlanıyor…';
+        exportBtn.disabled = true; exportBtn.textContent = T('settings.preparing');
         try {
           var data = await api('/api/companies/me/export');
           var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1070,7 +1156,7 @@
           document.body.appendChild(a); a.click(); document.body.removeChild(a);
           setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
           errEl.style.display = 'none';
-          toast('Verileriniz indirildi.');
+          toast(T('settings.dataDownloaded'));
         } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
         exportBtn.disabled = false; exportBtn.textContent = originalLabel;
       });
@@ -1096,7 +1182,7 @@
   <div class="agent-header" id="agentHeader">
     <div class="agent-header-id">
       <span class="agent-dot" id="agentStatusDot"></span>
-      <span class="agent-name">Şirket Asistanı</span>
+      <span class="agent-name" id="agentNameLabel">Şirket Asistanı</span>
     </div>
     <div class="agent-controls">
       <button type="button" class="agent-btn" id="agentHalfBtn" title="Yarım ekran" aria-label="Yarım ekran">▣</button>
@@ -1112,13 +1198,13 @@
       <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
     </div>
     <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
-      <p>Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Asistan menüsü).</p>
+      <p id="agentMicBlockedText">Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Asistan menüsü).</p>
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
     <div class="agent-captions" id="agentCaptions" hidden></div>
     <div class="agent-join-gate" id="agentJoinGate" hidden>
       <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
-      <div class="agent-join-hint">Mikrofonunuzu kullanmak için tıklayın</div>
+      <div class="agent-join-hint" id="agentJoinHint">Mikrofonunuzu kullanmak için tıklayın</div>
     </div>
   </div>
 </div>
