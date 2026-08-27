@@ -17,9 +17,20 @@ Kaynak: `worker-portal/portal-api-worker.js`. Tüm yanıtlar JSON. Auth: `Author
 |---|---|---|---|
 | GET/PATCH | `/api/companies/me` | owner/staff | Kendi şirket bilgisi; PATCH yalnızca `name` (plan/status admin-only) |
 | GET | `/api/companies/me/export` | **yalnızca owner** | Şirketin TÜM verisinin (projeler/birimler/lead/müşteri/görüşme/onay/audit) tek JSON'da dışa aktarımı — madde 61-62, `password_hash` DAHİL EDİLMEZ, portal.html Settings ekranında "Tüm Verilerimi İndir" butonu |
-| GET | `/api/team` | owner/staff | Kendi şirketinin kullanıcı listesi |
-| POST | `/api/team` | owner | Yeni `company_staff` davet eder |
+| GET | `/api/team` | owner/staff (tüm rol tier'leri) | Kendi şirketinin kullanıcı listesi |
+| POST | `/api/team` | owner | Yeni üye davet eder — body'de opsiyonel `role` (2026-08-27 eklendi): `company_staff` (varsayılan), `company_manager`, `company_sales_manager`, `company_sales_agent`, `company_viewer`. Tanınmayan/eksik değer sessizce `company_staff`'a düşer |
 | DELETE | `/api/team/:id` | owner | Kaldırır (owner kaldırılamaz) |
+
+## RBAC — Genişletilmiş roller (2026-08-27 eklendi, 65 maddelik master prompt)
+
+`company_owner` ve `company_staff`'a ek olarak 4 yeni rol tanımlandı: `company_manager`, `company_sales_manager`, `company_sales_agent`, `company_viewer`. Tasarım gereği **geriye dönük tam uyumlu** — mevcut owner/staff davranışı hiç değişmedi (105 testte doğrulandı, sıfır regresyon).
+
+- **Tier eşlemesi**: `requireAuth()` içinde `COMPANY_ROLE_BASE_TIER` bu 4 yeni rolü `'company_staff'` tier'ine eşliyor. Yani `allowedRoles: ['company_owner','company_staff']` ile korunan HER uç, ek kod değişikliği olmadan bu 4 yeni role de otomatik açılıyor (dokümandaki "owner/staff" tüm satırlar bu tier'i kapsar).
+- **`company_viewer` özel kısıtı — gerçekten uygulanıyor**: `requireAuth()` içinde doğrudan, rol `company_viewer` VE HTTP metodu `GET` değilse istek 401 ile reddediliyor — bu route bazlı değil, merkezi ve atlanamaz bir kontrol.
+- **Genişletilmiş yetkiler route-bazlı, asla örtük değil**: Şu an tek örnek `company_manager`'ın `/api/approvals/:id` (onay/red) uçlarına owner ile birlikte erişebilmesi — bu route'un `allowedRoles` listesine açıkça eklendi, tier eşlemesinden otomatik gelmedi.
+- **Bilinen basitleştirme (dürüstçe belirtiliyor)**: `company_sales_agent` şu an `company_staff` ile birebir aynı erişime sahip (satır bazlı "yalnızca kendi lead'lerini görsün" kısıtı YOK) — 65 maddelik promptun ima ettiği daha ince taneli "temsilci yalnızca kendi müşterilerini görür" davranışı bu pass'te kapsam dışı bırakıldı, ayrı bir iterasyon gerektiriyor.
+- **portal.html**: Ekip davet formunda rol seçici (`<select id="ntRole">`) eklendi; ekip listesi artık her rolü kendi Türkçe etiketiyle gösteriyor (`ROLE_LABELS`), eskiden tüm yeni roller "Personel" olarak yanlış gösteriliyordu.
+- **Test kapsamı**: 14 yeni test — davet ile her rolün atanabildiği, geçersiz rolün `company_staff`'a düştüğü, `company_sales_agent`'ın staff-tier erişimine sahip olduğu, `company_viewer`'ın GET yapabilip POST/PATCH'te 401 aldığı, `company_manager`/`company_sales_agent`'ın owner-only uçlara (export, davet) erişemediği, `company_sales_agent`'ın onay talebi oluşturup karar VEREMEDİĞİ, `company_manager`'ın karar VEREBİLDİĞİ.
 
 ## Projeler / Envanter
 
@@ -61,8 +72,8 @@ Not (güncellendi): bu uçlar artık `agent-core/orchestrator.js` tarafından `a
 |---|---|---|---|
 | GET/POST | `/api/leads` | owner/staff | POST artık opsiyonel `customer_id` kabul ediyor (başka şirkete aitse sessizce null kalır) |
 | PATCH | `/api/leads/:id` | owner/staff | `customer_id` ile bağlama/kaldırma (geçersiz id → 400) |
-| GET/POST | `/api/approvals` | owner/staff (POST) | |
-| PATCH | `/api/approvals/:id` | owner | `{status}` onay/red kararı |
+| GET/POST | `/api/approvals` | owner/staff tier (POST dahil, 2026-08-27: yeni rollerin hepsi talep oluşturabilir) | |
+| PATCH | `/api/approvals/:id` | owner **veya** `company_manager` (2026-08-27 genişletildi) | `{status}` onay/red kararı |
 | GET | `/api/audit-log` | owner/admin | owner kendi şirketi, admin tümü (son 200) |
 
 ## VERALIQ Admin (yalnızca `veraliq_admin`)

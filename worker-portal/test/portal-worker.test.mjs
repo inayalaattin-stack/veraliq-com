@@ -553,6 +553,68 @@ const run = async () => {
   data = await r.json();
   check('bağlantı kaldırma sonrası lead.customer_id gerçekten null', data.lead.customer_id === null, data);
 
+  // ---------------------------------------------------------------------
+  // RBAC genişlemesi (madde: Owner/Admin/Manager/Sales Manager/Sales
+  // Agent/Viewer) — company_owner ve company_staff'ın davranışı DEĞİŞMEDİ
+  // (yukarıdaki 91 test zaten bunu doğruluyor). Burada YENİ dört rol test
+  // ediliyor.
+  // ---------------------------------------------------------------------
+  async function inviteAndLogin(role, email) {
+    const rr = await worker.fetch(req('POST', '/api/team', { email, password: 'Passw0rd!', name: 'RBAC Test', role }, { Authorization: 'Bearer ' + ownerToken }), env);
+    const dd = await rr.json();
+    const lr = await worker.fetch(req('POST', '/api/auth/company/login', { email, password: 'Passw0rd!' }), env);
+    const ld = await lr.json();
+    return { userId: dd.id, token: ld.token, invitedRole: dd.role };
+  }
+
+  const manager = await inviteAndLogin('company_manager', 'rbac-manager@veraliq.com');
+  check('davet: company_manager rolüyle davet edilebilir, rol geri döner', manager.invitedRole === 'company_manager' && !!manager.token, manager);
+
+  const salesAgent = await inviteAndLogin('company_sales_agent', 'rbac-agent@veraliq.com');
+  check('davet: company_sales_agent rolüyle davet edilebilir', salesAgent.invitedRole === 'company_sales_agent' && !!salesAgent.token);
+
+  const viewer = await inviteAndLogin('company_viewer', 'rbac-viewer@veraliq.com');
+  check('davet: company_viewer rolüyle davet edilebilir', viewer.invitedRole === 'company_viewer' && !!viewer.token);
+
+  r = await worker.fetch(req('POST', '/api/team', { email: 'rbac-bogus@veraliq.com', password: 'Passw0rd!', name: 'Bogus', role: 'super_admin' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('davet: geçersiz/tanınmayan role değeri sessizce company_staff\'a düşer', data.role === 'company_staff', data);
+
+  // company_sales_agent: company_staff ile AYNI temel erişime sahip (bugün
+  // için satır-seviyesi kısıtlama YOK, bkz. SECURITY.md) — leads/customers
+  // okuyup yazabilmeli.
+  r = await worker.fetch(req('GET', '/api/leads', null, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('company_sales_agent /api/leads okuyabilir (company_staff tier\'i)', r.status === 200);
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Sales Agent\'ın eklediği müşteri' }, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('company_sales_agent yeni müşteri oluşturabilir (company_staff tier\'i)', r.status === 201);
+
+  // company_viewer: GET serbest, HER TÜRLÜ yazma (POST/PATCH/DELETE) 401.
+  r = await worker.fetch(req('GET', '/api/leads', null, { Authorization: 'Bearer ' + viewer.token }), env);
+  check('SECURITY(RBAC): company_viewer GET isteklerini yapabilir', r.status === 200);
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Viewer\'ın eklemeye çalıştığı' }, { Authorization: 'Bearer ' + viewer.token }), env);
+  check('SECURITY(RBAC): company_viewer POST/yazma isteği yapamaz (401, salt-okunur)', r.status === 401);
+  r = await worker.fetch(req('PATCH', `/api/leads/${linkedLeadId}`, { name: 'Viewer değiştirmeye çalıştı' }, { Authorization: 'Bearer ' + viewer.token }), env);
+  check('SECURITY(RBAC): company_viewer PATCH isteği de yapamaz (401)', r.status === 401);
+
+  // Owner-only uçlar (takım/export) YENİ rollerin HİÇBİRİNE otomatik açılmaz
+  // (tier eşlemesi yalnızca 'company_staff' gerektiren uçlarda geçerli).
+  r = await worker.fetch(req('GET', '/api/companies/me/export', null, { Authorization: 'Bearer ' + manager.token }), env);
+  check('SECURITY(RBAC): company_manager owner-only export ucuna erişemez (401)', r.status === 401);
+  r = await worker.fetch(req('POST', '/api/team', { email: 'nope@veraliq.com', password: 'Passw0rd!', name: 'Nope' }, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('SECURITY(RBAC): company_sales_agent takıma yeni üye davet edemez (401, owner-only)', r.status === 401);
+
+  // Onay yetkisi: company_manager onaylayabilir, company_sales_agent ONAYLAYAMAZ.
+  r = await worker.fetch(req('POST', '/api/approvals', { type: 'discount', amount: 5000, notes: 'RBAC testi' }, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  data = await r.json();
+  check('company_sales_agent bir onay TALEBİ oluşturabilir', r.status === 201 && !!data.id, data);
+  const rbacApprovalId = data.id;
+
+  r = await worker.fetch(req('POST', `/api/approvals/${rbacApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('SECURITY(RBAC): company_sales_agent onay KARARI VEREMEZ (401)', r.status === 401);
+
+  r = await worker.fetch(req('POST', `/api/approvals/${rbacApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + manager.token }), env);
+  check('RBAC: company_manager onay verebilir (madde 43 genişlemesi)', r.status === 200);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };

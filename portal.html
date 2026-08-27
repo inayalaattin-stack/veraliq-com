@@ -945,10 +945,21 @@
     var owner = isOwner();
     var body = viewHead(container, 'Team', 'Portala erişimi olan kullanıcılar.',
       owner ? '<button class="btn btn-primary btn-sm" id="toggleAddTeam">+ Üye Ekle</button>' : '');
+    var ROLE_LABELS = {
+      company_owner: 'Sahip', company_staff: 'Personel', company_manager: 'Yönetici',
+      company_sales_manager: 'Satış Müdürü', company_sales_agent: 'Satış Temsilcisi', company_viewer: 'İzleyici (salt-okunur)',
+    };
     var formHtml = owner ? (
       '<div class="card inline-form" id="addTeamForm">' +
         '<div class="row"><div class="field"><label>Ad Soyad</label><input id="ntName"></div><div class="field"><label>E-posta</label><input id="ntEmail"></div></div>' +
-        '<div class="field"><label>Geçici Şifre</label><input id="ntPass" placeholder="En az 8 karakter"></div>' +
+        '<div class="row"><div class="field"><label>Geçici Şifre</label><input id="ntPass" placeholder="En az 8 karakter"></div>' +
+        '<div class="field"><label>Rol</label><select id="ntRole">' +
+          '<option value="company_staff">Personel (tam erişim)</option>' +
+          '<option value="company_manager">Yönetici (+ onay yetkisi)</option>' +
+          '<option value="company_sales_manager">Satış Müdürü</option>' +
+          '<option value="company_sales_agent">Satış Temsilcisi</option>' +
+          '<option value="company_viewer">İzleyici (yalnızca görüntüleme)</option>' +
+        '</select></div></div>' +
         '<button class="btn btn-primary btn-sm" id="saveTeamBtn">Ekle</button>' +
         '<div class="err-msg" id="teamErr" style="display:none;"></div>' +
       '</div>') : '';
@@ -957,10 +968,11 @@
       document.getElementById('toggleAddTeam').addEventListener('click', function(){ document.getElementById('addTeamForm').classList.toggle('open'); });
       document.getElementById('saveTeamBtn').addEventListener('click', async function(){
         var name = document.getElementById('ntName').value.trim(), email = document.getElementById('ntEmail').value.trim(), pass = document.getElementById('ntPass').value;
+        var role = document.getElementById('ntRole').value;
         var errEl = document.getElementById('teamErr');
         if (!name || !email || !pass) { errEl.textContent = 'Tüm alanlar gerekli.'; errEl.style.display='block'; return; }
         try {
-          await api('/api/team', { method: 'POST', body: { name: name, email: email, password: pass } });
+          await api('/api/team', { method: 'POST', body: { name: name, email: email, password: pass, role: role } });
           errEl.style.display = 'none'; document.getElementById('addTeamForm').classList.remove('open');
           toast('Ekip üyesi eklendi.'); loadTeam();
         } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
@@ -974,8 +986,9 @@
         var res = await api('/api/team');
         var rows = res.team.map(function(u){
           var canRemove = owner && u.role !== 'company_owner';
+          var roleLabel = ROLE_LABELS[u.role] || u.role;
           return '<tr><td>' + esc(u.name) + '</td><td class="mono">' + esc(u.email) + '</td>' +
-            '<td><span class="pill ' + (u.role === 'company_owner' ? 'pill-gold' : 'pill-gray') + '">' + (u.role === 'company_owner' ? 'Sahip' : 'Personel') + '</span></td>' +
+            '<td><span class="pill ' + (u.role === 'company_owner' ? 'pill-gold' : 'pill-gray') + '">' + esc(roleLabel) + '</span></td>' +
             '<td>' + (canRemove ? '<button class="btn btn-danger btn-sm" data-remove="' + u.id + '">Kaldır</button>' : '—') + '</td></tr>';
         }).join('');
         wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';

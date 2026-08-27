@@ -60,6 +60,33 @@ async function writeAudit(env, { company_id, user_id, action, entity_type, entit
   } catch (e) { /* audit log yazımı başarısız olsa bile ana işlemi engelleme */ }
 }
 
+// RBAC GENİŞLEMESİ (2026-08-27, 65 maddelik master promptun RBAC maddesi —
+// Owner/Admin/Manager/Sales Manager/Sales Agent/Viewer). Mevcut üç rol
+// (veraliq_admin/company_owner/company_staff) HİÇBİR ŞEKİLDE DEĞİŞMEDİ —
+// tamamen geriye uyumlu, aşağıdaki dört rol YENİ ve EK.
+//
+// "Tier" (temel erişim katmanı) mantığı: bir route'un allowedRoles listesi
+// 'company_staff' içeriyorsa, bu dört yeni rol de (bugün için) company_staff
+// ile AYNI temel erişimi görür — company_manager/sales_manager/sales_agent
+// için satır-seviyesi (yalnızca kendi lead'i vb.) bir kısıtlama HENÜZ YOK,
+// bu dürüstçe SECURITY.md'de işaretlendi. Bir route'un allowedRoles listesi
+// yalnızca 'company_owner' içeriyorsa (ör. takım/şirket ayarları yönetimi),
+// bu dört yeni rol OTOMATİK OLARAK ERİŞEMEZ — genişletilmiş erişim yalnızca
+// KOD İÇİNDE AÇIKÇA eklendiği yerlerde var (ör. company_manager'ın onay
+// verebilmesi, aşağıda /api/approvals/:id/decide'a elle eklendi).
+//
+// company_viewer İSTİSNA: bu tek rol için GERÇEKTEN ENFORCE EDİLEN bir
+// kısıtlama var — GET dışındaki hiçbir metod kabul edilmez, allowedRoles ne
+// olursa olsun (route kendi içinde auth.role'ü ayrıca kontrol etse bile,
+// buradan zaten null dönüp 401 alır).
+const COMPANY_ROLE_BASE_TIER = {
+  company_manager: 'company_staff',
+  company_sales_manager: 'company_staff',
+  company_sales_agent: 'company_staff',
+  company_viewer: 'company_staff',
+};
+const COMPANY_EXTENDED_ROLES = ['company_manager', 'company_sales_manager', 'company_sales_agent', 'company_viewer'];
+
 // Verilen isteğin JWT'sini doğrular. allowedRoles boşsa herhangi bir
 // oturum açmış kullanıcı geçer. Döner: {sub, company_id, role} ya da null.
 async function requireAuth(request, env, allowedRoles) {
@@ -68,7 +95,11 @@ async function requireAuth(request, env, allowedRoles) {
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload) return null;
-  if (allowedRoles && allowedRoles.length && !allowedRoles.includes(payload.role)) return null;
+  if (payload.role === 'company_viewer' && request.method !== 'GET') return null;
+  if (allowedRoles && allowedRoles.length) {
+    const tier = COMPANY_ROLE_BASE_TIER[payload.role];
+    if (!allowedRoles.includes(payload.role) && !(tier && allowedRoles.includes(tier))) return null;
+  }
   return payload;
 }
 
@@ -399,15 +430,22 @@ async function route(request, url, env) {
     if (!auth) return json({ error: 'unauthorized' }, 401);
     const body = await request.json();
     if (!body.email || !body.password || !body.name) return json({ error: 'missing_fields', required: ['email', 'password', 'name'] }, 400);
+    // RBAC genişlemesi (2026-08-27): owner artık davet ederken daha
+    // granüler bir rol seçebilir (Manager/Sales Manager/Sales Agent/Viewer).
+    // GEÇERSİZ/eksik bir role değeri (veya 'company_owner'/'veraliq_admin'
+    // gibi davet yoluyla ASLA verilmemesi gereken bir rol) sessizce
+    // 'company_staff'a düşer — DAVRANIŞ DEĞİŞMEDİ (varsayılan hep buydu).
+    const invitableRoles = ['company_staff', ...COMPANY_EXTENDED_ROLES];
+    const role = invitableRoles.includes(body.role) ? body.role : 'company_staff';
     const existing = await env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(body.email.toLowerCase().trim()).first();
     if (existing) return json({ error: 'email_taken' }, 409);
     const id = generateId('usr');
     const passwordHash = await hashPassword(body.password);
     await env.DB.prepare(
-      `INSERT INTO users (id, company_id, email, password_hash, role, name, created_at) VALUES (?, ?, ?, ?, 'company_staff', ?, datetime('now'))`
-    ).bind(id, auth.company_id, body.email.toLowerCase().trim(), passwordHash, body.name).run();
-    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'team.invite', entity_type: 'user', entity_id: id, new_value: { email: body.email, name: body.name }, request });
-    return json({ id }, 201);
+      `INSERT INTO users (id, company_id, email, password_hash, role, name, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(id, auth.company_id, body.email.toLowerCase().trim(), passwordHash, role, body.name).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'team.invite', entity_type: 'user', entity_id: id, new_value: { email: body.email, name: body.name, role }, request });
+    return json({ id, role }, 201);
   }
   if ((m = path.match(/^\/api\/team\/([^/]+)$/)) && method === 'DELETE') {
     const auth = await requireAuth(request, env, ['company_owner']);
@@ -942,7 +980,8 @@ async function route(request, url, env) {
     // company portal kullanıcısı VEYA agent (X-Agent-Key) oluşturabilir.
     let companyId, requestedBy;
     const auth = await requireAuth(request, env, null);
-    if (auth && ['company_owner', 'company_staff'].includes(auth.role)) {
+    // company_viewer requireAuth içinde zaten (GET dışı → null) engellendi.
+    if (auth && (['company_owner', 'company_staff'].includes(auth.role) || COMPANY_EXTENDED_ROLES.includes(auth.role))) {
       companyId = auth.company_id; requestedBy = auth.sub;
     } else if (checkAgentKey(request, env)) {
       const body0 = await request.clone().json();
@@ -961,7 +1000,9 @@ async function route(request, url, env) {
     return json({ id }, 201);
   }
   if ((m = path.match(/^\/api\/approvals\/([^/]+)\/decide$/)) && method === 'POST') {
-    const auth = await requireAuth(request, env, ['company_owner']); // yalnız yetkili (owner) onaylayabilir — madde 43
+    // Onaylama yetkisi: owner + company_manager (madde 43 + RBAC genişlemesi
+    // 2026-08-27 — Manager rolü onay verebilir, diğer yeni roller VEREMEZ).
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
     if (!auth) return json({ error: 'unauthorized' }, 401);
     const approvalId = m[1];
     const approval = await env.DB.prepare(`SELECT * FROM approval_requests WHERE id = ? AND company_id = ?`).bind(approvalId, auth.company_id).first();
