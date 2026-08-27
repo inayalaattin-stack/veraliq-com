@@ -52,7 +52,7 @@ Provider-bağımsız, yapılandırılmış müşteri + görüşme hafızası —
 
 API: `POST /api/customers`, `GET /api/customers`, `GET/PATCH /api/customers/:id`, `POST /api/customers/:id/interests`, `POST /api/conversations` (JWT VEYA agent-key ile — presentation-lock ile aynı desen), `GET /api/conversations`, `GET /api/conversations/:id`, `POST /api/conversations/:id/messages`, `POST /api/conversations/:id/end`, `POST /api/conversations/:id/summary`. Hepsi test edildi (tenant izolasyonu dahil — bkz. `worker-portal/test/`).
 
-**⚠️ Hâlâ eksik**: bu API'lerin canlı ajan tarafından (agent-core/orchestrator.js) OTOMATİK çağrılması — bkz. PROJECT_ARCHITECTURE.md §4.
+**Güncelleme (aynı gün, ilerleyen saatler)**: bu API'ler artık `agent-core/orchestrator.js` tarafından `agent-core/conversation-logger.js` üzerinden GERÇEKTEN OTOMATİK çağrılıyor — ama yalnızca **portal.html**'de (company_owner/company_staff JWT'si backend'in beklediği rol+company_id ile eşleşiyor). **admin.html bilinçli olarak bağlanmadı** (veraliq_admin rolünün company_id'si yok, `/api/conversations` bu rolü kabul etmiyor) ve **index.html henüz bağlanmadı** (asıl hedef kullanım senaryosu budur, ama prodüksiyondaki çalışan müşteri ajanını riske atmamak için sıradaki adıma bırakıldı). Ayrıntı: PROJECT_ARCHITECTURE.md §4.
 
 ## Eksik olan (henüz tablo YOK)
 

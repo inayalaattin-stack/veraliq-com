@@ -25,6 +25,7 @@
 import { createProviders } from './config.js';
 import { ConversationStateMachine, AgentState } from './state-machine.js';
 import { AgentOrchestrator } from './orchestrator.js';
+import { ConversationLogger } from './conversation-logger.js';
 
 // index.html loads i18n.js (window.VeraliqI18N) for its 8-language site chrome.
 // Internal panels (admin.html, portal.html) are Turkish-only today and do NOT
@@ -42,7 +43,18 @@ const BARGE_IN_HISTORY_LIMIT = 12; // unused here, kept for parity — real limi
  * @param {{
  *   agentIdentity: {first_name?:string, last_name?:string, display_name:string, company_name:string, role:string},
  *   providerOverrides?: Partial<import('./config.js').AGENT_PROVIDER_CONFIG>,
+ *   startMinimized?: boolean,
+ *   conversationLogging?: {tokenKey?:string, agentKey?:string, channel?:string},
  * }} opts
+ *
+ * `conversationLogging` (2026-08-27, 65 maddelik master promptun 3-5, 38-39.
+ * maddeleri): opsiyonel. Verilmezse (bugün widget.js/index.html'de olduğu
+ * gibi) DAVRANIŞ SIFIR DEĞİŞİR — hiçbir yeni ağ çağrısı yapılmaz. Verilirse,
+ * her görüşme oturumu worker-portal'daki /api/conversations* uçlarına
+ * kalıcı olarak yazılır (bkz. conversation-logger.js). `tokenKey`, o sayfanın
+ * zaten sessionStorage'a yazdığı JWT anahtarıdır (ör. 'veraliq_company_jwt')
+ * — backend bu JWT'nin rolünü VE company_id'sini zorunlu kılar, yani bu
+ * yalnızca gerçekten o role/company_id'ye sahip bir oturumda çalışır.
  */
 export async function initAgentWidget(opts) {
   'use strict';
@@ -283,6 +295,17 @@ export async function initAgentWidget(opts) {
         }
       });
 
+      var conversationLogger = null;
+      if (opts.conversationLogging) {
+        conversationLogger = new ConversationLogger({
+          tokenKey: opts.conversationLogging.tokenKey,
+          agentKey: opts.conversationLogging.agentKey,
+          agentPersona: AGENT_IDENTITY.display_name,
+          provider: PROVIDER_OVERRIDES.llmProvider || 'faq',
+          channel: opts.conversationLogging.channel || 'web',
+        });
+      }
+
       orchestrator = new AgentOrchestrator({
         providers: providers,
         stateMachine: fsm,
@@ -291,6 +314,7 @@ export async function initAgentWidget(opts) {
         onError: onOrchestratorError,
         onTranscript: addCaption,
         autoListen: false,
+        conversationLogger: conversationLogger,
       });
 
       await orchestrator.start();

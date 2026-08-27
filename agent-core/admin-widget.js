@@ -27,4 +27,19 @@ initAgentWidget({
   // mobilde formu bloklar (bkz. widget-runtime.js'teki not). Küçük bir
   // bubble olarak otomatik başlar, tıklayınca genişler.
   startMinimized: true,
+  // NOT (2026-08-27): conversationLogging BİLİNÇLİ OLARAK BAĞLANMADI.
+  // worker-portal'daki /api/conversations POST ucu yalnızca 'company_owner'/
+  // 'company_staff' rolünü ve NOT NULL bir company_id'yi kabul ediyor (bkz.
+  // requireAuth çağrısı + conversations.company_id NOT NULL, schema.sql).
+  // veraliq_admin oturumunun (bu sayfanın JWT'si) NE o rolü NE de bir
+  // company_id'si var (platform-geneli, şirket-bağımsız) — yani bu widget'a
+  // portal-widget.js'teki gibi bir tokenKey verilse bile backend her seferinde
+  // 401 dönerdi (conversation-logger.js zaten bunu sessizce/non-blocking
+  // yutar, ama gerçek bir kayıt hiç oluşmaz). Bu şema/tasarım uyuşmazlığı
+  // dürüstçe işaretlidir — bkz. docs/DATABASE_SCHEMA.md ve PROJECT_ARCHITECTURE.md
+  // §4. Gerçek çözüm: ya conversations.company_id'yi nullable yapıp
+  // requireAuth'a 'veraliq_admin'i de eklemek (ayrı bir migration + backend
+  // değişikliği gerektirir), ya da VERALIQ Admin AI için tamamen ayrı, platform-
+  // geneli bir "admin_ai_sessions" tablosu açmak. İkisi de bu commit'in
+  // kapsamı DIŞINDA — bilerek ertelendi, planlama olmadan sessizce atlanmadı.
 });

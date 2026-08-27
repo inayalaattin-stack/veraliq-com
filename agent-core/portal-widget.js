@@ -33,4 +33,11 @@ initAgentWidget({
   // mobilde formu/menüyü bloklar (bkz. widget-runtime.js'teki not). Küçük
   // bir bubble olarak otomatik başlar, tıklayınca genişler.
   startMinimized: true,
+  // 2026-08-27: bu widget artık her görüşmeyi (start/mesaj/end) worker-portal
+  // /api/conversations* uçlarına GERÇEKTEN yazıyor (bkz. conversation-logger.js).
+  // Bu, portal.html'in company_owner/company_staff JWT'si zaten backend'in
+  // beklediği role+company_id ile birebir eşleştiği için doğru şekilde
+  // çalışıyor (admin.html'in veraliq_admin rolü İSE bu uca yazamıyor — bkz.
+  // admin-widget.js'teki not, orası bilinçli olarak HENÜZ bağlanmadı).
+  conversationLogging: { tokenKey: 'veraliq_company_jwt', channel: 'portal' },
 });

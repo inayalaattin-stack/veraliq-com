@@ -30,6 +30,7 @@ export class AgentOrchestrator {
    *   onTranscript?: (entry: {role:'customer'|'agent', text:string}) => void,
    *   onError?: (err: any) => void,
    *   autoListen?: boolean,
+   *   conversationLogger?: import('./conversation-logger.js').ConversationLogger,
    * }} opts
    */
   constructor(opts) {
@@ -39,6 +40,12 @@ export class AgentOrchestrator {
     this.lang = opts.lang || 'tr';
     this.onTranscript = opts.onTranscript || function () {};
     this.onError = opts.onError || function () {};
+    // NOT (2026-08-27): opsiyonel — verilmezse (index.html bugün olduğu gibi)
+    // davranış SIFIR DEĞİŞİR, hiçbir ağ çağrısı yapılmaz. Verildiğinde, her
+    // görüşme VERALIQ Core'a (worker-portal /api/conversations*) kalıcı
+    // olarak yazılır — bkz. conversation-logger.js'in başındaki tasarım
+    // ilkeleri (asla görüşmeyi kesmez/yavaşlatmaz, best-effort).
+    this.conversationLogger = opts.conversationLogger || null;
     // NOT (2026-08-26): varsayılan true (eski davranış korunuyor — mock/dev
     // ortamında hiçbir şey bozulmasın). widget.js, gerçek üretim akışında
     // (Spatius + "Görüşmeye Katıl" kapısı) bunu false geçirip beginListening()
@@ -70,6 +77,10 @@ export class AgentOrchestrator {
 
     await avatar.connect();
 
+    if (this.conversationLogger) {
+      try { await this.conversationLogger.start(); } catch (e) { /* best-effort, never blocks startup */ }
+    }
+
     // Spec section 11: "Agent açılış konuşması KISA OLACAK" — a short
     // opening line, spoken once, before we start listening. Optional: only
     // providers that implement greet() get this (FaqSalesBrainProvider
@@ -81,6 +92,7 @@ export class AgentOrchestrator {
         if (greeting && greeting.replyText) {
           this.history.push({ role: 'agent', text: greeting.replyText });
           this.onTranscript({ role: 'agent', text: greeting.replyText });
+          if (this.conversationLogger) this.conversationLogger.appendMessage('agent', greeting.replyText).catch(function () {});
           this.fsm.transition(AgentState.SPEAKING);
           await this._speakReply(greeting.replyText, normalizeEmotion(greeting.emotion || 'greeting'));
         }
@@ -106,6 +118,9 @@ export class AgentOrchestrator {
     try { stt.stop && stt.stop(); } catch (e) {}
     try { avatar.stopSpeaking(); } catch (e) {}
     try { await avatar.disconnect(); } catch (e) {}
+    if (this.conversationLogger) {
+      try { await this.conversationLogger.end(); } catch (e) { /* best-effort */ }
+    }
     this.fsm.transition(AgentState.IDLE);
   }
 
@@ -169,6 +184,7 @@ export class AgentOrchestrator {
   async _handleCustomerUtterance(text) {
     this.history.push({ role: 'customer', text });
     this.onTranscript({ role: 'customer', text });
+    if (this.conversationLogger) this.conversationLogger.appendMessage('customer', text).catch(function () {});
 
     if (!this.fsm.transition(AgentState.THINKING)) return;
 
@@ -198,6 +214,7 @@ export class AgentOrchestrator {
 
     this.history.push({ role: 'agent', text: result.replyText });
     this.onTranscript({ role: 'agent', text: result.replyText });
+    if (this.conversationLogger) this.conversationLogger.appendMessage('agent', result.replyText).catch(function () {});
 
     if (!this.fsm.transition(AgentState.SPEAKING)) return;
     await this._speakReply(result.replyText, emotion);

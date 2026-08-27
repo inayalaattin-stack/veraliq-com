@@ -52,7 +52,7 @@ Kaynak: `worker-portal/portal-api-worker.js`. Tüm yanıtlar JSON. Auth: `Author
 | POST | `/api/conversations/:id/end` | owner/staff veya agent-key | |
 | POST | `/api/conversations/:id/summary` | owner/staff veya agent-key | `{summary, customer_need, budget, interest, objection, next_step}` |
 
-⚠️ Not: bu uçlar HAZIR ve test edilmiş, ama `agent-core/orchestrator.js` henüz bunları otomatik ÇAĞIRMIYOR — bkz. PROJECT_ARCHITECTURE.md §4.
+Not (güncellendi): bu uçlar artık `agent-core/orchestrator.js` tarafından `agent-core/conversation-logger.js` üzerinden **portal.html**'de otomatik çağrılıyor (company_owner/company_staff JWT'si backend'in beklediği rol+company_id ile eşleştiği için). **admin.html bilinçli olarak bağlanmadı** (veraliq_admin'in company_id'si yok/rolü uymuyor) ve **index.html henüz bağlanmadı** (sıradaki adım) — bkz. PROJECT_ARCHITECTURE.md §4.
 
 ## Lead / Onay / Audit
 
