@@ -13,13 +13,16 @@
    bir fonksiyon çağrısı kullanılıyor (bkz. portal.html/admin.html'deki
    inline <script> içindeki T() tanımı).
 
-   BİLİNÇLİ İSTİSNA: "AI Asistan" sohbet ekranındaki öneri çipleri, karşılama
-   mesajı ve input placeholder'ı BİLEREK çevrilmedi — bu asistan (Zero Trust
-   AI ilkesi gereği) sabit, önceden tanımlı TÜRKÇE sorgu kalıplarıyla
-   çalışıyor (worker-portal/portal-api-worker.js /api/assistant/query).
-   Arayüzü İngilizce/Rusça göstermek, kullanıcıya o dilde soru sorabileceği
-   yanlış izlenimini verir — bu yüzden o ekranın başlığı/açıklaması/notu
-   çevrildi ama sohbet kutusunun içeriği Türkçe bırakıldı.
+   GÜNCELLEME (2026-08-27): "AI Asistan" sohbet ekranı da artık tam çevrili.
+   İlk turda öneri çipleri/karşılama/placeholder BİLEREK Türkçe bırakılmıştı
+   (backend sabit TÜRKÇE kalıplarla çalıştığı için). İmparator'ın "şirket
+   yetkilisi ingilizce veya rusça konuşursa mantıken asistanının o dili
+   konuşması gerekir" talebi üzerine worker-portal/portal-api-worker.js'deki
+   answerAssistantQuery() ÇOK DİLLİ hale getirildi: artık soru hangi dilde
+   yazılırsa yazılsın (tr/en/ru anahtar kelimeleri) niyet aynı şekilde
+   tanınıyor, cevap ise bu ekranın gönderdiği `lang` parametresine göre o
+   dilde üretiliyor — Zero Trust AI ilkesi DEĞİŞMEDİ, hâlâ hiçbir LLM SQL
+   üretmiyor, yalnızca sabit kalıp eşleştirme + gerçek D1 sorgusu var.
    ========================================================================== */
 window.VERALIQ_PORTAL_I18N = {
   defaultLang: 'tr',
@@ -36,7 +39,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.deliveryDateLabel":"Teslim Tarihi","common.aiAgent":"AI Agent","common.humanAgent":"İnsan Temsilci",
       "common.genericErrorPrefix":"Bir hata oluştu: ","common.unitsWord":"birim","common.soldWord":"satıldı",
       "common.nameLabel":"Ad Soyad","common.phoneLabel":"Telefon","common.emailLabel":"E-posta","common.passwordLabel":"Şifre","common.all":"Tümü",
-      "common.statusUpdatedPrefix":"Durum güncellendi: ",
+      "common.statusUpdatedPrefix":"Durum güncellendi: ","common.unknown":"bilinmeyen",
 
       "nav.group.general":"Genel","nav.group.operations":"Operasyon","nav.group.salesCustomer":"Satış & Müşteri",
       "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem",
@@ -76,6 +79,10 @@ window.VERALIQ_PORTAL_I18N = {
 
       "assistant.sub":"Şirket yöneticisi asistanı — gerçek veritabanı verisiyle cevap verir, müşteriye satış yapan agent DEĞİLDİR.",
       "assistant.note":"v1: Bu asistan, Zero Trust AI ilkesine uygun olarak serbest metin SQL üretmez — sabit, önceden tanımlı ve parametreli sorgu kalıplarıyla çalışır. Cevaplar her zaman gerçek veritabanı değerleridir, asla uydurma değildir.",
+      "assistant.welcome":"Merhaba, ben şirket yönetim asistanınızım. Lead, satış, stok, onay ve sunum durumlarınız hakkında bana soru sorabilirsiniz — cevaplar gerçek veritabanı verinize dayanır.",
+      "assistant.placeholder":"Örn. ABC Vadi Konutları kaç daire kaldı?",
+      "assistant.suggestLeadsToday":"Bugün kaç lead geldi?","assistant.suggestPendingApprovals":"Bekleyen onaylar?",
+      "assistant.suggestSalesToday":"Bugünkü satışlar?","assistant.suggestPresentations":"Sunumda kaç birim var?",
 
       "projects.sub":"Projeleriniz ve temel bilgileri.","projects.addBtn":"+ Proje Ekle","projects.nameLabel":"Proje Adı *",
       "projects.namePlaceholder":"Örn. Vadi Konutları 2","projects.locationPlaceholder":"Örn. İstanbul / Ataşehir",
@@ -122,6 +129,7 @@ window.VERALIQ_PORTAL_I18N = {
       "integrations.note":"<b>Harici entegrasyon (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/ödeme sağlayıcısı) henüz bağlı değil.</b> Bunların her biri kendi API anahtarınızı/hesabınızı gerektiriyor. VERALIQ mimarisi provider-agnostic tasarlandığı için bu servisler siz hazır olduğunuzda mevcut mimariye eklenebilir.",
 
       "reports.sub":"Gerçek verilerden anlık rapor ve dışa aktarma.","reports.downloadCsv":"CSV İndir",
+      "reports.csvHeader":"metrik,değer","reports.csvFilename":"veraliq-rapor.csv",
       "reports.note":"v1: rapor verisi CSV olarak indirilebilir. PDF export + şirket logosu/filigranı ayrı bir geliştirme adımı.",
 
       "agents.sub":"AI ve insan satış temsilcilerinin gerçek sunum performansı.",
@@ -157,7 +165,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.deliveryDateLabel":"Delivery Date","common.aiAgent":"AI Agent","common.humanAgent":"Human Rep",
       "common.genericErrorPrefix":"An error occurred: ","common.unitsWord":"units","common.soldWord":"sold",
       "common.nameLabel":"Full Name","common.phoneLabel":"Phone","common.emailLabel":"Email","common.passwordLabel":"Password","common.all":"All",
-      "common.statusUpdatedPrefix":"Status updated: ",
+      "common.statusUpdatedPrefix":"Status updated: ","common.unknown":"unknown",
 
       "nav.group.general":"General","nav.group.operations":"Operations","nav.group.salesCustomer":"Sales & Customers",
       "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System",
@@ -197,6 +205,10 @@ window.VERALIQ_PORTAL_I18N = {
 
       "assistant.sub":"Company management assistant — answers using real database data; this is NOT the customer-facing sales agent.",
       "assistant.note":"v1: In line with the Zero Trust AI principle, this assistant never generates free-text SQL — it works with fixed, predefined, parameterized query patterns. Answers are always real database values, never fabricated.",
+      "assistant.welcome":"Hello, I'm your company management assistant. You can ask me about leads, sales, stock, approvals, and presentation status — answers are based on your real database data.",
+      "assistant.placeholder":"e.g. How many units are left in ABC Vadi Residences?",
+      "assistant.suggestLeadsToday":"How many leads came in today?","assistant.suggestPendingApprovals":"Pending approvals?",
+      "assistant.suggestSalesToday":"Today's sales?","assistant.suggestPresentations":"How many units are in presentation?",
 
       "projects.sub":"Your projects and key details.","projects.addBtn":"+ Add Project","projects.nameLabel":"Project Name *",
       "projects.namePlaceholder":"e.g. Vadi Residences 2","projects.locationPlaceholder":"e.g. Istanbul / Ataşehir",
@@ -243,6 +255,7 @@ window.VERALIQ_PORTAL_I18N = {
       "integrations.note":"<b>External integrations (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/payment provider) aren't connected yet.</b> Each requires your own API key/account. Since VERALIQ's architecture is provider-agnostic by design, these services can be added whenever you're ready.",
 
       "reports.sub":"Real-time reporting and export from real data.","reports.downloadCsv":"Download CSV",
+      "reports.csvHeader":"metric,value","reports.csvFilename":"veraliq-report.csv",
       "reports.note":"v1: report data can be downloaded as CSV. PDF export + company logo/watermark is a separate development step.",
 
       "agents.sub":"Real presentation performance of AI and human sales reps.",
@@ -278,7 +291,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.deliveryDateLabel":"Дата сдачи","common.aiAgent":"AI-агент","common.humanAgent":"Менеджер-человек",
       "common.genericErrorPrefix":"Произошла ошибка: ","common.unitsWord":"ед.","common.soldWord":"продано",
       "common.nameLabel":"ФИО","common.phoneLabel":"Телефон","common.emailLabel":"Эл. почта","common.passwordLabel":"Пароль","common.all":"Все",
-      "common.statusUpdatedPrefix":"Статус обновлён: ",
+      "common.statusUpdatedPrefix":"Статус обновлён: ","common.unknown":"неизвестно",
 
       "nav.group.general":"Общее","nav.group.operations":"Операции","nav.group.salesCustomer":"Продажи и клиенты",
       "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система",
@@ -318,6 +331,10 @@ window.VERALIQ_PORTAL_I18N = {
 
       "assistant.sub":"Ассистент управления компанией — отвечает на основе реальных данных из базы данных, это НЕ агент по продажам для клиентов.",
       "assistant.note":"v1: В соответствии с принципом Zero Trust AI, этот ассистент никогда не генерирует произвольный SQL — он работает с фиксированными, заранее определёнными параметризованными шаблонами запросов. Ответы всегда основаны на реальных данных, никогда не выдуманы.",
+      "assistant.welcome":"Здравствуйте, я ваш ассистент управления компанией. Вы можете спрашивать меня о лидах, продажах, складе, одобрениях и статусах показов — ответы основаны на реальных данных вашей базы данных.",
+      "assistant.placeholder":"напр. Сколько юнитов осталось в ЖК ABC Vadi?",
+      "assistant.suggestLeadsToday":"Сколько лидов сегодня?","assistant.suggestPendingApprovals":"Ожидающие одобрения?",
+      "assistant.suggestSalesToday":"Сегодняшние продажи?","assistant.suggestPresentations":"Сколько юнитов на показе?",
 
       "projects.sub":"Ваши проекты и основная информация.","projects.addBtn":"+ Добавить проект","projects.nameLabel":"Название проекта *",
       "projects.namePlaceholder":"напр. ЖК Вади 2","projects.locationPlaceholder":"напр. Стамбул / Аташехир",
@@ -364,6 +381,7 @@ window.VERALIQ_PORTAL_I18N = {
       "integrations.note":"<b>Внешние интеграции (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/платёжный провайдер) пока не подключены.</b> Каждая требует вашего API-ключа/аккаунта. Архитектура VERALIQ независима от провайдера, поэтому эти сервисы можно добавить, когда вы будете готовы.",
 
       "reports.sub":"Отчётность и экспорт в реальном времени на основе реальных данных.","reports.downloadCsv":"Скачать CSV",
+      "reports.csvHeader":"показатель,значение","reports.csvFilename":"veraliq-otchet.csv",
       "reports.note":"v1: данные отчёта можно скачать в формате CSV. Экспорт в PDF и логотип компании — отдельный этап разработки.",
 
       "agents.sub":"Реальная эффективность показов AI-агентов и менеджеров-людей.",

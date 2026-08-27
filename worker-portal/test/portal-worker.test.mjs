@@ -269,6 +269,34 @@ const run = async () => {
   data = await r.json();
   check('assistant resolves project name and answers with real stock count', r.status === 200 && /2 adet/.test(data.answer), data);
 
+  // 13b. Company AI Assistant — ÇOK DİLLİ (2026-08-27, İmparator: "şirket
+  // yetkilisi ingilizce veya rusça konuşursa asistanı da o dili konuşmalı").
+  // Soru İNGİLİZCE/RUSÇA yazılabiliyor VE cevap `lang` parametresine göre o
+  // dilde üretiliyor — Türkçe davranış (yukarıdaki testler) hiç değişmedi.
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'How many sales did we make today?', lang: 'en' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant understands an ENGLISH question and answers in English', r.status === 200 && /2 unit\(s\) sold/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'How many units are left in ABC Vadi Konutları?', lang: 'en' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant resolves project name from an ENGLISH question and answers in English', r.status === 200 && /2 available/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'Сколько продаж сегодня?', lang: 'ru' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant understands a RUSSIAN question and answers in Russian', r.status === 200 && /Всего продано юнитов: 2/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'Bugün kaç satış yaptık?', lang: 'en' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant answers a TURKISH question in ENGLISH when lang=en is requested', r.status === 200 && /2 unit\(s\) sold/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'asdkjasdkj random gibberish 12345', lang: 'en' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant falls back in ENGLISH for an unrecognized question when lang=en', r.status === 200 && /couldn.t understand/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'Bekleyen onaylarım var mı?' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant defaults to TURKISH when lang is omitted (backward compatible)', r.status === 200 && /bekleyen onay/i.test(data.answer), data);
+
   // 14. Team management (company_owner invites company_staff, scoped to own company)
   r = await worker.fetch(req('POST', '/api/team', { email: 'staff1@veraliq.com', password: 'Staff123!', name: 'Ayşe Yılmaz' }, { Authorization: 'Bearer ' + ownerToken }), env);
   data = await r.json();

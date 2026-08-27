@@ -131,50 +131,141 @@ function tryMatchProjectName(text) {
   // "ABC Residence'da kaç daire kaldı" gibi cümlelerden proje adını çıkarmaya
   // çalışan basit bir sezgisel: cümledeki büyük harfle başlayan kelime
   // öbeklerini adayı olarak alır, aşağıda gerçek proje listesiyle karşılaştırılır.
-  const m = text.match(/([A-ZÇĞİÖŞÜ][\wçğıöşü]*(?:\s+[A-ZÇĞİÖŞÜ][\wçğıöşü]*)*)/);
+  // GÜNCELLEME (2026-08-27, çok dilli asistan): proje adları Rusça arayüzde de
+  // Latin harfli marka isimleri olabileceği için Kiril büyük harfler de EKLENDİ
+  // (yalnızca ekleme — mevcut [A-ZÇĞİÖŞÜ] davranışı DEĞİŞMEDİ).
+  const m = text.match(/([A-ZÇĞİÖŞÜА-Я][\wçğıöşüа-яё]*(?:\s+[A-ZÇĞİÖŞÜА-Я][\wçğıöşüа-яё]*)*)/);
   return m ? m[1] : null;
 }
 
-async function answerAssistantQuery(env, companyId, questionRaw) {
-  const q = questionRaw.toLocaleLowerCase('tr-TR');
+// ÇOK DİLLİ CEVAP ŞABLONLARI (2026-08-27 eklendi — İmparator: "şirket
+// yetkilisi ingilizce veya rusça konuşursa mantıken asistanının o dili
+// konuşması gerekir"). ZERO TRUST AI HİÇ DEĞİŞMEDİ: aşağıdaki hâlâ sabit
+// metin şablonları + GERÇEK D1 sorgu sonuçları — hiçbir LLM/SQL üretimi yok.
+// Mevcut Türkçe cevap metinleri (aşağıdaki `tr` alanları) BİREBİR AYNI
+// kaldı — bu tamamen EKLEME, davranış değişikliği değil.
+const ASSISTANT_ANSWERS = {
+  pendingApprovals: {
+    tr: (n) => (n > 0 ? `Şu anda ${n} bekleyen onay talebiniz var.` : 'Bekleyen onay talebiniz yok.'),
+    en: (n) => (n > 0 ? `You currently have ${n} pending approval request(s).` : 'You have no pending approval requests.'),
+    ru: (n) => (n > 0 ? `У вас сейчас ${n} запрос(ов) на одобрение, ожидающих решения.` : 'У вас нет запросов на одобрение, ожидающих решения.'),
+  },
+  leadsToday: {
+    tr: (n) => `Bugün ${n} yeni lead geldi.`,
+    en: (n) => `${n} new lead(s) came in today.`,
+    ru: (n) => `Сегодня поступило новых лидов: ${n}.`,
+  },
+  leadsTotal: {
+    tr: (n) => `Toplam ${n} lead kayıtlı.`,
+    en: (n) => `A total of ${n} leads are recorded.`,
+    ru: (n) => `Всего зарегистрировано лидов: ${n}.`,
+  },
+  salesSummary: {
+    tr: (n, total) => `Toplam ${n} birim satıldı, toplam ciro ${Number(total).toLocaleString('tr-TR')} TL.`,
+    en: (n, total) => `A total of ${n} unit(s) sold, total revenue ${Number(total).toLocaleString('en-US')} TL.`,
+    ru: (n, total) => `Всего продано юнитов: ${n}, общая выручка: ${Number(total).toLocaleString('ru-RU')} TL.`,
+  },
+  presentationsSome: {
+    tr: (n) => `Şu anda ${n} birim sunum halinde.`,
+    en: (n) => `${n} unit(s) currently in presentation.`,
+    ru: (n) => `Сейчас на показе юнитов: ${n}.`,
+  },
+  presentationsNone: {
+    tr: () => 'Şu anda sunumda olan birim yok.',
+    en: () => 'No units are currently in presentation.',
+    ru: () => 'Сейчас нет юнитов на показе.',
+  },
+  stockProject: {
+    tr: (name, n) => `${name} projesinde ${n} adet boşta (satılabilir) daire var.`,
+    en: (name, n) => `Project ${name} has ${n} available (sellable) unit(s).`,
+    ru: (name, n) => `В проекте ${name} свободных (доступных для продажи) юнитов: ${n}.`,
+  },
+  stockTotal: {
+    tr: (n) => `Tüm projelerde toplam ${n} adet boşta (satılabilir) birim var.`,
+    en: (n) => `Across all projects, there are ${n} available (sellable) unit(s) in total.`,
+    ru: (n) => `Во всех проектах свободных (доступных) юнитов: ${n}.`,
+  },
+  reservations: {
+    tr: (n) => `Şu anda ${n} birim rezerve durumda.`,
+    en: (n) => `${n} unit(s) are currently reserved.`,
+    ru: (n) => `Сейчас забронировано юнитов: ${n}.`,
+  },
+  fallback: {
+    tr: () => 'Bu soruyu şu an anlayamadım. Şunları sorabilirsiniz: "bugün kaç lead geldi", "bekleyen onaylar", "bugünkü satışlar", "<proje adı> kaç daire kaldı", "sunumda kaç birim var", "kaç birim rezerve".',
+    en: () => 'I couldn\'t understand that question. You can ask things like: "how many leads today", "pending approvals", "today\'s sales", "how many units left in <project name>", "how many units in presentation", "how many units reserved".',
+    ru: () => 'Не удалось понять этот вопрос. Можно спросить, например: "сколько лидов сегодня", "ожидающие одобрения", "сегодняшние продажи", "сколько юнитов осталось в <название проекта>", "сколько юнитов на показе", "сколько юнитов забронировано".',
+  },
+};
+function A(key, lang) {
+  const bucket = ASSISTANT_ANSWERS[key];
+  return (bucket && (bucket[lang] || bucket.tr)) || (() => '');
+}
 
-  if (/bekleyen onay/.test(q)) {
+async function answerAssistantQuery(env, companyId, questionRaw, langRaw) {
+  const lang = (langRaw === 'en' || langRaw === 'ru') ? langRaw : 'tr';
+  // qTr: orijinal Türkçe davranış İÇİN DOKUNULMADI (tr-TR locale, dotless-I
+  // doğru işlensin diye). qStd: İngilizce/Rusça anahtar kelime eşleştirmesi
+  // için standart (locale'siz) küçük harfe çevirme — tr-TR locale'i
+  // "PRESENTATION" gibi İngilizce kelimelerdeki I harfini yanlış (dotless ı)
+  // çevirip eşleşmeyi bozar, bu yüzden ayrı tutuluyor.
+  const qTr = questionRaw.toLocaleLowerCase('tr-TR');
+  const qStd = questionRaw.toLowerCase();
+
+  const isPendingApprovals = /bekleyen onay/.test(qTr) || /pending approval/.test(qStd) || /ожида\S*\s*(одобрен|утвержд)/.test(qStd);
+  if (isPendingApprovals) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE company_id = ? AND status = 'pending'`).bind(companyId).first();
-    return n > 0 ? `Şu anda ${n} bekleyen onay talebiniz var.` : 'Bekleyen onay talebiniz yok.';
+    return A('pendingApprovals', lang)(n);
   }
-  if (/(kaç|bugün).*(lead|müşteri)/.test(q) || /(lead|müşteri).*kaç/.test(q)) {
-    const today = /bugün/.test(q);
+
+  const isLeadsQuery =
+    /(kaç|bugün).*(lead|müşteri)/.test(qTr) || /(lead|müşteri).*kaç/.test(qTr) ||
+    /(how many|today).*(lead|customer)/.test(qStd) || /(lead|customer).*(how many)/.test(qStd) ||
+    /(сколько|сегодня).*(лид|клиент)/.test(qStd) || /(лид|клиент).*сколько/.test(qStd);
+  if (isLeadsQuery) {
+    const today = /bugün/.test(qTr) || /today/.test(qStd) || /сегодня/.test(qStd);
     const row = today
       ? await env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ? AND date(created_at) = date('now')`).bind(companyId).first()
       : await env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ?`).bind(companyId).first();
-    return today ? `Bugün ${row.n} yeni lead geldi.` : `Toplam ${row.n} lead kayıtlı.`;
+    return today ? A('leadsToday', lang)(row.n) : A('leadsTotal', lang)(row.n);
   }
-  if (/(kaç|bugün|bu ay).*(satış|satıldı)/.test(q) || /satış.*(kaç|özet)/.test(q)) {
+
+  const isSalesQuery =
+    /(kaç|bugün|bu ay).*(satış|satıldı)/.test(qTr) || /satış.*(kaç|özet)/.test(qTr) ||
+    /(how many|today|this month).*(sale|sold)/.test(qStd) || /sale.*(how many|summary)/.test(qStd) ||
+    /(сколько|сегодня|в этом месяце).*(продаж|продан)/.test(qStd) || /продаж.*(сколько|итог)/.test(qStd);
+  if (isSalesQuery) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
     const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
-    return `Toplam ${n} birim satıldı, toplam ciro ${Number(total).toLocaleString('tr-TR')} TL.`;
+    return A('salesSummary', lang)(n, total);
   }
-  if (/sunum/.test(q)) {
+
+  const isPresentationQuery = /sunum/.test(qTr) || /presentation/.test(qStd) || /презентац|показ/.test(qStd);
+  if (isPresentationQuery) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'PRESENTATION'`).bind(companyId).first();
-    return n > 0 ? `Şu anda ${n} birim sunum halinde.` : 'Şu anda sunumda olan birim yok.';
+    return n > 0 ? A('presentationsSome', lang)(n) : A('presentationsNone', lang)();
   }
-  if (/(stok|kaç daire|kaldı)/.test(q)) {
+
+  const isStockQuery = /(stok|kaç daire|kaldı)/.test(qTr) || /(stock|how many (units|apartments)|available)/.test(qStd) || /(склад|сколько (юнитов|квартир)|доступн)/.test(qStd);
+  if (isStockQuery) {
     const candidate = tryMatchProjectName(questionRaw);
     if (candidate) {
       const project = await env.DB.prepare(`SELECT id, name FROM projects WHERE company_id = ? AND name LIKE ?`).bind(companyId, `%${candidate}%`).first();
       if (project) {
         const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE project_id = ? AND status = 'AVAILABLE'`).bind(project.id).first();
-        return `${project.name} projesinde ${n} adet boşta (satılabilir) daire var.`;
+        return A('stockProject', lang)(project.name, n);
       }
     }
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'AVAILABLE'`).bind(companyId).first();
-    return `Tüm projelerde toplam ${n} adet boşta (satılabilir) birim var.`;
+    return A('stockTotal', lang)(n);
   }
-  if (/rezerv/.test(q)) {
+
+  const isReservationQuery = /rezerv/.test(qTr) || /reserv/.test(qStd) || /бронир|резерв/.test(qStd);
+  if (isReservationQuery) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'RESERVED'`).bind(companyId).first();
-    return `Şu anda ${n} birim rezerve durumda.`;
+    return A('reservations', lang)(n);
   }
-  return 'Bu soruyu şu an anlayamadım. Şunları sorabilirsiniz: "bugün kaç lead geldi", "bekleyen onaylar", "bugünkü satışlar", "<proje adı> kaç daire kaldı", "sunumda kaç birim var", "kaç birim rezerve".';
+
+  return A('fallback', lang)();
 }
 
 // VERALIQ Admin AI — platform-genelinde (tüm şirketler, company_id filtresi
@@ -628,10 +719,15 @@ async function route(request, url, env) {
   if (path === '/api/assistant/query' && method === 'POST') {
     const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
     if (!auth) return json({ error: 'unauthorized' }, 401);
-    const { question } = await request.json();
+    const { question, lang } = await request.json();
     if (!question || typeof question !== 'string') return json({ error: 'missing_fields' }, 400);
-    const answer = await answerAssistantQuery(env, auth.company_id, question);
-    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'assistant.query', entity_type: 'assistant', new_value: { question }, request });
+    // `lang`: portal.html'in o anki arayüz dili (tr/en/ru, varsayılan tr) —
+    // İmparator'ın "şirket yetkilisi ingilizce/rusça konuşursa asistanı da o
+    // dili konuşmalı" isteği üzerine eklendi. Yalnızca CEVABIN hangi dilde
+    // üretileceğini seçer; soru hangi dilde yazılırsa yazılsın niyet aynı
+    // şekilde tanınır (bkz. answerAssistantQuery).
+    const answer = await answerAssistantQuery(env, auth.company_id, question, lang);
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'assistant.query', entity_type: 'assistant', new_value: { question, lang }, request });
     return json({ answer });
   }
 

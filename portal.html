@@ -365,7 +365,7 @@
   function errMsg(e){
     var k = e && e.message && ERROR_KEY_MAP[e.message];
     if (k) return T(k);
-    return T('common.genericErrorPrefix') + ((e && e.message) || 'bilinmeyen');
+    return T('common.genericErrorPrefix') + ((e && e.message) || T('common.unknown'));
   }
 
   var toastEl = document.getElementById('toast');
@@ -614,21 +614,31 @@
   // AI ASSISTANT (madde 20-22: Company AI Assistant)
   // ============================================================
   function renderAssistant(container){
+    // GÜNCELLEME (2026-08-27, çok dilli asistan): bu ekran artık İngilizce/
+    // Rusça arayüzde de İngilizce/Rusça çalışıyor — hem öneri çipleri/
+    // karşılama/placeholder metni T() ile çevriliyor HEM DE backend'e
+    // `lang: currentLang` gönderiliyor (bkz. worker-portal/portal-api-worker.js
+    // answerAssistantQuery — hangi dilde yazıldığına bakılmaksızın niyeti
+    // tanıyor, cevabı `lang`e göre üretiyor). Önceki turda burası bilinçli
+    // olarak Türkçe bırakılmıştı; İmparator'ın "şirket yetkilisi ingilizce
+    // veya rusça konuşursa asistanı da o dili konuşmalı" talebiyle tamamlandı.
+    var sLeads = T('assistant.suggestLeadsToday'), sApprovals = T('assistant.suggestPendingApprovals'),
+        sSales = T('assistant.suggestSalesToday'), sPres = T('assistant.suggestPresentations');
     container.innerHTML =
       '<div class="view-head"><div><h1 class="view-title">' + esc(T('nav.item.assistant')) + '</h1>' +
       '<p class="view-sub">' + esc(T('assistant.sub')) + '</p></div></div>' +
       '<div class="card">' +
         '<div class="suggest-row" id="assistantSuggest">' +
-          '<button class="suggest-chip" data-q="Bugün kaç lead geldi?">Bugün kaç lead geldi?</button>' +
-          '<button class="suggest-chip" data-q="Bekleyen onayları göster">Bekleyen onaylar?</button>' +
-          '<button class="suggest-chip" data-q="Bugünkü satışları göster">Bugünkü satışlar?</button>' +
-          '<button class="suggest-chip" data-q="Sunumda kaç birim var?">Sunumda kaç birim var?</button>' +
+          '<button class="suggest-chip" data-q="' + esc(sLeads) + '">' + esc(sLeads) + '</button>' +
+          '<button class="suggest-chip" data-q="' + esc(sApprovals) + '">' + esc(sApprovals) + '</button>' +
+          '<button class="suggest-chip" data-q="' + esc(sSales) + '">' + esc(sSales) + '</button>' +
+          '<button class="suggest-chip" data-q="' + esc(sPres) + '">' + esc(sPres) + '</button>' +
         '</div>' +
         '<div class="chat-wrap">' +
-          '<div class="chat-log" id="chatLog"><div class="chat-msg assistant"><b class="tag">VERALIQ AI</b>Merhaba, ben şirket yönetim asistanınızım. Lead, satış, stok, onay ve sunum durumlarınız hakkında bana soru sorabilirsiniz — cevaplar gerçek veritabanı verinize dayanır.</div></div>' +
+          '<div class="chat-log" id="chatLog"><div class="chat-msg assistant"><b class="tag">VERALIQ AI</b>' + esc(T('assistant.welcome')) + '</div></div>' +
           '<div class="chat-input-row">' +
-            '<input type="text" id="chatInput" placeholder="Örn. ABC Vadi Konutları kaç daire kaldı?">' +
-            '<button class="btn btn-mint" id="chatSendBtn">Gönder</button>' +
+            '<input type="text" id="chatInput" placeholder="' + esc(T('assistant.placeholder')) + '">' +
+            '<button class="btn btn-mint" id="chatSendBtn">' + esc(T('common.send')) + '</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -648,7 +658,7 @@
       addMsg('user', q);
       document.getElementById('chatInput').value = '';
       try {
-        var res = await api('/api/assistant/query', { method: 'POST', body: { question: q } });
+        var res = await api('/api/assistant/query', { method: 'POST', body: { question: q, lang: currentLang } });
         addMsg('assistant', res.answer, 'VERALIQ AI');
       } catch (e) {
         addMsg('assistant', errMsg(e), 'VERALIQ AI');
@@ -1001,10 +1011,10 @@
         statCard(T('dashboard.stat.activeStock'), d.active_stock) + statCard(T('dashboard.stat.pendingApproval'), d.pending_approvals) +
       '</div><div class="note-gap" style="margin-top:14px;">' + esc(T('reports.note')) + '</div>';
       document.getElementById('exportCsvBtn').addEventListener('click', function(){
-        var csv = 'metrik,değer\n' + Object.keys(d).map(function(k){ return k + ',' + d[k]; }).join('\n');
+        var csv = T('reports.csvHeader') + '\n' + Object.keys(d).map(function(k){ return k + ',' + d[k]; }).join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         var url = URL.createObjectURL(blob);
-        var a = document.createElement('a'); a.href = url; a.download = 'veraliq-rapor.csv'; a.click();
+        var a = document.createElement('a'); a.href = url; a.download = T('reports.csvFilename'); a.click();
         URL.revokeObjectURL(url);
       });
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
