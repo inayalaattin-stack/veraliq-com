@@ -37,14 +37,22 @@ bash scripts/create-full-backup.sh
 
 `../VERALIQ_BACKUP-<tarih>/` altında `source/ database/ migrations/ config/ docs/ scripts/ deployment/` klasörlerini oluşturur (bkz. `scripts/create-full-backup.sh` başındaki açıklama). GERÇEK secret içermez — `.env.example` yalnızca hangi değişkenlerin gerektiğini gösterir.
 
-## 4. Yedekleme sıklığı — şu an MANUEL, otomatik DEĞİL
+## 4. Yedekleme sıklığı — Windows Task Scheduler ile OTOMATİK (2026-08-27 eklendi)
 
-⚠️ EKSİK: 65 maddelik promptun 24 ve 57. maddeleri "saatlik incremental + günlük full + kritik işlem sonrası event-triggered backup" istiyor. Bugün bu OTOMATİK değil — yukarıdaki iki script'i elle çalıştırmanız gerekiyor. Gerçek otomasyon için iki seçenek var (ikisi de Cloudflare hesabınızda yeni kaynak gerektirir, bu yüzden şimdilik kodlanmadı, yalnızca net bir öneri olarak yazıyorum):
+✅ HAZIR — ⚠️ SANDBOX'TA TEST EDİLEMEDİ (kod incelemesiyle doğrulandı, gerçek çalıştırma sizin bilgisayarınızda yapılmalı): `scripts/schedule-backup-task.ps1` + `scripts/run-scheduled-backup.ps1` iki yeni PowerShell script'i, `scripts/backup-d1.sh`'i Windows Task Scheduler ile günlük/6-saatlik/saatlik otomatik çalıştırıyor — Cloudflare hesabınızda yeni bir kaynak (R2 bucket vb.) gerektirmiyor, mevcut yedekleme mekanizmasının üzerine kuruluyor.
 
-- **Cron Trigger + R2**: `worker-portal/`'a yeni bir Cloudflare Worker Cron Trigger eklenir (`wrangler.toml`'da `[triggers] crons = ["0 * * * *"]`), bu worker D1'i sorgulayıp bir JSON/SQL dökümünü bir R2 bucket'a yazar. Gerektirir: `npx wrangler r2 bucket create veraliq-portal-backups` (sizin çalıştırmanız gerekir).
-- **Basit alternatif**: `scripts/backup-d1.sh`'ı Windows Task Scheduler / cron ile saatlik/günlük çalıştırmak (kendi bilgisayarınızda) — ek Cloudflare kaynağı gerektirmez, hemen kullanılabilir.
+**Kurulum (bir kere, kendi PowerShell'inizden):**
 
-İkinci seçeneği hemen kurabilirim (bir `.bat`/PowerShell zamanlayıcı script'i yazarım) — isterseniz söyleyin.
+```powershell
+cd worker-portal\scripts
+.\schedule-backup-task.ps1
+```
+
+Script sırayla: Git Bash'i bulur, yedek klasörünü sorar, şifrelemek isteyip istemediğinizi sorar (isterseniz parolanızı GİZLİ olarak sorar ve Windows DPAPI ile — yalnızca sizin hesabınız çözebilir — diske şifreli yazar, düz metin ASLA yazılmaz), sıklığı sorar (günlük/6 saatte bir/saatte bir) ve bir Windows Scheduled Task ("VERALIQ D1 Backup") kaydeder. Task yalnızca siz Windows'ta oturum açtığınızda çalışır (Windows hesap şifrenizi hiçbir yere kaydetmemek için bilinçli bir tercih).
+
+Her çalıştırmanın sonucu `<yedek-klasörü>\backup-log.txt`'e zaman damgasıyla yazılır — "yedek gerçekten alınıyor mu" hiçbir zaman belirsiz kalmaz. Ayrıca `$RetentionDays` (varsayılan 30) gün geçmiş yedekler otomatik siliniyor (65 maddelik promptun "versiyonlu yedekler, sınırsız birikmesin" beklentisi).
+
+**Neden "sandbox'ta test edilemedi" diyoruz**: bu script'ler gerçek Windows PowerShell + Task Scheduler + Git Bash gerektiriyor — sandbox ortamında (Linux) VE bu makineye bağlanan device-bridge shell'inde (o da ayrı bir Linux VM) `pwsh`/`powershell` bulunmuyor, denendi doğrulandı. Bu yüzden mantık dikkatlice elle incelendi (DPAPI şifreleme/çözme simetrisi, bash argüman kaçışı, dosya izinleri) ama GERÇEK bir PowerShell yorumlayıcısıyla ÇALIŞTIRILARAK doğrulanamadı. Kurup bir deneme çalıştırması (`Start-ScheduledTask -TaskName 'VERALIQ D1 Backup'`) yaptığınızda `backup-log.txt`'i kontrol edin — bir sorun olursa bana bildirin, düzeltirim.
 
 ## 5. Şifreleme
 
