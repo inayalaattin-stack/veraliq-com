@@ -6,154 +6,216 @@
 <title>VERALIQ — Şirket Portalı</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="/assets/veraliq-mark.svg">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --line:#252C28;
+    --ink:#080A0A; --ink-2:#101413; --panel:#171C19; --panel-2:#1C2220; --line:#252C28;
     --text:#EDE9DF; --text-dim:#8A918C; --text-dim-soft:rgba(138,145,140,0.65);
     --accent:#BFA16A; --accent-text:#D4BB87; --accent-dim:rgba(191,161,106,0.14);
-    --accent-ink:#080A0A; --green:#7EE0B2; --red:#D93A40; --radius:8px;
+    --accent-ink:#080A0A; --mint:#7EE0B2; --mint-dim:rgba(126,224,178,0.13); --mint-text:#8FEAC0;
+    --red:#D93A40; --red-dim:rgba(217,58,64,0.12); --radius:10px; --sidebar-w:236px; --topbar-h:60px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
   a{color:inherit;}
-  header{position:sticky;top:0;z-index:10;background:rgba(8,10,10,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
-  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;text-decoration:none;color:var(--text);}
-  .logo img{width:22px;height:22px;}
-  .logo-sub{font-size:11px;font-weight:400;color:var(--text-dim);margin-left:8px;font-family:'IBM Plex Mono',monospace;}
-  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent-text);border:1px solid var(--accent-dim);background:var(--accent-dim);padding:4px 10px;border-radius:999px;}
-  main{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
-  h1{font-size:22px;margin:0 0 6px;}
-  .sub{color:var(--text-dim);font-size:13.5px;margin:0 0 28px;}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+  button{cursor:pointer;font-family:'Inter',sans-serif;}
+  input,select,textarea{font-family:'Inter',sans-serif;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
+
+  /* ---------- Login ---------- */
+  .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:32px;}
+  .login-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;margin-bottom:26px;}
+  .login-logo img{width:24px;height:24px;}
   .field{margin-bottom:14px;}
-  label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;}
-  input, select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;}
-  input:focus, select:focus{outline:none;border-color:var(--accent);}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media(max-width:600px){.row{grid-template-columns:1fr;}}
-  button{cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:6px;padding:10px 18px;transition:transform .12s ease, box-shadow .12s ease;}
+  .field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:7px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-size:14px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+  .btn{border:none;border-radius:7px;padding:10px 16px;font-weight:600;font-size:13.5px;transition:transform .1s ease,opacity .15s ease;}
   .btn-primary{background:var(--accent);color:var(--accent-ink);}
-  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(191,161,106,0.3);}
+  .btn-primary:hover{transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.5;cursor:default;transform:none;}
+  .btn-mint{background:var(--mint);color:#06110A;}
   .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--line);}
   .btn-ghost:hover{color:var(--text);border-color:var(--accent);}
-  .btn-sm{padding:6px 12px;font-size:12.5px;}
-  .err{color:var(--red);font-size:13px;margin-top:10px;}
-  .login-wrap{max-width:380px;margin:80px auto;}
-  .empty{color:var(--text-dim);font-size:13.5px;text-align:center;padding:30px 0;}
-  .notice{background:var(--accent-dim);border:1px solid rgba(191,161,106,0.3);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--accent-text);margin-bottom:20px;line-height:1.6;}
-  .proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:700px){.proj-grid{grid-template-columns:1fr;}}
-  .proj-card{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
-  .proj-card h3{margin:0 0 6px;font-size:15px;}
-  .proj-meta{color:var(--text-dim);font-size:12.5px;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
-  .status-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;background:var(--accent-dim);color:var(--accent-text);font-family:'IBM Plex Mono',monospace;}
-  .unit-list{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px;}
-  .unit-list li{display:flex;justify-content:space-between;padding:5px 0;border-top:1px dashed var(--line);}
-  .unit-list li:first-child{border-top:none;}
-  .unit-boş{color:var(--text-dim);}
-  .unit-rezerve{color:var(--accent-text);}
-  .unit-satıldı{color:var(--green);}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;}
-  .toast.show{opacity:1;}
-  .top-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
-  .inline-form{display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(217,58,64,0.35);}
+  .btn-danger:hover{background:var(--red-dim);}
+  .btn-sm{padding:6px 12px;font-size:12.5px;border-radius:6px;}
+  .btn-block{width:100%;}
+  .err-msg{color:var(--red);font-size:13px;margin-top:10px;}
+  .hint{color:var(--text-dim-soft);font-size:11.5px;margin-top:5px;}
+
+  /* ---------- App shell ---------- */
+  .app{display:none;min-height:100vh;}
+  .app.show{display:flex;}
+  .sidebar{width:var(--sidebar-w);flex:0 0 var(--sidebar-w);background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:20;transition:transform .2s ease;}
+  .sidebar-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15.5px;padding:20px 20px 16px;}
+  .sidebar-logo img{width:22px;height:22px;}
+  .sidebar-nav{flex:1;overflow-y:auto;padding:6px 12px 16px;}
+  .nav-group{margin-top:16px;}
+  .nav-group:first-child{margin-top:0;}
+  .nav-group-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim-soft);padding:0 10px;margin-bottom:6px;}
+  .nav-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--text-dim);font-size:13.5px;padding:9px 10px;border-radius:7px;margin-bottom:2px;}
+  .nav-item:hover{background:var(--ink-2);color:var(--text);}
+  .nav-item.active{background:var(--accent-dim);color:var(--accent-text);font-weight:600;}
+  .nav-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.55;flex:0 0 auto;}
+  .sidebar-foot{padding:14px 20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-dim-soft);font-family:'IBM Plex Mono',monospace;}
+
+  .app-main{flex:1;margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{height:var(--topbar-h);flex:0 0 var(--topbar-h);position:sticky;top:0;z-index:10;background:rgba(8,10,10,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .topbar-company{font-weight:600;font-size:14.5px;}
+  .topbar-view-label{color:var(--text-dim);font-size:12.5px;font-family:'IBM Plex Mono',monospace;}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .icon-btn{position:relative;background:var(--ink-2);border:1px solid var(--line);color:var(--text-dim);border-radius:7px;padding:7px 10px;font-size:12.5px;}
+  .icon-btn:hover{color:var(--text);border-color:var(--accent);}
+  .badge-dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;line-height:1;padding:2px 5px;border-radius:999px;font-family:'IBM Plex Mono',monospace;}
+  .content{flex:1;padding:26px 28px 60px;max-width:1280px;width:100%;}
+  .view-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .view-title{font-size:21px;font-weight:700;margin:0 0 4px;}
+  .view-sub{color:var(--text-dim);font-size:13px;margin:0;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .card + .card{margin-top:16px;}
+  .empty{color:var(--text-dim);font-size:13.5px;text-align:center;padding:36px 0;}
+  .note{background:var(--accent-dim);border:1px solid rgba(191,161,106,0.28);border-radius:8px;padding:12px 14px;font-size:12.5px;color:var(--accent-text);line-height:1.55;}
+  .note-gap{background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:12.8px;color:var(--text-dim);line-height:1.6;}
+  .note-gap b{color:var(--text);}
+
+  /* stat grid */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .stat-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim-soft);margin-bottom:8px;}
+  .stat-value{font-size:24px;font-weight:700;color:var(--text);}
+  .stat-value.mint{color:var(--mint-text);}
+  .stat-value.gold{color:var(--accent-text);}
+
+  table{width:100%;border-collapse:collapse;font-size:13.2px;}
+  th{text-align:left;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .table-wrap{overflow-x:auto;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .muted{color:var(--text-dim);}
+
+  .pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .pill-gold{background:var(--accent-dim);color:var(--accent-text);}
+  .pill-mint{background:var(--mint-dim);color:var(--mint-text);}
+  .pill-gray{background:rgba(138,145,140,0.14);color:var(--text-dim);}
+  .pill-red{background:var(--red-dim);color:var(--red);}
+
+  .filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .filter-tab{background:var(--ink-2);border:1px solid var(--line);color:var(--text-dim);font-size:12px;padding:6px 12px;border-radius:999px;font-family:'IBM Plex Mono',monospace;}
+  .filter-tab.active{background:var(--accent-dim);border-color:rgba(191,161,106,0.4);color:var(--accent-text);}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:640px){.row,.row3{grid-template-columns:1fr;}}
+  .inline-form{border-top:1px solid var(--line);margin-top:16px;padding-top:16px;display:none;}
   .inline-form.open{display:block;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px;}
+
+  /* AI assistant chat */
+  .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - var(--topbar-h) - 130px);min-height:360px;}
+  .chat-log{flex:1;overflow-y:auto;padding:6px 2px 16px;display:flex;flex-direction:column;gap:12px;}
+  .chat-msg{max-width:72%;padding:11px 14px;border-radius:12px;font-size:13.8px;line-height:1.55;}
+  .chat-msg.user{align-self:flex-end;background:var(--accent-dim);color:var(--text);border:1px solid rgba(191,161,106,0.25);}
+  .chat-msg.assistant{align-self:flex-start;background:var(--panel-2);color:var(--text);border:1px solid var(--line);}
+  .chat-msg.assistant b.tag{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mint-text);margin-bottom:5px;letter-spacing:.05em;}
+  .chat-input-row{display:flex;gap:10px;padding-top:14px;border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1;}
+  .suggest-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .suggest-chip{background:var(--ink-2);border:1px solid var(--line);color:var(--text-dim);font-size:12px;padding:6px 12px;border-radius:999px;}
+  .suggest-chip:hover{border-color:var(--mint);color:var(--mint-text);}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:100;}
+  .toast.show{opacity:1;}
+
+  .mobile-menu-btn{display:none;background:var(--ink-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 10px;}
+  @media(max-width:900px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .app-main{margin-left:0;}
+    .mobile-menu-btn{display:inline-flex;}
+    .content{padding:18px 16px 100px;}
+  }
+  @media(max-width:520px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <a href="/" class="logo" aria-label="VERALIQ ana sayfa">
-    <img src="/assets/veraliq-mark.svg" alt="VERALIQ" width="22" height="22">
-    VERALIQ<span class="logo-sub">Şirket Portalı</span>
-  </a>
-  <span class="badge">PROTOTİP / TEST ORTAMI</span>
-</header>
-
-<main>
-
-  <div id="loginView" class="login-wrap" hidden>
-    <div class="card">
-      <h1>Şirket Girişi</h1>
-      <p class="sub">Size verilen kullanıcı adı ve şifre ile giriş yapın.</p>
-      <div class="field">
-        <label for="pUser">E-posta</label>
-        <input type="text" id="pUser" placeholder="Örn. abcinsaat@veraliq.com" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="pPass">Şifre</label>
-        <input type="password" id="pPass" placeholder="••••••••" autocomplete="off">
-      </div>
-      <button class="btn-primary" id="loginBtn" style="width:100%;">Giriş Yap</button>
-      <div class="err" id="loginErr" style="display:none;">Kullanıcı adı veya şifre hatalı.</div>
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><img src="/assets/veraliq-mark.svg" alt="VERALIQ">VERALIQ Şirket Portalı</div>
+    <div class="field">
+      <label for="pUser">E-posta</label>
+      <input type="text" id="pUser" placeholder="ornek@sirketiniz.com" autocomplete="username">
     </div>
+    <div class="field">
+      <label for="pPass">Şifre</label>
+      <input type="password" id="pPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-block" id="loginBtn">Giriş Yap</button>
+    <div class="err-msg" id="loginErr" style="display:none;"></div>
+    <div class="hint">Bu portal Cloudflare D1 üzerinde çalışan gerçek bir backend'e bağlıdır — verileriniz sunucuda saklanır.</div>
   </div>
+</div>
 
-  <div id="dashView" hidden>
-    <div class="top-actions">
-      <div>
-        <h1 id="companyName">—</h1>
-        <p class="sub" style="margin:0;">Projeleriniz ve birim durumları</p>
+<!-- ============ APP SHELL ============ -->
+<div id="app" class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><img src="/assets/veraliq-mark.svg" alt="VERALIQ">VERALIQ</div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-foot" id="sidebarFoot">v1 · gerçek backend</div>
+  </aside>
+
+  <div class="app-main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="menuToggle">☰</button>
+        <span class="topbar-company" id="topbarCompany">—</span>
+        <span class="topbar-view-label" id="topbarView"></span>
       </div>
-      <button class="btn-ghost btn-sm" id="logoutBtn">Çıkış Yap</button>
-    </div>
-
-    <div class="notice">
-      Bu portal artık <b>gerçek bir backend'e</b> (Cloudflare D1 veritabanı + Worker API) bağlıdır — projeleriniz ve birimleriniz sunucuda saklanır, herhangi bir cihazdan aynı bilgilerle görülebilir.
-    </div>
-
-    <div class="card">
-      <div class="top-actions" style="margin-bottom:0;">
-        <h2 style="margin:0;font-size:15px;">Projelerim</h2>
-        <button class="btn-primary btn-sm" id="toggleAddProj">+ Proje Ekle</button>
-      </div>
-      <div class="inline-form" id="addProjForm">
-        <div class="row">
-          <div class="field"><label>Proje Adı</label><input type="text" id="npName" placeholder="Örn. Vadi Konutları 2"></div>
-          <div class="field"><label>Konum</label><input type="text" id="npLocation" placeholder="Örn. İstanbul / Ataşehir"></div>
-        </div>
-        <div class="row">
-          <div class="field"><label>Teslim Tarihi</label><input type="date" id="npDelivery"></div>
-          <div class="field"><label>Durum</label>
-            <select id="npStatus">
-              <option value="planning">Planlama</option>
-              <option value="construction">İnşaat</option>
-              <option value="selling" selected>Satışta</option>
-              <option value="completed">Tamamlandı</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn-primary btn-sm" id="saveProjBtn">Kaydet</button>
-        <div class="err" id="projErr" style="display:none;"></div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="assistantQuickBtn" title="AI Assistant">✦ AI
+          <span class="badge-dot" id="approvalBadge" style="display:none;">0</span>
+        </button>
+        <button class="icon-btn btn-sm" id="logoutBtn">Çıkış</button>
       </div>
     </div>
-
-    <div id="projectsWrap"></div>
+    <div class="content" id="content"></div>
   </div>
-
-</main>
+</div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   "use strict";
-  // GERÇEK BACKEND: worker-portal/portal-api-worker.js (Cloudflare D1 +
-  // Durable Object). Bkz. docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md ve
-  // admin.html'deki aynı desen. `wrangler deploy` sonrası adres farklıysa
-  // bu satırı güncelleyin.
+
+  // ============================================================
+  // GERÇEK BACKEND — worker-portal/portal-api-worker.js (Cloudflare
+  // D1 + Durable Object). Bkz. docs/MASTER_PLATFORM_ANALYSIS_AND_ROADMAP.md.
+  // ============================================================
   var API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
   var TOKEN_KEY = 'veraliq_company_jwt';
   var COMPANY_KEY = 'veraliq_company_info';
+  var USER_KEY = 'veraliq_company_user';
 
   function getToken(){ return sessionStorage.getItem(TOKEN_KEY); }
-  function setToken(t){ sessionStorage.setItem(TOKEN_KEY, t); }
-  function clearToken(){ sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(COMPANY_KEY); }
-  function getCompanyInfo(){
-    try { return JSON.parse(sessionStorage.getItem(COMPANY_KEY) || 'null'); } catch(e){ return null; }
+  function setSession(token, user, company){
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    sessionStorage.setItem(COMPANY_KEY, JSON.stringify(company || {}));
   }
-  function setCompanyInfo(c){ sessionStorage.setItem(COMPANY_KEY, JSON.stringify(c || {})); }
+  function clearSession(){ sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(USER_KEY); sessionStorage.removeItem(COMPANY_KEY); }
+  function getUser(){ try { return JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'); } catch(e){ return null; } }
+  function getCompany(){ try { return JSON.parse(sessionStorage.getItem(COMPANY_KEY) || 'null'); } catch(e){ return null; } }
+  function isOwner(){ var u = getUser(); return !!u && u.role === 'company_owner'; }
 
   async function api(path, opts){
     opts = opts || {};
@@ -169,8 +231,7 @@
     try { data = await resp.json(); } catch(e){}
     if (!resp.ok) {
       var err = new Error((data && data.error) || ('http_' + resp.status));
-      err.status = resp.status;
-      err.data = data;
+      err.status = resp.status; err.data = data;
       throw err;
     }
     return data;
@@ -181,152 +242,717 @@
       return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
     });
   }
+  function money(n){ return Number(n || 0).toLocaleString('tr-TR') + ' ₺'; }
+  function fmtDate(s){ if (!s) return '—'; try { return new Date(s.replace(' ', 'T') + 'Z').toLocaleDateString('tr-TR'); } catch(e){ return s; } }
 
   var ERROR_MESSAGES = {
     invalid_credentials: 'E-posta veya şifre hatalı.',
     company_inactive: 'Şirket hesabı pasif durumda — VERALIQ ile iletişime geçin.',
     missing_fields: 'Lütfen tüm alanları doldurun.',
-    company_id_required: 'Şirket bilgisi bulunamadı — lütfen tekrar giriş yapın.',
+    email_taken: 'Bu e-posta zaten kullanılıyor.',
+    password_too_short: 'Şifre en az 8 karakter olmalı.',
+    forbidden: 'Bu işlem için yetkiniz yok.',
+    cannot_remove_owner: 'Şirket sahibi hesabı kaldırılamaz.',
+    invalid_status_transition: 'Bu durum geçişine izin verilmiyor.',
+    already_decided: 'Bu talep zaten karara bağlanmış.',
   };
-  function errMsg(err){
-    return ERROR_MESSAGES[err && err.message] || 'Bir hata oluştu: ' + ((err && err.message) || 'bilinmeyen');
-  }
+  function errMsg(e){ return ERROR_MESSAGES[e && e.message] || 'Bir hata oluştu: ' + ((e && e.message) || 'bilinmeyen'); }
 
-  // units.status (backend state machine) -> ekranda gösterilecek Türkçe
-  // etiket + renk sınıfı. Sıra: AVAILABLE -> PRESENTATION -> HOLD ->
-  // RESERVED -> DEPOSIT_PAID -> CONTRACT -> SOLD (bkz. portal-api-worker.js
-  // ALLOWED_TRANSITIONS).
-  var STATUS_LABELS = {
-    AVAILABLE: 'Boşta', PRESENTATION: 'Sunumda', HOLD: 'Tutuldu',
-    RESERVED: 'Rezerve', DEPOSIT_PAID: 'Kapora Alındı', CONTRACT: 'Sözleşmede', SOLD: 'Satıldı',
-  };
-  var STATUS_CLASSES = {
-    AVAILABLE: 'unit-boş', PRESENTATION: 'unit-rezerve', HOLD: 'unit-rezerve',
-    RESERVED: 'unit-rezerve', DEPOSIT_PAID: 'unit-rezerve', CONTRACT: 'unit-rezerve', SOLD: 'unit-satıldı',
-  };
-  var PROJECT_STATUS_LABELS = {
-    planning: 'Planlama', construction: 'İnşaat', selling: 'Satışta', completed: 'Tamamlandı',
-  };
-
-  var loginView = document.getElementById('loginView');
-  var dashView = document.getElementById('dashView');
   var toastEl = document.getElementById('toast');
-
   function toast(msg){
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+    setTimeout(function(){ toastEl.classList.remove('show'); }, 2400);
   }
 
-  function isAuthed(){ return !!getToken(); }
+  // ---------------- Status labels (real state machine, bkz. portal-api-worker.js) ----------------
+  var STATUS_LABEL = { AVAILABLE:'Boşta', PRESENTATION:'Sunumda', HOLD:'Tutuldu', RESERVED:'Rezerve', DEPOSIT_PAID:'Kapora Alındı', CONTRACT:'Sözleşmede', SOLD:'Satıldı' };
+  var STATUS_PILL = { AVAILABLE:'pill-gray', PRESENTATION:'pill-mint', HOLD:'pill-gold', RESERVED:'pill-gold', DEPOSIT_PAID:'pill-gold', CONTRACT:'pill-gold', SOLD:'pill-mint' };
+  var PROJECT_STATUS_LABEL = { planning:'Planlama', construction:'İnşaat', selling:'Satışta', completed:'Tamamlandı' };
+  var LEAD_STATUS_LABEL = { new:'Yeni', qualified:'Nitelikli', presentation:'Sunum', negotiating:'Müzakere', won:'Kazanıldı', lost:'Kaybedildi' };
 
-  function render(){
-    if (!isAuthed()) {
-      loginView.hidden = false;
-      dashView.hidden = true;
-      return;
-    }
-    loginView.hidden = true;
-    dashView.hidden = false;
-    var company = getCompanyInfo();
-    document.getElementById('companyName').textContent = (company && company.name) || 'Şirketim';
-    renderProjects();
+  // ============================================================
+  // NAV — madde 13/18: Company Portal Menü (tam liste, gruplu).
+  // ============================================================
+  var NAV = [
+    { group: 'Genel', items: [
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'assistant', label: 'AI Assistant' },
+    ]},
+    { group: 'Operasyon', items: [
+      { id: 'projects', label: 'Projects' },
+      { id: 'inventory', label: 'Inventory' },
+      { id: 'presentations', label: 'Presentations' },
+      { id: 'reservations', label: 'Reservations' },
+    ]},
+    { group: 'Satış & Müşteri', items: [
+      { id: 'leads', label: 'Leads' },
+      { id: 'customers', label: 'Customers' },
+      { id: 'sales', label: 'Sales' },
+      { id: 'crm', label: 'CRM' },
+    ]},
+    { group: 'Finans & Belge', items: [
+      { id: 'payments', label: 'Payments' },
+      { id: 'contracts', label: 'Contracts' },
+      { id: 'documents', label: 'Documents' },
+    ]},
+    { group: 'Planlama', items: [
+      { id: 'calendar', label: 'Calendar' },
+      { id: 'reports', label: 'Reports' },
+    ]},
+    { group: 'Sistem', items: [
+      { id: 'agents', label: 'Agents' },
+      { id: 'team', label: 'Team' },
+      { id: 'integrations', label: 'Integrations' },
+      { id: 'settings', label: 'Settings' },
+    ]},
+  ];
+
+  var state = { view: 'dashboard', projectsCache: null };
+
+  // ============================================================
+  // LOGIN / SESSION
+  // ============================================================
+  function showLogin(){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').classList.remove('show');
   }
-
-  async function renderProjects(){
-    var wrap = document.getElementById('projectsWrap');
-    wrap.innerHTML = '<div class="card"><div class="empty">Yükleniyor…</div></div>';
-    var list;
-    try {
-      list = await api('/api/projects');
-    } catch (e) {
-      if (e.status === 401 || e.status === 403) { clearToken(); render(); return; }
-      wrap.innerHTML = '<div class="card"><div class="empty">Projeler yüklenemedi: ' + esc(errMsg(e)) + '</div></div>';
-      return;
-    }
-    var projects = list.projects || [];
-    if (!projects.length) {
-      wrap.innerHTML = '<div class="card"><div class="empty">Henüz proje eklenmedi. Yukarıdan "+ Proje Ekle" ile başlayın.</div></div>';
-      return;
-    }
-    // Her projenin birim (envanter) listesini almak için paralel çağır.
-    var withUnits = await Promise.all(projects.map(function(p){
-      return api('/api/projects/' + p.id + '/units').then(function(r){
-        return { project: p, units: (r && r.units) || [] };
-      }).catch(function(){ return { project: p, units: [] }; });
-    }));
-
-    var html = '<div class="proj-grid">';
-    withUnits.forEach(function(item){
-      var p = item.project, units = item.units;
-      html += '<div class="proj-card">' +
-        '<h3>'+esc(p.name)+'</h3>' +
-        '<div class="proj-meta">'+esc(p.location||'-')+' · '+ units.length +' birim</div>' +
-        '<span class="status-pill">'+esc(PROJECT_STATUS_LABELS[p.status] || p.status || '-')+'</span>';
-      if (units.length) {
-        html += '<ul class="unit-list">';
-        units.forEach(function(u){
-          var cls = STATUS_CLASSES[u.status] || 'unit-boş';
-          var label = STATUS_LABELS[u.status] || u.status;
-          var no = (u.block ? u.block + '-' : '') + u.unit_no;
-          html += '<li><span>'+esc(no)+'</span><span class="'+cls+'">'+esc(label)+'</span></li>';
-        });
-        html += '</ul>';
-      }
-      html += '</div>';
-    });
-    html += '</div>';
-    wrap.innerHTML = html;
+  function showApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    document.getElementById('topbarCompany').textContent = (getCompany() || {}).name || 'Şirketim';
+    buildNav();
+    refreshApprovalBadge();
+    navigate(state.view);
   }
 
   document.getElementById('loginBtn').addEventListener('click', async function(){
-    var user = document.getElementById('pUser').value.trim();
+    var email = document.getElementById('pUser').value.trim();
     var pass = document.getElementById('pPass').value;
     var errEl = document.getElementById('loginErr');
+    if (!email || !pass) { errEl.textContent = 'E-posta ve şifre gerekli.'; errEl.style.display='block'; return; }
     try {
-      var res = await api('/api/auth/company/login', { method: 'POST', body: { email: user, password: pass } });
-      setToken(res.token);
-      setCompanyInfo(res.company);
+      var res = await api('/api/auth/company/login', { method: 'POST', body: { email: email, password: pass } });
+      setSession(res.token, res.user, res.company);
       errEl.style.display = 'none';
-      render();
+      showApp();
     } catch (e) {
       errEl.textContent = errMsg(e);
       errEl.style.display = 'block';
     }
   });
-  document.getElementById('pPass').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') document.getElementById('loginBtn').click();
-  });
-  document.getElementById('logoutBtn').addEventListener('click', function(){
-    clearToken();
-    render();
-  });
-  document.getElementById('toggleAddProj').addEventListener('click', function(){
-    document.getElementById('addProjForm').classList.toggle('open');
-  });
-  document.getElementById('saveProjBtn').addEventListener('click', async function(){
-    var name = document.getElementById('npName').value.trim();
-    var location = document.getElementById('npLocation').value.trim();
-    var delivery = document.getElementById('npDelivery').value || null;
-    var status = document.getElementById('npStatus').value;
-    var errEl = document.getElementById('projErr');
-    if (!name) { toast('Proje adı gerekli.'); return; }
-    try {
-      await api('/api/projects', { method: 'POST', body: { name: name, location: location, delivery_date: delivery, status: status } });
-      errEl.style.display = 'none';
-      document.getElementById('npName').value = '';
-      document.getElementById('npLocation').value = '';
-      document.getElementById('npDelivery').value = '';
-      document.getElementById('addProjForm').classList.remove('open');
-      toast('Proje eklendi.');
-      renderProjects();
-    } catch (e) {
-      errEl.textContent = errMsg(e);
-      errEl.style.display = 'block';
-    }
-  });
+  document.getElementById('pPass').addEventListener('keydown', function(e){ if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+  document.getElementById('logoutBtn').addEventListener('click', function(){ clearSession(); showLogin(); });
+  document.getElementById('menuToggle').addEventListener('click', function(){ document.getElementById('sidebar').classList.toggle('open'); });
+  document.getElementById('assistantQuickBtn').addEventListener('click', function(){ navigate('assistant'); });
 
-  render();
+  async function refreshApprovalBadge(){
+    try {
+      var res = await api('/api/dashboard');
+      var badge = document.getElementById('approvalBadge');
+      if (res.pending_approvals > 0) { badge.style.display = 'block'; badge.textContent = res.pending_approvals; }
+      else badge.style.display = 'none';
+    } catch(e){ /* sessiz — topbar rozeti kritik değil */ }
+  }
+
+  // ============================================================
+  // NAV BUILD + ROUTER
+  // ============================================================
+  function buildNav(){
+    var nav = document.getElementById('sidebarNav');
+    var html = '';
+    NAV.forEach(function(g){
+      html += '<div class="nav-group"><div class="nav-group-label">' + esc(g.group) + '</div>';
+      g.items.forEach(function(it){
+        html += '<button class="nav-item" data-view="' + it.id + '"><span class="dot"></span>' + esc(it.label) + '</button>';
+      });
+      html += '</div>';
+    });
+    nav.innerHTML = html;
+    nav.querySelectorAll('[data-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){ navigate(btn.getAttribute('data-view')); document.getElementById('sidebar').classList.remove('open'); });
+    });
+  }
+
+  var VIEW_LABELS = {};
+  NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_LABELS[it.id] = it.label; }); });
+
+  var RENDERERS = {
+    dashboard: renderDashboard, assistant: renderAssistant, projects: renderProjects,
+    inventory: renderInventory, presentations: renderPresentations, reservations: renderReservations,
+    leads: renderLeads, customers: renderCustomers, sales: renderSales, crm: renderCrm,
+    payments: renderPayments, contracts: renderContracts, documents: renderDocuments,
+    calendar: renderCalendar, reports: renderReports, agents: renderAgents, team: renderTeam,
+    integrations: renderIntegrations, settings: renderSettings,
+  };
+
+  function navigate(view){
+    state.view = view;
+    document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === view); });
+    document.getElementById('topbarView').textContent = VIEW_LABELS[view] || '';
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="empty">Yükleniyor…</div>';
+    var fn = RENDERERS[view];
+    if (fn) fn(content); else content.innerHTML = '<div class="empty">Ekran bulunamadı.</div>';
+  }
+
+  function viewHead(container, title, sub, actionsHtml){
+    container.innerHTML = '<div class="view-head"><div><h1 class="view-title">' + esc(title) + '</h1>' +
+      (sub ? '<p class="view-sub">' + esc(sub) + '</p>' : '') + '</div>' + (actionsHtml || '') + '</div><div id="viewBody"></div>';
+    return document.getElementById('viewBody');
+  }
+
+  function statCard(label, value, cls){
+    return '<div class="stat-card"><div class="stat-label">' + esc(label) + '</div><div class="stat-value' + (cls ? ' ' + cls : '') + '">' + value + '</div></div>';
+  }
+
+  // ============================================================
+  // DASHBOARD (madde 19: Company Dashboard)
+  // ============================================================
+  async function renderDashboard(container){
+    var body = viewHead(container, 'Dashboard', 'Gerçek zamanlı satış, envanter ve operasyon özeti.');
+    try {
+      var d = await api('/api/dashboard');
+      var html = '<div class="stat-grid">' +
+        statCard('Toplam Lead', d.total_leads) +
+        statCard('Bugünkü Lead', d.today_leads, 'mint') +
+        statCard('Sunumda', d.presentations, 'mint') +
+        statCard('Tutulan', d.holds) +
+        statCard('Rezerve', d.reservations, 'gold') +
+        statCard('Kapora Alındı', d.deposits, 'gold') +
+        statCard('Sözleşmede', d.contracts, 'gold') +
+        statCard('Satış', d.sales, 'gold') +
+        statCard('Ciro', money(d.revenue), 'gold') +
+        statCard('Aktif Stok (Boşta)', d.active_stock) +
+        statCard('Bekleyen Onay', d.pending_approvals, d.pending_approvals > 0 ? 'gold' : '') +
+      '</div>';
+      html += '<div class="card" style="margin-top:16px;">' +
+        '<div class="stat-label" style="margin-bottom:12px;">AI Agent Performance / Human Sales Performance <span class="muted" style="text-transform:none;letter-spacing:0;">— gerçek sunum kilidi (presentation lock) kayıtlarından</span></div>' +
+        '<div class="row">' +
+          '<div><div class="pill pill-mint" style="margin-bottom:6px;">AI Agent</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12px;">başlatılan sunum</div></div>' +
+          '<div><div class="pill pill-gold" style="margin-bottom:6px;">İnsan Temsilci</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12px;">başlatılan sunum</div></div>' +
+        '</div></div>';
+      body.innerHTML = html;
+      refreshApprovalBadge();
+    } catch (e) {
+      body.innerHTML = '<div class="empty">Dashboard yüklenemedi: ' + esc(errMsg(e)) + '</div>';
+    }
+  }
+
+  // ============================================================
+  // AI ASSISTANT (madde 20-22: Company AI Assistant)
+  // ============================================================
+  function renderAssistant(container){
+    container.innerHTML =
+      '<div class="view-head"><div><h1 class="view-title">AI Assistant</h1>' +
+      '<p class="view-sub">Şirket yöneticisi asistanı — gerçek veritabanı verisiyle cevap verir, müşteriye satış yapan agent DEĞİLDİR.</p></div></div>' +
+      '<div class="card">' +
+        '<div class="suggest-row" id="assistantSuggest">' +
+          '<button class="suggest-chip" data-q="Bugün kaç lead geldi?">Bugün kaç lead geldi?</button>' +
+          '<button class="suggest-chip" data-q="Bekleyen onayları göster">Bekleyen onaylar?</button>' +
+          '<button class="suggest-chip" data-q="Bugünkü satışları göster">Bugünkü satışlar?</button>' +
+          '<button class="suggest-chip" data-q="Sunumda kaç birim var?">Sunumda kaç birim var?</button>' +
+        '</div>' +
+        '<div class="chat-wrap">' +
+          '<div class="chat-log" id="chatLog"><div class="chat-msg assistant"><b class="tag">VERALIQ AI</b>Merhaba, ben şirket yönetim asistanınızım. Lead, satış, stok, onay ve sunum durumlarınız hakkında bana soru sorabilirsiniz — cevaplar gerçek veritabanı verinize dayanır.</div></div>' +
+          '<div class="chat-input-row">' +
+            '<input type="text" id="chatInput" placeholder="Örn. ABC Vadi Konutları kaç daire kaldı?">' +
+            '<button class="btn btn-mint" id="chatSendBtn">Gönder</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="note" style="margin-top:14px;">v1: Bu asistan, promptun Zero Trust AI ilkesine uygun olarak (madde 41/56) serbest metin SQL üretmez — sabit, önceden tanımlı ve parametreli sorgu kalıplarıyla çalışır. Cevaplar her zaman gerçek veritabanı değerleridir, asla uydurma değildir.</div>';
+
+    var log = document.getElementById('chatLog');
+    function addMsg(role, text, tag){
+      var div = document.createElement('div');
+      div.className = 'chat-msg ' + role;
+      if (tag) { var b = document.createElement('b'); b.className='tag'; b.textContent = tag; div.appendChild(b); }
+      div.appendChild(document.createTextNode(text));
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+    async function ask(q){
+      if (!q) return;
+      addMsg('user', q);
+      document.getElementById('chatInput').value = '';
+      try {
+        var res = await api('/api/assistant/query', { method: 'POST', body: { question: q } });
+        addMsg('assistant', res.answer, 'VERALIQ AI');
+      } catch (e) {
+        addMsg('assistant', errMsg(e), 'VERALIQ AI');
+      }
+    }
+    document.getElementById('chatSendBtn').addEventListener('click', function(){ ask(document.getElementById('chatInput').value.trim()); });
+    document.getElementById('chatInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') ask(e.target.value.trim()); });
+    document.getElementById('assistantSuggest').querySelectorAll('[data-q]').forEach(function(btn){
+      btn.addEventListener('click', function(){ ask(btn.getAttribute('data-q')); });
+    });
+  }
+
+  // ============================================================
+  // PROJECTS (madde 21: Proje Yönetimi)
+  // ============================================================
+  async function renderProjects(container){
+    var body = viewHead(container, 'Projects', 'Projeleriniz ve temel bilgileri.',
+      '<button class="btn btn-primary btn-sm" id="toggleAddProj">+ Proje Ekle</button>');
+    var formHtml =
+      '<div class="card inline-form" id="addProjForm">' +
+        '<div class="row">' +
+          '<div class="field"><label>Proje Adı *</label><input id="npName" placeholder="Örn. Vadi Konutları 2"></div>' +
+          '<div class="field"><label>Konum</label><input id="npLocation" placeholder="Örn. İstanbul / Ataşehir"></div>' +
+        '</div>' +
+        '<div class="row3">' +
+          '<div class="field"><label>Ada</label><input id="npAda"></div>' +
+          '<div class="field"><label>Parsel</label><input id="npParsel"></div>' +
+          '<div class="field"><label>Pafta</label><input id="npPafta"></div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Teslim Tarihi</label><input type="date" id="npDelivery"></div>' +
+          '<div class="field"><label>Durum</label><select id="npStatus"><option value="planning">Planlama</option><option value="construction">İnşaat</option><option value="selling" selected>Satışta</option><option value="completed">Tamamlandı</option></select></div>' +
+        '</div>' +
+        '<div class="field"><label>Açıklama</label><textarea id="npDesc" rows="2"></textarea></div>' +
+        '<button class="btn btn-primary btn-sm" id="saveProjBtn">Kaydet</button>' +
+        '<div class="err-msg" id="projErr" style="display:none;"></div>' +
+      '</div><div id="projList" style="margin-top:16px;"></div>';
+    body.innerHTML = formHtml;
+
+    document.getElementById('toggleAddProj').addEventListener('click', function(){ document.getElementById('addProjForm').classList.toggle('open'); });
+    document.getElementById('saveProjBtn').addEventListener('click', async function(){
+      var name = document.getElementById('npName').value.trim();
+      var errEl = document.getElementById('projErr');
+      if (!name) { errEl.textContent = 'Proje adı gerekli.'; errEl.style.display='block'; return; }
+      try {
+        await api('/api/projects', { method: 'POST', body: {
+          name: name, location: document.getElementById('npLocation').value.trim(),
+          ada: document.getElementById('npAda').value.trim() || null,
+          parsel: document.getElementById('npParsel').value.trim() || null,
+          pafta: document.getElementById('npPafta').value.trim() || null,
+          delivery_date: document.getElementById('npDelivery').value || null,
+          status: document.getElementById('npStatus').value,
+          description: document.getElementById('npDesc').value.trim(),
+        }});
+        errEl.style.display = 'none';
+        document.getElementById('addProjForm').classList.remove('open');
+        toast('Proje eklendi.');
+        loadProjectList();
+      } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+    });
+
+    await loadProjectList();
+
+    async function loadProjectList(){
+      var wrap = document.getElementById('projList');
+      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        var res = await api('/api/projects');
+        state.projectsCache = res.projects;
+        if (!res.projects.length) { wrap.innerHTML = '<div class="card"><div class="empty">Henüz proje eklenmedi.</div></div>'; return; }
+        var withUnits = await Promise.all(res.projects.map(function(p){
+          return api('/api/projects/' + p.id + '/units').then(function(r){ return { p: p, units: r.units || [] }; }).catch(function(){ return { p: p, units: [] }; });
+        }));
+        var html = '';
+        withUnits.forEach(function(item){
+          var p = item.p, units = item.units;
+          var sold = units.filter(function(u){ return u.status === 'SOLD'; }).length;
+          html += '<div class="card">' +
+            '<div class="toolbar"><div><b>' + esc(p.name) + '</b> <span class="pill pill-gray">' + esc(PROJECT_STATUS_LABEL[p.status] || p.status) + '</span></div>' +
+            '<span class="muted mono">' + units.length + ' birim · ' + sold + ' satıldı</span></div>' +
+            '<div class="muted" style="font-size:12.5px;margin-top:6px;">' + esc(p.location || '—') +
+            (p.ada ? ' · Ada ' + esc(p.ada) : '') + (p.parsel ? ' / Parsel ' + esc(p.parsel) : '') +
+            (p.delivery_date ? ' · Teslim: ' + esc(p.delivery_date) : '') + '</div>' +
+            (p.description ? '<div class="muted" style="font-size:12.5px;margin-top:6px;">' + esc(p.description) + '</div>' : '') +
+          '</div>';
+        });
+        wrap.innerHTML = html;
+      } catch (e) { wrap.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+    }
+  }
+
+  // ============================================================
+  // Ortak: şirket geneli birim tablosu (Inventory/Sales/Presentations/Reservations/Contracts)
+  // ============================================================
+  var NEXT_STATUS = { AVAILABLE:['PRESENTATION','HOLD'], PRESENTATION:['AVAILABLE','HOLD'], HOLD:['RESERVED','AVAILABLE'], RESERVED:['DEPOSIT_PAID','AVAILABLE'], DEPOSIT_PAID:['CONTRACT'], CONTRACT:['SOLD'], SOLD:[] };
+
+  async function fetchUnits(status){
+    var qs = status ? ('?status=' + encodeURIComponent(status)) : '';
+    var res = await api('/api/units' + qs);
+    return res.units;
+  }
+
+  function unitsTable(units, opts){
+    opts = opts || {};
+    if (!units.length) return '<div class="empty">Kayıt yok.</div>';
+    var rows = units.map(function(u){
+      var actions = '';
+      if (opts.allowTransition) {
+        (NEXT_STATUS[u.status] || []).forEach(function(next){
+          actions += '<button class="btn btn-ghost btn-sm" data-transition="' + u.id + '|' + next + '" style="margin-right:4px;">→ ' + esc(STATUS_LABEL[next]) + '</button>';
+        });
+      }
+      return '<tr><td>' + esc(u.project_name || '') + '</td><td class="mono">' + esc((u.block ? u.block + '-' : '') + u.unit_no) + '</td>' +
+        '<td>' + esc(u.unit_type || '—') + '</td><td class="mono">' + (u.price ? money(u.price) : '—') + '</td>' +
+        '<td><span class="pill ' + (STATUS_PILL[u.status] || 'pill-gray') + '">' + esc(STATUS_LABEL[u.status] || u.status) + '</span></td>' +
+        '<td class="mono muted">' + fmtDate(u.updated_at) + '</td>' +
+        (opts.allowTransition ? '<td>' + actions + '</td>' : '') +
+      '</tr>';
+    }).join('');
+    return '<div class="table-wrap"><table><thead><tr><th>Proje</th><th>Birim</th><th>Tip</th><th>Fiyat</th><th>Durum</th><th>Güncelleme</th>' +
+      (opts.allowTransition ? '<th>İşlem</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function wireTransitionButtons(container, onDone){
+    container.querySelectorAll('[data-transition]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var parts = btn.getAttribute('data-transition').split('|');
+        try {
+          await api('/api/units/' + parts[0], { method: 'PATCH', body: { status: parts[1] } });
+          toast('Durum güncellendi: ' + STATUS_LABEL[parts[1]]);
+          onDone();
+        } catch (e) { toast(errMsg(e)); }
+      });
+    });
+  }
+
+  // ============================================================
+  // INVENTORY (madde 26/32: Real-Time Inventory)
+  // ============================================================
+  async function renderInventory(container){
+    var body = viewHead(container, 'Inventory', 'Tüm projelerdeki gerçek zamanlı birim envanteri.');
+    var statuses = ['', 'AVAILABLE', 'PRESENTATION', 'HOLD', 'RESERVED', 'DEPOSIT_PAID', 'CONTRACT', 'SOLD'];
+    var current = '';
+    body.innerHTML = '<div class="filter-tabs" id="invTabs"></div><div id="invTable" class="card"></div>';
+    var tabsEl = document.getElementById('invTabs');
+    tabsEl.innerHTML = statuses.map(function(s){
+      return '<button class="filter-tab' + (s === current ? ' active' : '') + '" data-status="' + s + '">' + (s ? esc(STATUS_LABEL[s]) : 'Tümü') + '</button>';
+    }).join('');
+    async function load(status){
+      var tableEl = document.getElementById('invTable');
+      tableEl.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        var units = await fetchUnits(status);
+        tableEl.innerHTML = unitsTable(units, { allowTransition: true });
+        wireTransitionButtons(tableEl, function(){ load(status); });
+      } catch (e) { tableEl.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+    }
+    tabsEl.querySelectorAll('[data-status]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        current = btn.getAttribute('data-status');
+        tabsEl.querySelectorAll('.filter-tab').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        load(current);
+      });
+    });
+    load('');
+  }
+
+  async function renderPresentations(container){
+    var body = viewHead(container, 'Presentations', 'Şu anda sunum halinde olan birimler — presentation lock ile korunur, iki agent aynı birimi aynı anda sunamaz.');
+    try { body.innerHTML = unitsTable(await fetchUnits('PRESENTATION')); }
+    catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  async function renderReservations(container){
+    var body = viewHead(container, 'Reservations', 'Rezerve edilmiş ve kaporası alınmış birimler.');
+    try {
+      var reserved = await fetchUnits('RESERVED');
+      var deposit = await fetchUnits('DEPOSIT_PAID');
+      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">Rezerve</div>' + unitsTable(reserved, { allowTransition: true }) + '</div>' +
+        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">Kapora Alındı</div>' + unitsTable(deposit, { allowTransition: true }) + '</div>';
+      wireTransitionButtons(body, function(){ renderReservations(container); });
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  async function renderSales(container){
+    var body = viewHead(container, 'Sales', 'Satışı tamamlanmış birimler (units.status = SOLD).');
+    try {
+      var units = await fetchUnits('SOLD');
+      var total = units.reduce(function(s,u){ return s + (u.price || 0); }, 0);
+      body.innerHTML = '<div class="stat-grid" style="margin-bottom:14px;">' + statCard('Toplam Satış', units.length) + statCard('Toplam Ciro', money(total), 'gold') + '</div>' +
+        '<div class="card">' + unitsTable(units) + '</div>';
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  async function renderContracts(container){
+    var body = viewHead(container, 'Contracts', 'Sözleşme aşamasındaki ve tamamlanmış satışlar.');
+    try {
+      var contract = await fetchUnits('CONTRACT');
+      var sold = await fetchUnits('SOLD');
+      body.innerHTML = '<div class="card"><div class="stat-label" style="margin-bottom:10px;">Sözleşmede</div>' + unitsTable(contract, { allowTransition: true }) + '</div>' +
+        '<div class="card" style="margin-top:14px;"><div class="stat-label" style="margin-bottom:10px;">Tamamlanan (Satıldı)</div>' + unitsTable(sold) + '</div>' +
+        '<div class="note-gap" style="margin-top:14px;">Sözleşme <b>şablonu yükleme ve e-imza</b> altyapısı henüz bağlı değil — bu, ayrı bir e-imza sağlayıcı hesabı gerektiriyor (madde 36). Şu an bu ekran sözleşme AŞAMASINDAKİ gerçek birimleri gösteriyor.</div>';
+      wireTransitionButtons(body, function(){ renderContracts(container); });
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  // ============================================================
+  // LEADS / CUSTOMERS / CRM (madde 30 mobilden CRM + genel CRM)
+  // ============================================================
+  async function renderLeads(container){
+    var body = viewHead(container, 'Leads', 'Tüm potansiyel müşteri kayıtları.',
+      '<button class="btn btn-primary btn-sm" id="toggleAddLead">+ Lead Ekle</button>');
+    body.innerHTML =
+      '<div class="card inline-form" id="addLeadForm">' +
+        '<div class="row"><div class="field"><label>Ad Soyad</label><input id="nlName"></div><div class="field"><label>Telefon</label><input id="nlPhone"></div></div>' +
+        '<div class="row"><div class="field"><label>E-posta</label><input id="nlEmail"></div><div class="field"><label>Bütçe (TRY)</label><input type="number" id="nlBudget"></div></div>' +
+        '<div class="field"><label>İlgi / Not</label><textarea id="nlInterest" rows="2"></textarea></div>' +
+        '<button class="btn btn-primary btn-sm" id="saveLeadBtn">Kaydet</button>' +
+        '<div class="err-msg" id="leadErr" style="display:none;"></div>' +
+      '</div><div id="leadList" style="margin-top:16px;" class="card"></div>';
+    document.getElementById('toggleAddLead').addEventListener('click', function(){ document.getElementById('addLeadForm').classList.toggle('open'); });
+    document.getElementById('saveLeadBtn').addEventListener('click', async function(){
+      var name = document.getElementById('nlName').value.trim();
+      var errEl = document.getElementById('leadErr');
+      if (!name) { errEl.textContent = 'Ad soyad gerekli.'; errEl.style.display='block'; return; }
+      try {
+        await api('/api/leads', { method: 'POST', body: {
+          name: name, phone: document.getElementById('nlPhone').value.trim(), email: document.getElementById('nlEmail').value.trim(),
+          budget: Number(document.getElementById('nlBudget').value) || null, interest: document.getElementById('nlInterest').value.trim(), source: 'manual',
+        }});
+        errEl.style.display = 'none';
+        document.getElementById('addLeadForm').classList.remove('open');
+        toast('Lead eklendi.'); loadLeads();
+      } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+    });
+    await loadLeads();
+    async function loadLeads(){
+      var wrap = document.getElementById('leadList');
+      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        var res = await api('/api/leads');
+        if (!res.leads.length) { wrap.innerHTML = '<div class="empty">Henüz lead yok.</div>'; return; }
+        var rows = res.leads.map(function(l){
+          var opts = Object.keys(LEAD_STATUS_LABEL).map(function(k){ return '<option value="'+k+'"'+(k===l.status?' selected':'')+'>'+LEAD_STATUS_LABEL[k]+'</option>'; }).join('');
+          return '<tr><td>' + esc(l.name) + '</td><td class="mono">' + esc(l.phone || l.email || '—') + '</td>' +
+            '<td>' + (l.budget ? money(l.budget) : '—') + '</td><td>' + esc(l.source) + '</td>' +
+            '<td><select class="lead-status" data-id="' + l.id + '" style="padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-size:12px;">' + opts + '</select></td>' +
+            '<td class="mono muted">' + fmtDate(l.created_at) + '</td></tr>';
+        }).join('');
+        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Ad</th><th>İletişim</th><th>Bütçe</th><th>Kaynak</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        wrap.querySelectorAll('.lead-status').forEach(function(sel){
+          sel.addEventListener('change', async function(){
+            try { await api('/api/leads/' + sel.getAttribute('data-id'), { method: 'PATCH', body: { status: sel.value } }); toast('Lead durumu güncellendi.'); }
+            catch (e) { toast(errMsg(e)); }
+          });
+        });
+      } catch (e) { wrap.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+    }
+  }
+
+  async function renderCustomers(container){
+    var body = viewHead(container, 'Customers', 'Satışı kazanılmış (won) lead\'lerden oluşan müşteri listesi.');
+    try {
+      var res = await api('/api/leads');
+      var won = res.leads.filter(function(l){ return l.status === 'won'; });
+      if (!won.length) { body.innerHTML = '<div class="empty">Henüz "kazanıldı" durumunda müşteri yok.</div>'; return; }
+      var rows = won.map(function(l){
+        return '<tr><td>' + esc(l.name) + '</td><td class="mono">' + esc(l.phone || l.email || '—') + '</td><td>' + (l.budget ? money(l.budget) : '—') + '</td><td class="mono muted">' + fmtDate(l.updated_at) + '</td></tr>';
+      }).join('');
+      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>Ad</th><th>İletişim</th><th>Bütçe</th><th>Müşteri Olma Tarihi</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  async function renderCrm(container){
+    var body = viewHead(container, 'CRM', 'Satış hunisi — lead durumlarına göre gerçek zamanlı dağılım.');
+    try {
+      var res = await api('/api/leads');
+      var counts = { new:0, qualified:0, presentation:0, negotiating:0, won:0, lost:0 };
+      res.leads.forEach(function(l){ if (counts[l.status] !== undefined) counts[l.status]++; });
+      var html = '<div class="stat-grid">';
+      Object.keys(LEAD_STATUS_LABEL).forEach(function(k){ html += statCard(LEAD_STATUS_LABEL[k], counts[k], k === 'won' ? 'mint' : (k === 'lost' ? '' : 'gold')); });
+      html += '</div><div class="note-gap" style="margin-top:16px;">Harici CRM senkronu (HubSpot/Salesforce/Zoho/Dynamics/Webhook) henüz bağlı değil — bu, ilgili sağlayıcının API anahtarını gerektiriyor (madde 29). Bu ekran şu an VERALIQ\'ın kendi dahili CRM verisini (leads tablosu) gösteriyor.</div>';
+      body.innerHTML = html;
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  // ============================================================
+  // PAYMENTS (approval_requests üzerinden — gerçek onay akışı)
+  // ============================================================
+  async function renderPayments(container){
+    var body = viewHead(container, 'Payments', 'İndirim / ödeme planı onay talepleri (approval engine).');
+    await loadApprovals(body, ['discount', 'payment_plan']);
+  }
+  async function renderTeamPlaceholder(){} // (unused, kept for symmetry)
+
+  async function loadApprovals(body, types){
+    try {
+      var res = await api('/api/approvals');
+      var list = res.approvals.filter(function(a){ return !types || types.indexOf(a.type) !== -1; });
+      if (!list.length) { body.innerHTML = '<div class="empty">Kayıt yok.</div>'; return; }
+      var owner = isOwner();
+      var rows = list.map(function(a){
+        var actions = (a.status === 'pending' && owner)
+          ? '<button class="btn btn-mint btn-sm" data-decide="' + a.id + '|approved" style="margin-right:6px;">Onayla</button><button class="btn btn-danger btn-sm" data-decide="' + a.id + '|rejected">Reddet</button>'
+          : '';
+        var pillCls = a.status === 'approved' ? 'pill-mint' : (a.status === 'rejected' ? 'pill-red' : 'pill-gold');
+        return '<tr><td>' + esc(a.type) + '</td><td>' + (a.amount ? money(a.amount) : '—') + '</td><td>' + esc(a.notes || '—') + '</td>' +
+          '<td><span class="pill ' + pillCls + '">' + esc(a.status) + '</span></td><td class="mono muted">' + fmtDate(a.created_at) + '</td><td>' + actions + '</td></tr>';
+      }).join('');
+      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>Tip</th><th>Tutar</th><th>Not</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        (owner ? '' : '<div class="note-gap" style="margin-top:12px;">Onaylama yetkisi yalnızca şirket sahibi (company_owner) hesabındadır.</div>');
+      body.querySelectorAll('[data-decide]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var parts = btn.getAttribute('data-decide').split('|');
+          try { await api('/api/approvals/' + parts[0] + '/decide', { method: 'POST', body: { decision: parts[1] } }); toast('Karar kaydedildi.'); loadApprovals(body, types); }
+          catch (e) { toast(errMsg(e)); }
+        });
+      });
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  // ============================================================
+  // DOCUMENTS / CALENDAR / INTEGRATIONS — dürüst altyapı notları
+  // ============================================================
+  function renderDocuments(container){
+    var body = viewHead(container, 'Documents', 'Proje ve sözleşme belgeleri.');
+    body.innerHTML = '<div class="note-gap"><b>Bu ekran henüz dosya yükleme yapamıyor.</b> Veritabanı şemasında belge METADATA\'sı için bir tablo hazır (worker-portal/schema.sql → documents), ancak gerçek dosya depolama (Cloudflare R2 bucket) bu şirket hesabında henüz kurulmadı. Bu, sahte bir "yükle" butonu koymak yerine (madde 49 "mockup yasağı") dürüst bir şekilde burada belirtiliyor — R2 bucket\'ı kurulduğunda bu ekran gerçek yükleme/indirme ile çalışacak şekilde bağlanacak.</div>';
+  }
+  function renderCalendar(container){
+    var body = viewHead(container, 'Calendar', 'Randevu ve takvim yönetimi.');
+    body.innerHTML = '<div class="note-gap"><b>Randevu/takvim altyapısı henüz kurulmadı.</b> Veritabanında bir randevu tablosu yok — bu, ayrı bir geliştirme fazı (yeni bir tablo + API uçları) gerektiriyor. Sahte randevu göstermek yerine bu gerçek durumu belirtiyoruz.</div>';
+  }
+  function renderIntegrations(container){
+    var body = viewHead(container, 'Integrations', 'Harici CRM/ERP ve diğer servis bağlantıları.');
+    body.innerHTML = '<div class="note-gap"><b>Harici entegrasyon (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/ödeme sağlayıcısı) henüz bağlı değil.</b> Bunların her biri kendi API anahtarınızı/hesabınızı gerektiriyor (madde 29/35). VERALIQ mimarisi provider-agnostic tasarlandığı için (agent-core/providers.js) bu servisler siz hazır olduğunuzda mevcut mimariye eklenebilir.</div>';
+  }
+
+  // ============================================================
+  // REPORTS (madde 38 — gerçek veriden PDF/Excel yerine CSV export v1)
+  // ============================================================
+  async function renderReports(container){
+    var body = viewHead(container, 'Reports', 'Gerçek verilerden anlık rapor ve dışa aktarma.',
+      '<button class="btn btn-ghost btn-sm" id="exportCsvBtn">CSV İndir</button>');
+    try {
+      var d = await api('/api/dashboard');
+      body.innerHTML = '<div class="stat-grid">' +
+        statCard('Toplam Lead', d.total_leads) + statCard('Bugünkü Lead', d.today_leads) +
+        statCard('Satış', d.sales, 'gold') + statCard('Ciro', money(d.revenue), 'gold') +
+        statCard('Aktif Stok', d.active_stock) + statCard('Bekleyen Onay', d.pending_approvals) +
+      '</div><div class="note-gap" style="margin-top:14px;">v1: rapor verisi CSV olarak indirilebilir. PDF export + şirket logosu/filigranı (madde 38) ayrı bir geliştirme adımı.</div>';
+      document.getElementById('exportCsvBtn').addEventListener('click', function(){
+        var csv = 'metrik,değer\n' + Object.keys(d).map(function(k){ return k + ',' + d[k]; }).join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'veraliq-rapor.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  // ============================================================
+  // AGENTS (AI vs Human — gerçek audit log verisinden)
+  // ============================================================
+  async function renderAgents(container){
+    var body = viewHead(container, 'Agents', 'AI ve insan satış temsilcilerinin gerçek sunum performansı.');
+    try {
+      var d = await api('/api/dashboard');
+      body.innerHTML = '<div class="row">' +
+        '<div class="card"><div class="pill pill-mint" style="margin-bottom:8px;">AI Agent</div><div class="stat-value">' + d.ai_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">gerçekleştirdiği sunum (presentation lock kayıtları)</div></div>' +
+        '<div class="card"><div class="pill pill-gold" style="margin-bottom:8px;">İnsan Temsilci</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12.5px;margin-top:4px;">gerçekleştirdiği sunum (presentation lock kayıtları)</div></div>' +
+      '</div><div class="note-gap" style="margin-top:14px;">Bu sayılar audit_log tablosundaki gerçek "unit.presentation_lock" kayıtlarından hesaplanır — tahmini/uydurma bir performans skoru değildir.</div>';
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  // ============================================================
+  // TEAM (madde 18)
+  // ============================================================
+  async function renderTeam(container){
+    var owner = isOwner();
+    var body = viewHead(container, 'Team', 'Portala erişimi olan kullanıcılar.',
+      owner ? '<button class="btn btn-primary btn-sm" id="toggleAddTeam">+ Üye Ekle</button>' : '');
+    var formHtml = owner ? (
+      '<div class="card inline-form" id="addTeamForm">' +
+        '<div class="row"><div class="field"><label>Ad Soyad</label><input id="ntName"></div><div class="field"><label>E-posta</label><input id="ntEmail"></div></div>' +
+        '<div class="field"><label>Geçici Şifre</label><input id="ntPass" placeholder="En az 8 karakter"></div>' +
+        '<button class="btn btn-primary btn-sm" id="saveTeamBtn">Ekle</button>' +
+        '<div class="err-msg" id="teamErr" style="display:none;"></div>' +
+      '</div>') : '';
+    body.innerHTML = formHtml + '<div id="teamList" class="card" style="margin-top:16px;"></div>';
+    if (owner) {
+      document.getElementById('toggleAddTeam').addEventListener('click', function(){ document.getElementById('addTeamForm').classList.toggle('open'); });
+      document.getElementById('saveTeamBtn').addEventListener('click', async function(){
+        var name = document.getElementById('ntName').value.trim(), email = document.getElementById('ntEmail').value.trim(), pass = document.getElementById('ntPass').value;
+        var errEl = document.getElementById('teamErr');
+        if (!name || !email || !pass) { errEl.textContent = 'Tüm alanlar gerekli.'; errEl.style.display='block'; return; }
+        try {
+          await api('/api/team', { method: 'POST', body: { name: name, email: email, password: pass } });
+          errEl.style.display = 'none'; document.getElementById('addTeamForm').classList.remove('open');
+          toast('Ekip üyesi eklendi.'); loadTeam();
+        } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+      });
+    }
+    await loadTeam();
+    async function loadTeam(){
+      var wrap = document.getElementById('teamList');
+      wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+      try {
+        var res = await api('/api/team');
+        var rows = res.team.map(function(u){
+          var canRemove = owner && u.role !== 'company_owner';
+          return '<tr><td>' + esc(u.name) + '</td><td class="mono">' + esc(u.email) + '</td>' +
+            '<td><span class="pill ' + (u.role === 'company_owner' ? 'pill-gold' : 'pill-gray') + '">' + (u.role === 'company_owner' ? 'Sahip' : 'Personel') + '</span></td>' +
+            '<td>' + (canRemove ? '<button class="btn btn-danger btn-sm" data-remove="' + u.id + '">Kaldır</button>' : '—') + '</td></tr>';
+        }).join('');
+        wrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        wrap.querySelectorAll('[data-remove]').forEach(function(btn){
+          btn.addEventListener('click', async function(){
+            if (!confirm('Bu kullanıcıyı ekipten kaldırmak istediğinize emin misiniz?')) return;
+            try { await api('/api/team/' + btn.getAttribute('data-remove'), { method: 'DELETE' }); toast('Kaldırıldı.'); loadTeam(); }
+            catch (e) { toast(errMsg(e)); }
+          });
+        });
+      } catch (e) { wrap.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+    }
+  }
+
+  // ============================================================
+  // SETTINGS
+  // ============================================================
+  async function renderSettings(container){
+    var owner = isOwner();
+    var body = viewHead(container, 'Settings', 'Şirket bilgileri ve hesap ayarları.');
+    var company = getCompany() || {};
+    body.innerHTML =
+      '<div class="card">' +
+        '<div class="stat-label" style="margin-bottom:12px;">Şirket Bilgileri</div>' +
+        '<div class="field"><label>Şirket Adı</label><input id="stCompanyName" value="' + esc(company.name || '') + '" ' + (owner ? '' : 'disabled') + '></div>' +
+        (owner ? '<button class="btn btn-primary btn-sm" id="saveCompanyBtn">Kaydet</button><div class="err-msg" id="companyErr" style="display:none;"></div>' :
+          '<div class="hint">Şirket bilgilerini yalnızca şirket sahibi değiştirebilir.</div>') +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="stat-label" style="margin-bottom:12px;">Şifre Değiştir</div>' +
+        '<div class="row"><div class="field"><label>Mevcut Şifre</label><input type="password" id="curPass"></div><div class="field"><label>Yeni Şifre</label><input type="password" id="newPass"></div></div>' +
+        '<button class="btn btn-primary btn-sm" id="changePassBtn">Şifreyi Değiştir</button>' +
+        '<div class="err-msg" id="passErr" style="display:none;"></div>' +
+      '</div>';
+    if (owner) {
+      document.getElementById('saveCompanyBtn').addEventListener('click', async function(){
+        var name = document.getElementById('stCompanyName').value.trim();
+        var errEl = document.getElementById('companyErr');
+        try {
+          await api('/api/companies/me', { method: 'PATCH', body: { name: name } });
+          var c = getCompany(); c.name = name; sessionStorage.setItem(COMPANY_KEY, JSON.stringify(c));
+          document.getElementById('topbarCompany').textContent = name;
+          errEl.style.display = 'none'; toast('Şirket bilgileri güncellendi.');
+        } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+      });
+    }
+    document.getElementById('changePassBtn').addEventListener('click', async function(){
+      var cur = document.getElementById('curPass').value, next = document.getElementById('newPass').value;
+      var errEl = document.getElementById('passErr');
+      if (!cur || !next) { errEl.textContent = 'Her iki alan da gerekli.'; errEl.style.display='block'; return; }
+      try {
+        await api('/api/auth/change-password', { method: 'POST', body: { current_password: cur, new_password: next } });
+        errEl.style.display = 'none'; document.getElementById('curPass').value=''; document.getElementById('newPass').value='';
+        toast('Şifreniz güncellendi.');
+      } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+    });
+  }
+
+  // ============================================================
+  // BOOT
+  // ============================================================
+  if (getToken()) { showApp(); } else { showLogin(); }
 })();
 </script>
 </body>

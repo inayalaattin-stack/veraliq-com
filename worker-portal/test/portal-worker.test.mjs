@@ -235,6 +235,61 @@ const run = async () => {
   r = await worker.fetch(req('POST', '/api/projects', { name: 'No Company Id' }, { Authorization: 'Bearer ' + adminToken }), env);
   check('admin creating project WITHOUT company_id is rejected', r.status === 400);
 
+  // 11. Company-wide units listing (Inventory/Sales/Presentations/Reservations menus)
+  r = await worker.fetch(req('GET', '/api/units', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('GET /api/units returns all company units across projects', r.status === 200 && data.units.length === 5, data);
+
+  r = await worker.fetch(req('GET', '/api/units?status=SOLD', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('GET /api/units?status=SOLD filters correctly', r.status === 200 && data.units.length === 2 && data.units.every(u => u.status === 'SOLD'), data);
+
+  r = await worker.fetch(req('GET', '/api/units', null, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  check('TENANT ISOLATION: XYZ sees zero units via /api/units', r.status === 200 && data.units.length === 0, data);
+
+  // 12. Dashboard — real aggregate numbers
+  r = await worker.fetch(req('GET', '/api/dashboard', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('dashboard reports 2 sales (SOLD units)', r.status === 200 && data.sales === 2, data);
+  check('dashboard reports correct revenue (5200000 + 5250000)', data.revenue === 10450000, data);
+  check('dashboard reports active_stock (AVAILABLE units)', data.active_stock === 2, data);
+
+  // 13. Company AI Assistant — deterministic real-data query engine
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'Bugün kaç satış yaptık?' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant answers sales question with real numbers', r.status === 200 && /2 birim satıldı/.test(data.answer), data);
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'ABC Vadi Konutları kaç daire kaldı?' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('assistant resolves project name and answers with real stock count', r.status === 200 && /2 adet/.test(data.answer), data);
+
+  // 14. Team management (company_owner invites company_staff, scoped to own company)
+  r = await worker.fetch(req('POST', '/api/team', { email: 'staff1@veraliq.com', password: 'Staff123!', name: 'Ayşe Yılmaz' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('company_owner can invite team member', r.status === 201 && !!data.id, data);
+  const staffUserId = data.id;
+
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'staff1@veraliq.com', password: 'Staff123!' }), env);
+  check('newly invited staff can log in', r.status === 200);
+
+  r = await worker.fetch(req('GET', '/api/team', null, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  check('TENANT ISOLATION: XYZ team list does not include ABC staff', r.status === 200 && !data.team.some(u => u.id === staffUserId), data);
+
+  r = await worker.fetch(req('DELETE', `/api/team/${staffUserId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('company_owner can remove a team member', r.status === 200);
+
+  // 15. Self-service password change
+  r = await worker.fetch(req('POST', '/api/auth/change-password', { current_password: 'Abc12345!', new_password: 'NewPass123!' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('user can change own password with correct current password', r.status === 200);
+
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'NewPass123!' }), env);
+  check('login works with new password after change', r.status === 200);
+
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'Abc12345!' }), env);
+  check('login rejected with OLD password after change', r.status === 401);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };

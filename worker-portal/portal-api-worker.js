@@ -93,6 +93,59 @@ async function getUnitLockStub(env, unitId) {
   return env.PRESENTATION_LOCK.get(id);
 }
 
+// Company AI Assistant v1 — deterministik niyet eşleştirme (bkz. yukarıdaki
+// /api/assistant/query route'undaki mimari not). Her intent, GERÇEK bir D1
+// sorgusu çalıştırır ve cevabı gerçek sayılarla üretir.
+function tryMatchProjectName(text) {
+  // "ABC Residence'da kaç daire kaldı" gibi cümlelerden proje adını çıkarmaya
+  // çalışan basit bir sezgisel: cümledeki büyük harfle başlayan kelime
+  // öbeklerini adayı olarak alır, aşağıda gerçek proje listesiyle karşılaştırılır.
+  const m = text.match(/([A-ZÇĞİÖŞÜ][\wçğıöşü]*(?:\s+[A-ZÇĞİÖŞÜ][\wçğıöşü]*)*)/);
+  return m ? m[1] : null;
+}
+
+async function answerAssistantQuery(env, companyId, questionRaw) {
+  const q = questionRaw.toLocaleLowerCase('tr-TR');
+
+  if (/bekleyen onay/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE company_id = ? AND status = 'pending'`).bind(companyId).first();
+    return n > 0 ? `Şu anda ${n} bekleyen onay talebiniz var.` : 'Bekleyen onay talebiniz yok.';
+  }
+  if (/(kaç|bugün).*(lead|müşteri)/.test(q) || /(lead|müşteri).*kaç/.test(q)) {
+    const today = /bugün/.test(q);
+    const row = today
+      ? await env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ? AND date(created_at) = date('now')`).bind(companyId).first()
+      : await env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ?`).bind(companyId).first();
+    return today ? `Bugün ${row.n} yeni lead geldi.` : `Toplam ${row.n} lead kayıtlı.`;
+  }
+  if (/(kaç|bugün|bu ay).*(satış|satıldı)/.test(q) || /satış.*(kaç|özet)/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
+    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
+    return `Toplam ${n} birim satıldı, toplam ciro ${Number(total).toLocaleString('tr-TR')} TL.`;
+  }
+  if (/sunum/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'PRESENTATION'`).bind(companyId).first();
+    return n > 0 ? `Şu anda ${n} birim sunum halinde.` : 'Şu anda sunumda olan birim yok.';
+  }
+  if (/(stok|kaç daire|kaldı)/.test(q)) {
+    const candidate = tryMatchProjectName(questionRaw);
+    if (candidate) {
+      const project = await env.DB.prepare(`SELECT id, name FROM projects WHERE company_id = ? AND name LIKE ?`).bind(companyId, `%${candidate}%`).first();
+      if (project) {
+        const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE project_id = ? AND status = 'AVAILABLE'`).bind(project.id).first();
+        return `${project.name} projesinde ${n} adet boşta (satılabilir) daire var.`;
+      }
+    }
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'AVAILABLE'`).bind(companyId).first();
+    return `Tüm projelerde toplam ${n} adet boşta (satılabilir) birim var.`;
+  }
+  if (/rezerv/.test(q)) {
+    const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'RESERVED'`).bind(companyId).first();
+    return `Şu anda ${n} birim rezerve durumda.`;
+  }
+  return 'Bu soruyu şu an anlayamadım. Şunları sorabilirsiniz: "bugün kaç lead geldi", "bekleyen onaylar", "bugünkü satışlar", "<proje adı> kaç daire kaldı", "sunumda kaç birim var", "kaç birim rezerve".';
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -114,6 +167,7 @@ export default {
 async function route(request, url, env) {
   const path = url.pathname;
   const method = request.method;
+  let m;
 
   // ---- AUTH ----------------------------------------------------------
   if (path === '/api/auth/admin/login' && method === 'POST') {
@@ -146,6 +200,25 @@ async function route(request, url, env) {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       company: { id: company.id, name: company.name, slug: company.slug, remove_branding: !!company.remove_branding },
     });
+  }
+
+  // Kullanıcı kendi şifresini değiştirir (madde: canlıya geçmeden önce seed
+  // şifrelerinin değiştirilmesi gerekiyor — bunu wrangler CLI'a muhtaç
+  // bırakmadan portal içinden yapılabilir kılıyor).
+  if (path === '/api/auth/change-password' && method === 'POST') {
+    const auth = await requireAuth(request, env, null);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { current_password, new_password } = await request.json();
+    if (!current_password || !new_password) return json({ error: 'missing_fields' }, 400);
+    if (new_password.length < 8) return json({ error: 'password_too_short' }, 400);
+    const user = await env.DB.prepare(`SELECT * FROM users WHERE id = ?`).bind(auth.sub).first();
+    if (!user || !(await verifyPassword(current_password, user.password_hash))) {
+      return json({ error: 'invalid_credentials' }, 401);
+    }
+    const newHash = await hashPassword(new_password);
+    await env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).bind(newHash, user.id).run();
+    await writeAudit(env, { company_id: user.company_id, user_id: user.id, action: 'user.change_password', entity_type: 'user', entity_id: user.id, request });
+    return json({ ok: true });
   }
 
   // ---- COMPANIES (admin only) -----------------------------------------
@@ -183,7 +256,64 @@ async function route(request, url, env) {
     return json({ id: companyId, owner_user_id: userId }, 201);
   }
 
-  let m;
+  // Şirket yetkilisinin KENDİ şirketini yönetmesi (madde 18 "Settings") —
+  // /api/companies/:id (yukarıda) yalnızca veraliq_admin içindir; bu uç
+  // company_owner'ın kendi company_id'sine (JWT'den, asla body'den) scope'lu
+  // self-servis ayar ekranı içindir.
+  if (path === '/api/companies/me' && (method === 'GET' || method === 'PATCH')) {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    if (method === 'GET') {
+      const company = await env.DB.prepare(`SELECT id, name, slug, plan, status, remove_branding, created_at FROM companies WHERE id = ?`).bind(auth.company_id).first();
+      if (!company) return json({ error: 'not_found' }, 404);
+      return json({ company });
+    }
+    if (auth.role !== 'company_owner') return json({ error: 'forbidden' }, 403);
+    const body = await request.json();
+    const fields = ['name']; // company_owner yalnızca görünen adı değiştirebilir — plan/status/remove_branding SADECE veraliq_admin yetkisinde (billing/abonelik alanları).
+    const sets = [], vals = [];
+    for (const f of fields) if (f in body) { sets.push(`${f} = ?`); vals.push(body[f]); }
+    if (!sets.length) return json({ error: 'no_fields' }, 400);
+    vals.push(auth.company_id);
+    await env.DB.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'company.self_update', entity_type: 'company', entity_id: auth.company_id, new_value: body, request });
+    return json({ ok: true });
+  }
+
+  // ---- TEAM (madde 18 "Team") — company_owner kendi şirketinin kullanıcılarını yönetir ----
+  if (path === '/api/team' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { results } = await env.DB.prepare(`SELECT id, email, name, role, created_at FROM users WHERE company_id = ? ORDER BY created_at ASC`).bind(auth.company_id).all();
+    return json({ team: results });
+  }
+  if (path === '/api/team' && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const body = await request.json();
+    if (!body.email || !body.password || !body.name) return json({ error: 'missing_fields', required: ['email', 'password', 'name'] }, 400);
+    const existing = await env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(body.email.toLowerCase().trim()).first();
+    if (existing) return json({ error: 'email_taken' }, 409);
+    const id = generateId('usr');
+    const passwordHash = await hashPassword(body.password);
+    await env.DB.prepare(
+      `INSERT INTO users (id, company_id, email, password_hash, role, name, created_at) VALUES (?, ?, ?, ?, 'company_staff', ?, datetime('now'))`
+    ).bind(id, auth.company_id, body.email.toLowerCase().trim(), passwordHash, body.name).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'team.invite', entity_type: 'user', entity_id: id, new_value: { email: body.email, name: body.name }, request });
+    return json({ id }, 201);
+  }
+  if ((m = path.match(/^\/api\/team\/([^/]+)$/)) && method === 'DELETE') {
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const targetId = m[1];
+    const target = await env.DB.prepare(`SELECT * FROM users WHERE id = ? AND company_id = ?`).bind(targetId, auth.company_id).first();
+    if (!target) return json({ error: 'not_found' }, 404);
+    if (target.role === 'company_owner') return json({ error: 'cannot_remove_owner' }, 400);
+    await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(targetId).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'team.remove', entity_type: 'user', entity_id: targetId, request });
+    return json({ ok: true });
+  }
+
   if ((m = path.match(/^\/api\/companies\/([^/]+)$/))) {
     const auth = await requireAuth(request, env, ['veraliq_admin']);
     if (!auth) return json({ error: 'unauthorized' }, 401);
@@ -272,6 +402,92 @@ async function route(request, url, env) {
       await writeAudit(env, { company_id: project.company_id, user_id: auth.sub, action: 'project.delete', entity_type: 'project', entity_id: projectId, request });
       return json({ ok: true });
     }
+  }
+
+  // Şirket geneli envanter sorgusu (proje ayırt etmeden) — portal.html'in
+  // Inventory/Sales/Presentations/Reservations/Contracts menülerinin hepsi
+  // aynı `units` tablosunu, yalnızca status filtresiyle farklı görünümde
+  // gösterir (madde 18 menüsündeki bu 5 sekme, promptun kendi veri modelinde
+  // (madde 32-36) zaten TEK bir envanter tablosuna dayanıyor — ayrı ayrı
+  // "sales" / "reservations" tabloları icat etmek yerine mevcut state
+  // machine'i (AVAILABLE→...→SOLD) tek kaynak olarak kullanmak, madde 81'in
+  // "gereksiz teknoloji/model değişikliği yapma" kuralına uygun).
+  if (path === '/api/units' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff', 'veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const companyId = auth.role === 'veraliq_admin' ? url.searchParams.get('company_id') : auth.company_id;
+    if (!companyId) return json({ error: 'company_id_required' }, 400);
+    const status = url.searchParams.get('status');
+    let query = `SELECT u.*, p.name AS project_name FROM units u JOIN projects p ON p.id = u.project_id WHERE u.company_id = ?`;
+    const params = [companyId];
+    if (status) { query += ` AND u.status = ?`; params.push(status); }
+    query += ` ORDER BY u.updated_at DESC LIMIT 500`;
+    const { results } = await env.DB.prepare(query).bind(...params).all();
+    return json({ units: results });
+  }
+
+  // ---- DASHBOARD (madde 19) -------------------------------------------------
+  if (path === '/api/dashboard' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const cid = auth.company_id;
+    const [totalLeads, todayLeads, unitStatusCounts, revenue, pendingApprovals, agentPerf] = await Promise.all([
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ?`).bind(cid).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ? AND date(created_at) = date('now')`).bind(cid).first(),
+      env.DB.prepare(`SELECT status, COUNT(*) AS n FROM units WHERE company_id = ? GROUP BY status`).bind(cid).all(),
+      env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(cid).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE company_id = ? AND status = 'pending'`).bind(cid).first(),
+      // madde 19 "AI Agent Performance / Human Sales Performance": presentation_lock
+      // audit kayıtlarındaki gerçek agent_type dağılımından hesaplanır (uydurma
+      // bir "performans skoru" DEĞİL, gerçekten kaç sunumun AI/insan tarafından
+      // başlatıldığının sayımı).
+      env.DB.prepare(
+        `SELECT json_extract(new_value, '$.agent_type') AS agent_type, COUNT(*) AS n
+         FROM audit_log WHERE company_id = ? AND action = 'unit.presentation_lock'
+         GROUP BY agent_type`
+      ).bind(cid).all(),
+    ]);
+    const statusMap = {};
+    for (const row of unitStatusCounts.results) statusMap[row.status] = row.n;
+    const agentMap = { AI: 0, HUMAN: 0 };
+    for (const row of agentPerf.results) if (row.agent_type) agentMap[row.agent_type] = row.n;
+    return json({
+      total_leads: totalLeads.n,
+      today_leads: todayLeads.n,
+      active_stock: statusMap.AVAILABLE || 0,
+      presentations: statusMap.PRESENTATION || 0,
+      holds: statusMap.HOLD || 0,
+      reservations: statusMap.RESERVED || 0,
+      deposits: statusMap.DEPOSIT_PAID || 0,
+      contracts: statusMap.CONTRACT || 0,
+      sales: statusMap.SOLD || 0,
+      revenue: revenue.total,
+      pending_approvals: pendingApprovals.n,
+      ai_agent_presentations: agentMap.AI,
+      human_agent_presentations: agentMap.HUMAN,
+    });
+  }
+
+  // ---- COMPANY AI ASSISTANT (madde 20-22) ------------------------------------
+  // ZERO TRUST AI (madde 56) burada da geçerli: bu uç bir LLM'e SERBEST metin
+  // SQL ürettirmiyor (bu, en klasik SQL injection/veri sızıntısı riskidir).
+  // Bunun yerine, agent-core/providers/faq-sales-brain-provider.js'de zaten
+  // kurulu olan aynı desenle (deterministik niyet eşleştirme) çalışıyor: sabit
+  // bir örüntü listesi soruyu SINIRLI, ÖNCEDEN TANIMLANMIŞ ve PARAMETRELİ bir
+  // D1 sorgusuna eşler, cevap GERÇEK veritabanı değerinden üretilir — asla
+  // uydurulmuş bir sayı değildir. v1 kapsamı madde 20'deki örnek sorularla
+  // sınırlı; daha geniş doğal dil anlama için gerçek bir LLM sağlayıcısı
+  // (agent-core/config.js'deki llmProvider gibi) BAĞLANABİLİR ama bu, LLM'in
+  // yine de asla doğrudan DB'ye dokunmaması gerektiği anlamına gelir — LLM
+  // yalnızca "hangi intent" sorusuna cevap verir, sorguyu BU fonksiyon çalıştırır.
+  if (path === '/api/assistant/query' && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { question } = await request.json();
+    if (!question || typeof question !== 'string') return json({ error: 'missing_fields' }, 400);
+    const answer = await answerAssistantQuery(env, auth.company_id, question);
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'assistant.query', entity_type: 'assistant', new_value: { question }, request });
+    return json({ answer });
   }
 
   // ---- UNITS (envanter) ---------------------------------------------------
