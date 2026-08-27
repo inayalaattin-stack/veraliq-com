@@ -347,11 +347,11 @@
 
   // ---------------- NAV / ROUTER ----------------
   var NAV = [
-    { group: 'Genel', items: [ {id:'dashboard', label:'Dashboard'}, {id:'assistant', label:'AI Assistant'} ] },
+    { group: 'Genel', items: [ {id:'dashboard', label:'Panel'}, {id:'assistant', label:'AI Asistan'} ] },
     { group: 'Platform', items: [ {id:'companies', label:'Şirketler'}, {id:'users', label:'Kullanıcılar'}, {id:'projects', label:'Projeler'}, {id:'subscriptions', label:'Abonelikler'} ] },
-    { group: 'Yapay Zekâ', items: [ {id:'agents', label:'Agents'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'} ] },
+    { group: 'Yapay Zekâ', items: [ {id:'agents', label:'Agent\'lar'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'} ] },
     { group: 'Entegrasyon', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
-    { group: 'Sistem', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Audit Log'}, {id:'health', label:'Sistem Sağlığı'} ] },
+    { group: 'Sistem', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Denetim Kaydı'}, {id:'health', label:'Sistem Sağlığı'} ] },
   ];
   var VIEW_TITLES = {};
   NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_TITLES[it.id] = it.label; }); });
@@ -410,10 +410,10 @@
   async function renderDashboard(el){
     var stats;
     try { stats = await api('/api/admin/stats'); }
-    catch(e){ el.innerHTML = viewHead('Dashboard','Platform genel bakış') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    catch(e){ el.innerHTML = viewHead('Panel','Platform genel bakış') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
     var plansHtml = (stats.plans||[]).map(function(p){ return '<span class="pill pill-gold" style="margin-right:6px;">'+esc(p.plan)+': '+p.n+'</span>'; }).join('') || '<span class="muted">Kayıtlı şirket yok</span>';
     el.innerHTML =
-      viewHead('Dashboard', 'Platform genelinde gerçek zamanlı özet — tüm şirketler.') +
+      viewHead('Panel', 'Platform genelinde gerçek zamanlı özet — tüm şirketler.') +
       '<div class="stat-grid">' +
         statCard('Toplam Şirket', stats.total_companies, 'accent') +
         statCard('Aktif Şirket', stats.active_companies) +
@@ -434,7 +434,7 @@
   var SUGGESTIONS = ['Platformda kaç şirket var?', 'Toplam satış ve ciro nedir?', 'Bekleyen onaylar var mı?', 'Toplam kullanıcı sayısı nedir?', 'AI mi insan mı daha çok sunum yaptı?'];
   function renderAssistant(el){
     el.innerHTML =
-      viewHead('AI Assistant', 'VERALIQ Admin AI — sağ altta canlı görüntülü/sesli olarak da konuşabilirsiniz. Bu ekran, aynı asistanın yazılı/metin sürümüdür (Zero Trust AI: yalnızca gerçek platform verisiyle cevap verir).') +
+      viewHead('AI Asistan', 'VERALIQ Admin AI — sağ altta canlı görüntülü/sesli olarak da konuşabilirsiniz. Bu ekran, aynı asistanın yazılı/metin sürümüdür (Zero Trust AI: yalnızca gerçek platform verisiyle cevap verir).') +
       '<div class="chat-box">' +
         '<div class="chat-log" id="chatLog"><div class="chat-msg bot">Merhaba, ben VERALIQ Admin Asistanı. Size nasıl yardımcı olabilirim?</div></div>' +
         '<div class="suggest-row">' + SUGGESTIONS.map(function(s){ return '<button type="button" class="suggest-chip">'+esc(s)+'</button>'; }).join('') + '</div>' +
@@ -621,10 +621,10 @@
   async function renderAgents(el){
     var stats;
     try { stats = await api('/api/admin/stats'); }
-    catch(e){ el.innerHTML = viewHead('Agents','AI vs İnsan temsilci performansı') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    catch(e){ el.innerHTML = viewHead('Agent\'lar','AI vs İnsan temsilci performansı') + '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
     var total = stats.ai_agent_presentations + stats.human_agent_presentations;
     var aiPct = total ? Math.round(stats.ai_agent_presentations/total*100) : 0;
-    el.innerHTML = viewHead('Agents', 'Platform genelinde AI ajan (Elif Kaya / Spatius) ile insan temsilcilerin sunum performansı — audit_log kayıtlarından gerçek veri.') +
+    el.innerHTML = viewHead('Agent\'lar', 'Platform genelinde AI ajan (Elif Kaya / Spatius) ile insan temsilcilerin sunum performansı — audit_log kayıtlarından gerçek veri.') +
       '<div class="stat-grid">' +
         statCard('AI Ajan Sunumları', stats.ai_agent_presentations, 'mint') +
         statCard('İnsan Temsilci Sunumları', stats.human_agent_presentations, 'accent') +
@@ -686,7 +686,7 @@
 
   // ---------------- AUDIT LOG (madde 45 "Audit Logs") ----------------
   async function renderAudit(el){
-    el.innerHTML = viewHead('Audit Log', 'Platform genelinde son 200 işlem — GET /api/audit-log (gerçek veri).') + '<div id="auditWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    el.innerHTML = viewHead('Denetim Kaydı', 'Platform genelinde son 200 işlem — GET /api/audit-log (gerçek veri).') + '<div id="auditWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
     var wrap = document.getElementById('auditWrap');
     try {
       var data = await api('/api/audit-log');

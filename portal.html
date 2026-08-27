@@ -266,7 +266,7 @@
         <span class="topbar-view-label" id="topbarView"></span>
       </div>
       <div class="topbar-right">
-        <button class="icon-btn" id="assistantQuickBtn" title="AI Assistant">✦ AI
+        <button class="icon-btn" id="assistantQuickBtn" title="AI Asistan">✦ AI
           <span class="badge-dot" id="approvalBadge" style="display:none;">0</span>
         </button>
         <button class="icon-btn btn-sm" id="logoutBtn">Çıkış</button>
@@ -361,35 +361,35 @@
   // ============================================================
   var NAV = [
     { group: 'Genel', items: [
-      { id: 'dashboard', label: 'Dashboard' },
-      { id: 'assistant', label: 'AI Assistant' },
+      { id: 'dashboard', label: 'Panel' },
+      { id: 'assistant', label: 'AI Asistan' },
     ]},
     { group: 'Operasyon', items: [
-      { id: 'projects', label: 'Projects' },
-      { id: 'inventory', label: 'Inventory' },
-      { id: 'presentations', label: 'Presentations' },
-      { id: 'reservations', label: 'Reservations' },
+      { id: 'projects', label: 'Projeler' },
+      { id: 'inventory', label: 'Envanter' },
+      { id: 'presentations', label: 'Sunumlar' },
+      { id: 'reservations', label: 'Rezervasyonlar' },
     ]},
     { group: 'Satış & Müşteri', items: [
-      { id: 'leads', label: 'Leads' },
-      { id: 'customers', label: 'Customers' },
-      { id: 'sales', label: 'Sales' },
+      { id: 'leads', label: 'Lead\'ler' },
+      { id: 'customers', label: 'Müşteriler' },
+      { id: 'sales', label: 'Satışlar' },
       { id: 'crm', label: 'CRM' },
     ]},
     { group: 'Finans & Belge', items: [
-      { id: 'payments', label: 'Payments' },
-      { id: 'contracts', label: 'Contracts' },
-      { id: 'documents', label: 'Documents' },
+      { id: 'payments', label: 'Ödemeler' },
+      { id: 'contracts', label: 'Sözleşmeler' },
+      { id: 'documents', label: 'Belgeler' },
     ]},
     { group: 'Planlama', items: [
-      { id: 'calendar', label: 'Calendar' },
-      { id: 'reports', label: 'Reports' },
+      { id: 'calendar', label: 'Takvim' },
+      { id: 'reports', label: 'Raporlar' },
     ]},
     { group: 'Sistem', items: [
-      { id: 'agents', label: 'Agents' },
-      { id: 'team', label: 'Team' },
-      { id: 'integrations', label: 'Integrations' },
-      { id: 'settings', label: 'Settings' },
+      { id: 'agents', label: 'Agent\'lar' },
+      { id: 'team', label: 'Ekip' },
+      { id: 'integrations', label: 'Entegrasyonlar' },
+      { id: 'settings', label: 'Ayarlar' },
     ]},
   ];
 
@@ -495,7 +495,7 @@
   // DASHBOARD (madde 19: Company Dashboard)
   // ============================================================
   async function renderDashboard(container){
-    var body = viewHead(container, 'Dashboard', 'Gerçek zamanlı satış, envanter ve operasyon özeti.');
+    var body = viewHead(container, 'Panel', 'Gerçek zamanlı satış, envanter ve operasyon özeti.');
     try {
       var d = await api('/api/dashboard');
       var html = '<div class="stat-grid">' +
@@ -529,7 +529,7 @@
   // ============================================================
   function renderAssistant(container){
     container.innerHTML =
-      '<div class="view-head"><div><h1 class="view-title">AI Assistant</h1>' +
+      '<div class="view-head"><div><h1 class="view-title">AI Asistan</h1>' +
       '<p class="view-sub">Şirket yöneticisi asistanı — gerçek veritabanı verisiyle cevap verir, müşteriye satış yapan agent DEĞİLDİR.</p></div></div>' +
       '<div class="card">' +
         '<div class="suggest-row" id="assistantSuggest">' +
@@ -579,7 +579,7 @@
   // PROJECTS (madde 21: Proje Yönetimi)
   // ============================================================
   async function renderProjects(container){
-    var body = viewHead(container, 'Projects', 'Projeleriniz ve temel bilgileri.',
+    var body = viewHead(container, 'Projeler', 'Projeleriniz ve temel bilgileri.',
       '<button class="btn btn-primary btn-sm" id="toggleAddProj">+ Proje Ekle</button>');
     var formHtml =
       '<div class="card inline-form" id="addProjForm">' +
@@ -703,7 +703,7 @@
   // INVENTORY (madde 26/32: Real-Time Inventory)
   // ============================================================
   async function renderInventory(container){
-    var body = viewHead(container, 'Inventory', 'Tüm projelerdeki gerçek zamanlı birim envanteri.');
+    var body = viewHead(container, 'Envanter', 'Tüm projelerdeki gerçek zamanlı birim envanteri.');
     var statuses = ['', 'AVAILABLE', 'PRESENTATION', 'HOLD', 'RESERVED', 'DEPOSIT_PAID', 'CONTRACT', 'SOLD'];
     var current = '';
     body.innerHTML = '<div class="filter-tabs" id="invTabs"></div><div id="invTable" class="card"></div>';
@@ -732,13 +732,13 @@
   }
 
   async function renderPresentations(container){
-    var body = viewHead(container, 'Presentations', 'Şu anda sunum halinde olan birimler — presentation lock ile korunur, iki agent aynı birimi aynı anda sunamaz.');
+    var body = viewHead(container, 'Sunumlar', 'Şu anda sunum halinde olan birimler — presentation lock ile korunur, iki agent aynı birimi aynı anda sunamaz.');
     try { body.innerHTML = unitsTable(await fetchUnits('PRESENTATION')); }
     catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
   }
 
   async function renderReservations(container){
-    var body = viewHead(container, 'Reservations', 'Rezerve edilmiş ve kaporası alınmış birimler.');
+    var body = viewHead(container, 'Rezervasyonlar', 'Rezerve edilmiş ve kaporası alınmış birimler.');
     try {
       var reserved = await fetchUnits('RESERVED');
       var deposit = await fetchUnits('DEPOSIT_PAID');
@@ -749,7 +749,7 @@
   }
 
   async function renderSales(container){
-    var body = viewHead(container, 'Sales', 'Satışı tamamlanmış birimler (units.status = SOLD).');
+    var body = viewHead(container, 'Satışlar', 'Satışı tamamlanmış birimler (units.status = SOLD).');
     try {
       var units = await fetchUnits('SOLD');
       var total = units.reduce(function(s,u){ return s + (u.price || 0); }, 0);
@@ -759,7 +759,7 @@
   }
 
   async function renderContracts(container){
-    var body = viewHead(container, 'Contracts', 'Sözleşme aşamasındaki ve tamamlanmış satışlar.');
+    var body = viewHead(container, 'Sözleşmeler', 'Sözleşme aşamasındaki ve tamamlanmış satışlar.');
     try {
       var contract = await fetchUnits('CONTRACT');
       var sold = await fetchUnits('SOLD');
@@ -774,7 +774,7 @@
   // LEADS / CUSTOMERS / CRM (madde 30 mobilden CRM + genel CRM)
   // ============================================================
   async function renderLeads(container){
-    var body = viewHead(container, 'Leads', 'Tüm potansiyel müşteri kayıtları.',
+    var body = viewHead(container, 'Lead\'ler', 'Tüm potansiyel müşteri kayıtları.',
       '<button class="btn btn-primary btn-sm" id="toggleAddLead">+ Lead Ekle</button>');
     body.innerHTML =
       '<div class="card inline-form" id="addLeadForm">' +
@@ -825,7 +825,7 @@
   }
 
   async function renderCustomers(container){
-    var body = viewHead(container, 'Customers', 'Satışı kazanılmış (won) lead\'lerden oluşan müşteri listesi.');
+    var body = viewHead(container, 'Müşteriler', 'Satışı kazanılmış (won) lead\'lerden oluşan müşteri listesi.');
     try {
       var res = await api('/api/leads');
       var won = res.leads.filter(function(l){ return l.status === 'won'; });
@@ -854,7 +854,7 @@
   // PAYMENTS (approval_requests üzerinden — gerçek onay akışı)
   // ============================================================
   async function renderPayments(container){
-    var body = viewHead(container, 'Payments', 'İndirim / ödeme planı onay talepleri (approval engine).');
+    var body = viewHead(container, 'Ödemeler', 'İndirim / ödeme planı onay talepleri (approval engine).');
     await loadApprovals(body, ['discount', 'payment_plan']);
   }
   async function renderTeamPlaceholder(){} // (unused, kept for symmetry)
@@ -889,15 +889,15 @@
   // DOCUMENTS / CALENDAR / INTEGRATIONS — dürüst altyapı notları
   // ============================================================
   function renderDocuments(container){
-    var body = viewHead(container, 'Documents', 'Proje ve sözleşme belgeleri.');
+    var body = viewHead(container, 'Belgeler', 'Proje ve sözleşme belgeleri.');
     body.innerHTML = '<div class="note-gap"><b>Bu ekran henüz dosya yükleme yapamıyor.</b> Veritabanı şemasında belge METADATA\'sı için bir tablo hazır (worker-portal/schema.sql → documents), ancak gerçek dosya depolama (Cloudflare R2 bucket) bu şirket hesabında henüz kurulmadı. Bu, sahte bir "yükle" butonu koymak yerine (madde 49 "mockup yasağı") dürüst bir şekilde burada belirtiliyor — R2 bucket\'ı kurulduğunda bu ekran gerçek yükleme/indirme ile çalışacak şekilde bağlanacak.</div>';
   }
   function renderCalendar(container){
-    var body = viewHead(container, 'Calendar', 'Randevu ve takvim yönetimi.');
+    var body = viewHead(container, 'Takvim', 'Randevu ve takvim yönetimi.');
     body.innerHTML = '<div class="note-gap"><b>Randevu/takvim altyapısı henüz kurulmadı.</b> Veritabanında bir randevu tablosu yok — bu, ayrı bir geliştirme fazı (yeni bir tablo + API uçları) gerektiriyor. Sahte randevu göstermek yerine bu gerçek durumu belirtiyoruz.</div>';
   }
   function renderIntegrations(container){
-    var body = viewHead(container, 'Integrations', 'Harici CRM/ERP ve diğer servis bağlantıları.');
+    var body = viewHead(container, 'Entegrasyonlar', 'Harici CRM/ERP ve diğer servis bağlantıları.');
     body.innerHTML = '<div class="note-gap"><b>Harici entegrasyon (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/ödeme sağlayıcısı) henüz bağlı değil.</b> Bunların her biri kendi API anahtarınızı/hesabınızı gerektiriyor (madde 29/35). VERALIQ mimarisi provider-agnostic tasarlandığı için (agent-core/providers.js) bu servisler siz hazır olduğunuzda mevcut mimariye eklenebilir.</div>';
   }
 
@@ -905,7 +905,7 @@
   // REPORTS (madde 38 — gerçek veriden PDF/Excel yerine CSV export v1)
   // ============================================================
   async function renderReports(container){
-    var body = viewHead(container, 'Reports', 'Gerçek verilerden anlık rapor ve dışa aktarma.',
+    var body = viewHead(container, 'Raporlar', 'Gerçek verilerden anlık rapor ve dışa aktarma.',
       '<button class="btn btn-ghost btn-sm" id="exportCsvBtn">CSV İndir</button>');
     try {
       var d = await api('/api/dashboard');
@@ -928,7 +928,7 @@
   // AGENTS (AI vs Human — gerçek audit log verisinden)
   // ============================================================
   async function renderAgents(container){
-    var body = viewHead(container, 'Agents', 'AI ve insan satış temsilcilerinin gerçek sunum performansı.');
+    var body = viewHead(container, 'Agent\'lar', 'AI ve insan satış temsilcilerinin gerçek sunum performansı.');
     try {
       var d = await api('/api/dashboard');
       body.innerHTML = '<div class="row">' +
@@ -943,7 +943,7 @@
   // ============================================================
   async function renderTeam(container){
     var owner = isOwner();
-    var body = viewHead(container, 'Team', 'Portala erişimi olan kullanıcılar.',
+    var body = viewHead(container, 'Ekip', 'Portala erişimi olan kullanıcılar.',
       owner ? '<button class="btn btn-primary btn-sm" id="toggleAddTeam">+ Üye Ekle</button>' : '');
     var ROLE_LABELS = {
       company_owner: 'Sahip', company_staff: 'Personel', company_manager: 'Yönetici',
@@ -1008,7 +1008,7 @@
   // ============================================================
   async function renderSettings(container){
     var owner = isOwner();
-    var body = viewHead(container, 'Settings', 'Şirket bilgileri ve hesap ayarları.');
+    var body = viewHead(container, 'Ayarlar', 'Şirket bilgileri ve hesap ayarları.');
     var company = getCompany() || {};
     body.innerHTML =
       '<div class="card">' +
@@ -1112,7 +1112,7 @@
       <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
     </div>
     <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
-      <p>Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Assistant menüsü).</p>
+      <p>Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Asistan menüsü).</p>
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
     <div class="agent-captions" id="agentCaptions" hidden></div>
