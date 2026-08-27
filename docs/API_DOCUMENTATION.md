@@ -39,6 +39,21 @@ Kaynak: `worker-portal/portal-api-worker.js`. Tüm yanıtlar JSON. Auth: `Author
 | GET | `/api/dashboard` | owner/staff | Toplam lead/satış/ciro/onay istatistikleri |
 | POST | `/api/assistant/query` | owner/staff | `{question}` → `{answer}` — deterministik, `answerAssistantQuery()` |
 
+## Müşteri + Görüşme Hafızası (provider-bağımsız, 2026-08-27 eklendi)
+
+| Method | Path | Rol | Açıklama |
+|---|---|---|---|
+| GET/POST | `/api/customers` | owner/staff | |
+| GET/PATCH | `/api/customers/:id` | owner/staff | GET; interests + conversation geçmişi dahil |
+| POST | `/api/customers/:id/interests` | owner/staff | `{project_id?, unit_id?}` |
+| GET/POST | `/api/conversations` | owner/staff (GET), owner/staff **veya** agent-key (POST) | POST: canlı ajan (widget) `X-Agent-Key` ile başlatabilir — presentation-lock ile aynı desen |
+| GET | `/api/conversations/:id` | owner/staff/admin | mesajlar + son özet dahil |
+| POST | `/api/conversations/:id/messages` | owner/staff veya agent-key | `{role, text}` |
+| POST | `/api/conversations/:id/end` | owner/staff veya agent-key | |
+| POST | `/api/conversations/:id/summary` | owner/staff veya agent-key | `{summary, customer_need, budget, interest, objection, next_step}` |
+
+⚠️ Not: bu uçlar HAZIR ve test edilmiş, ama `agent-core/orchestrator.js` henüz bunları otomatik ÇAĞIRMIYOR — bkz. PROJECT_ARCHITECTURE.md §4.
+
 ## Lead / Onay / Audit
 
 | Method | Path | Rol | Açıklama |

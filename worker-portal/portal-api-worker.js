@@ -689,6 +689,168 @@ async function route(request, url, env) {
     }
   }
 
+  // ---- CUSTOMERS + CONVERSATION MEMORY (2026-08-27) --------------------------
+  // Provider-bağımsız müşteri/görüşme hafızası — bkz. schema.sql'deki geniş
+  // yorum ve docs/DATABASE_SCHEMA.md. Hangi avatar/LLM sağlayıcısı kullanılırsa
+  // kullanılsın (Anam/Spatius/başka biri), bu veriler burada, VERALIQ'ın kendi
+  // veritabanında kalır ve provider değişse bile ASLA kaybolmaz.
+  if (path === '/api/customers' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const { results } = await env.DB.prepare(`SELECT * FROM customers WHERE company_id = ? ORDER BY updated_at DESC LIMIT 500`).bind(auth.company_id).all();
+    return json({ customers: results });
+  }
+  if (path === '/api/customers' && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const body = await request.json();
+    const id = generateId('cust');
+    await env.DB.prepare(
+      `INSERT INTO customers (id, company_id, name, phone, email, budget, preferences, sales_status, consent_status, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(
+      id, auth.company_id, body.name || '', body.phone || null, body.email || null, body.budget ?? null,
+      body.preferences || '', body.sales_status || 'new', body.consent_status || 'unknown', body.notes || ''
+    ).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'customer.create', entity_type: 'customer', entity_id: id, new_value: body, request });
+    return json({ id }, 201);
+  }
+  if ((m = path.match(/^\/api\/customers\/([^/]+)$/)) && (method === 'GET' || method === 'PATCH')) {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const customerId = m[1];
+    const customer = await env.DB.prepare(`SELECT * FROM customers WHERE id = ? AND company_id = ?`).bind(customerId, auth.company_id).first();
+    if (!customer) return json({ error: 'not_found' }, 404);
+    if (method === 'GET') {
+      const interests = await env.DB.prepare(
+        `SELECT ci.*, p.name AS project_name, u.unit_no FROM customer_interests ci
+         LEFT JOIN projects p ON p.id = ci.project_id LEFT JOIN units u ON u.id = ci.unit_id
+         WHERE ci.customer_id = ? ORDER BY ci.created_at DESC`
+      ).bind(customerId).all();
+      const conversations = await env.DB.prepare(`SELECT * FROM conversations WHERE customer_id = ? ORDER BY started_at DESC LIMIT 50`).bind(customerId).all();
+      return json({ customer, interests: interests.results, conversations: conversations.results });
+    }
+    const body = await request.json();
+    const fields = ['name', 'phone', 'email', 'budget', 'preferences', 'sales_status', 'consent_status', 'notes'];
+    const sets = [], vals = [];
+    for (const f of fields) if (f in body) { sets.push(`${f} = ?`); vals.push(body[f]); }
+    if (!sets.length) return json({ error: 'no_fields' }, 400);
+    sets.push(`updated_at = datetime('now')`);
+    vals.push(customerId);
+    await env.DB.prepare(`UPDATE customers SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'customer.update', entity_type: 'customer', entity_id: customerId, old_value: customer, new_value: body, request });
+    return json({ ok: true });
+  }
+  if ((m = path.match(/^\/api\/customers\/([^/]+)\/interests$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const customerId = m[1];
+    const customer = await env.DB.prepare(`SELECT id FROM customers WHERE id = ? AND company_id = ?`).bind(customerId, auth.company_id).first();
+    if (!customer) return json({ error: 'not_found' }, 404);
+    const body = await request.json();
+    if (!body.project_id && !body.unit_id) return json({ error: 'missing_fields', required: ['project_id or unit_id'] }, 400);
+    const id = generateId('int');
+    await env.DB.prepare(
+      `INSERT INTO customer_interests (id, customer_id, project_id, unit_id, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
+    ).bind(id, customerId, body.project_id || null, body.unit_id || null).run();
+    return json({ id }, 201);
+  }
+
+  if (path === '/api/conversations' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const customerFilter = url.searchParams.get('customer_id');
+    let query = `SELECT * FROM conversations WHERE company_id = ?`;
+    const params = [auth.company_id];
+    if (customerFilter) { query += ` AND customer_id = ?`; params.push(customerFilter); }
+    query += ` ORDER BY started_at DESC LIMIT 200`;
+    const { results } = await env.DB.prepare(query).bind(...params).all();
+    return json({ conversations: results });
+  }
+  if (path === '/api/conversations' && method === 'POST') {
+    // Bu uç hem portal JWT'si (company_owner/staff) hem de agent-key (Zero
+    // Trust) ile çağrılabilir — çünkü bir görüşmeyi BAŞLATAN taraf genellikle
+    // müşteriyle konuşan canlı ajanın kendisidir (widget-runtime.js), portal
+    // oturumu açmış bir insan değil. Bu, /units/:id/lock ile AYNI mimari
+    // desen (bkz. yukarıdaki checkAgentKey notu). Ajan yalnızca YENİ bir
+    // konuşma satırı ve mesaj EKLEYEBİLİR — customer/lead/unit/proje gibi
+    // hiçbir iş verisini DEĞİŞTİREMEZ.
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    const viaAgentKey = !auth && checkAgentKey(request, env);
+    if (!auth && !viaAgentKey) return json({ error: 'unauthorized' }, 401);
+    const body = await request.json();
+    const companyId = auth ? auth.company_id : body.company_id;
+    if (!companyId) return json({ error: 'company_id_required' }, 400);
+    const id = generateId('conv');
+    await env.DB.prepare(
+      `INSERT INTO conversations (id, company_id, customer_id, lead_id, agent_type, agent_persona, provider, channel, started_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(
+      id, companyId, body.customer_id || null, body.lead_id || null, body.agent_type || 'AI',
+      body.agent_persona || '', body.provider || '', body.channel || 'web'
+    ).run();
+    return json({ id }, 201);
+  }
+  if ((m = path.match(/^\/api\/conversations\/([^/]+)$/)) && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff', 'veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const conversationId = m[1];
+    const conversation = await env.DB.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(conversationId).first();
+    if (!conversation) return json({ error: 'not_found' }, 404);
+    if (auth.role !== 'veraliq_admin' && conversation.company_id !== auth.company_id) return json({ error: 'forbidden' }, 403);
+    const messages = await env.DB.prepare(`SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY created_at ASC`).bind(conversationId).all();
+    const summary = await env.DB.prepare(`SELECT * FROM conversation_summaries WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1`).bind(conversationId).first();
+    return json({ conversation, messages: messages.results, summary: summary || null });
+  }
+  if ((m = path.match(/^\/api\/conversations\/([^/]+)\/messages$/)) && method === 'POST') {
+    // Zero Trust AI: agent-key ile çağrıldığında bu uç yalnızca bir metin
+    // satırı EKLER — hiçbir status/fiyat/CRM alanını değiştirmez.
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    const viaAgentKey = !auth && checkAgentKey(request, env);
+    if (!auth && !viaAgentKey) return json({ error: 'unauthorized' }, 401);
+    const conversationId = m[1];
+    const conversation = await env.DB.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(conversationId).first();
+    if (!conversation) return json({ error: 'not_found' }, 404);
+    if (auth && conversation.company_id !== auth.company_id) return json({ error: 'forbidden' }, 403);
+    const body = await request.json();
+    if (!body.role || !body.text) return json({ error: 'missing_fields', required: ['role', 'text'] }, 400);
+    const id = generateId('msg');
+    await env.DB.prepare(
+      `INSERT INTO conversation_messages (id, conversation_id, role, text, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
+    ).bind(id, conversationId, body.role, body.text).run();
+    return json({ id }, 201);
+  }
+  if ((m = path.match(/^\/api\/conversations\/([^/]+)\/end$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    const viaAgentKey = !auth && checkAgentKey(request, env);
+    if (!auth && !viaAgentKey) return json({ error: 'unauthorized' }, 401);
+    const conversationId = m[1];
+    const conversation = await env.DB.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(conversationId).first();
+    if (!conversation) return json({ error: 'not_found' }, 404);
+    if (auth && conversation.company_id !== auth.company_id) return json({ error: 'forbidden' }, 403);
+    await env.DB.prepare(`UPDATE conversations SET ended_at = datetime('now') WHERE id = ?`).bind(conversationId).run();
+    return json({ ok: true });
+  }
+  if ((m = path.match(/^\/api\/conversations\/([^/]+)\/summary$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    const viaAgentKey = !auth && checkAgentKey(request, env);
+    if (!auth && !viaAgentKey) return json({ error: 'unauthorized' }, 401);
+    const conversationId = m[1];
+    const conversation = await env.DB.prepare(`SELECT * FROM conversations WHERE id = ?`).bind(conversationId).first();
+    if (!conversation) return json({ error: 'not_found' }, 404);
+    if (auth && conversation.company_id !== auth.company_id) return json({ error: 'forbidden' }, 403);
+    const body = await request.json();
+    const id = generateId('sum');
+    await env.DB.prepare(
+      `INSERT INTO conversation_summaries (id, conversation_id, summary, customer_need, budget, interest, objection, next_step, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(
+      id, conversationId, body.summary || '', body.customer_need || '', body.budget ?? null,
+      body.interest || '', body.objection || '', body.next_step || ''
+    ).run();
+    return json({ id }, 201);
+  }
+
   // ---- APPROVALS (madde 42-43) ----------------------------------------------
   if (path === '/api/approvals' && method === 'GET') {
     const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);

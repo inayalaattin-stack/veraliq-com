@@ -331,6 +331,60 @@ const run = async () => {
   data = await r.json();
   check('health check reports ok with no auth', r.status === 200 && data.ok === true && data.db === 'ok', data);
 
+  // 19. Customer + Conversation Memory (provider-independent — madde 3-5, 38-39)
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Mehmet Öz', phone: '5559998877', budget: 4500000, preferences: '2+1, yüksek kat' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('company_owner can create a customer', r.status === 201 && !!data.id, data);
+  const customerId = data.id;
+
+  r = await worker.fetch(req('GET', '/api/customers', null, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  check('TENANT ISOLATION: XYZ does not see ABC\'s customer', r.status === 200 && !data.customers.some(c => c.id === customerId), data);
+
+  r = await worker.fetch(req('POST', `/api/customers/${customerId}/interests`, { project_id: projectId }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('owner can record a customer interest in a project', r.status === 201);
+
+  r = await worker.fetch(req('GET', `/api/customers/${customerId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('customer detail includes recorded interest', r.status === 200 && data.interests.length === 1 && data.interests[0].project_name === 'ABC Vadi Konutları', data);
+
+  r = await worker.fetch(req('GET', `/api/customers/${customerId}`, null, { Authorization: 'Bearer ' + xyzToken }), env);
+  check('TENANT ISOLATION: XYZ cannot read ABC customer by id (404, not leaked)', r.status === 404);
+
+  // A live agent (no portal JWT — X-Agent-Key instead, same pattern as presentation-lock)
+  // starts a conversation, appends messages from BOTH sides, ends it, and attaches
+  // a structured summary — none of this touches units/leads/customers directly.
+  r = await worker.fetch(req('POST', '/api/conversations', { company_id: 'co_swo61xr4midp', customer_id: customerId, agent_type: 'AI', agent_persona: 'Elif Kaya', provider: 'spatius', channel: 'web' }, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  data = await r.json();
+  check('live agent (agent-key) can start a conversation', r.status === 201 && !!data.id, data);
+  const conversationId = data.id;
+
+  r = await worker.fetch(req('POST', '/api/conversations', { company_id: 'co_swo61xr4midp' }, { 'X-Agent-Key': 'WRONG-KEY' }), env);
+  check('SECURITY: wrong agent-key cannot start a conversation (401)', r.status === 401);
+
+  r = await worker.fetch(req('POST', `/api/conversations/${conversationId}/messages`, { role: 'customer', text: 'Merhaba, 2+1 daireleriniz var mı?' }, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  check('agent-key can append a customer message', r.status === 201);
+
+  r = await worker.fetch(req('POST', `/api/conversations/${conversationId}/messages`, { role: 'agent', text: 'Evet, ABC Vadi Konutları\'nda 2+1 seçenekler mevcut.' }, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  check('agent-key can append an agent message', r.status === 201);
+
+  r = await worker.fetch(req('POST', `/api/conversations/${conversationId}/summary`, { summary: 'Müşteri 2+1 arıyor, bütçesi 4.5M.', customer_need: '2+1 daire', budget: 4500000, next_step: 'Sunum planla' }, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  check('agent-key can attach a structured conversation summary', r.status === 201);
+
+  r = await worker.fetch(req('POST', `/api/conversations/${conversationId}/end`, {}, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  check('agent-key can end the conversation', r.status === 200);
+
+  r = await worker.fetch(req('GET', `/api/conversations/${conversationId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('owner can read full conversation (messages + summary) started by the agent', r.status === 200 && data.messages.length === 2 && data.summary && data.summary.customer_need === '2+1 daire' && !!data.conversation.ended_at, data);
+
+  r = await worker.fetch(req('GET', `/api/conversations/${conversationId}`, null, { Authorization: 'Bearer ' + xyzToken }), env);
+  check('TENANT ISOLATION: XYZ cannot read ABC\'s conversation (403)', r.status === 403);
+
+  r = await worker.fetch(req('GET', `/api/customers/${customerId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('customer record now shows the conversation in its history', r.status === 200 && data.conversations.length === 1 && data.conversations[0].id === conversationId, data);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };

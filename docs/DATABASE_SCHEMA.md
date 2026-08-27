@@ -40,10 +40,22 @@ Onay motoru (temel versiyon). `type` (discount/payment_plan/reservation/contract
 ### `audit_log`
 Kritik işlemlerin tamamı: `action`, `entity_type`/`entity_id`, `old_value`/`new_value` (JSON string), `ip`, `device`, `created_at`. AI'ın yaptığı işlemler de buraya yazılıyor (örn. `assistant.query`, `admin_assistant.query`) — 65 maddelik promptun 34. maddesindeki "AI Action Log" isteği kısmen burada karşılanıyor (soru-cevap logluyor; henüz "AI created lead" / "AI created reservation" gibi ayrı, LLM'in doğrudan tetiklediği state-changing aksiyonlar YOK çünkü LLM'e zaten böyle bir yetki verilmedi — Zero Trust AI ilkesi gereği).
 
+## `customers` / `customer_interests` / `conversations` / `conversation_messages` / `conversation_summaries` (2026-08-27 eklendi)
+
+Provider-bağımsız, yapılandırılmış müşteri + görüşme hafızası — 65 maddelik master promptun 3-5, 38-39. maddeleri. Kaynak: `worker-portal/migrations/0001_conversation_memory.sql` (aynı içerik `schema.sql`'e de kopyalandı — tek doğruluk kaynağı ilkesi korunuyor).
+
+- `customers`: `leads`'ten daha zengin, kalıcı müşteri kaydı (`budget`, `preferences`, `sales_status`, `consent_status`). `leads` tablosuyla şimdilik doğrudan bir foreign-key bağı YOK (bilinçli karar — bkz. schema.sql'deki yorum: SQLite'ta `ALTER TABLE ADD COLUMN` var olan bir veritabanına güvenle tekrar uygulanamıyor).
+- `customer_interests`: bir müşterinin ilgilendiği proje/birimler (çoktan-çoğa).
+- `conversations`: bir görüşüm OTURUMU — `provider` sütunu hangi avatar/LLM sağlayıcısının görüşmeyi yürüttüğünü kaydeder (yalnızca bilgi amaçlı; `customer_id`/`company_id` gibi kimlikler provider değişse bile sabit kalır).
+- `conversation_messages`: gerçek transkript (bugün yalnızca tarayıcı belleğinde tutulanın kalıcı karşılığı).
+- `conversation_summaries`: özet/ihtiyaç/bütçe/ilgi/itiraz/sonraki-adım.
+
+API: `POST /api/customers`, `GET /api/customers`, `GET/PATCH /api/customers/:id`, `POST /api/customers/:id/interests`, `POST /api/conversations` (JWT VEYA agent-key ile — presentation-lock ile aynı desen), `GET /api/conversations`, `GET /api/conversations/:id`, `POST /api/conversations/:id/messages`, `POST /api/conversations/:id/end`, `POST /api/conversations/:id/summary`. Hepsi test edildi (tenant izolasyonu dahil — bkz. `worker-portal/test/`).
+
+**⚠️ Hâlâ eksik**: bu API'lerin canlı ajan tarafından (agent-core/orchestrator.js) OTOMATİK çağrılması — bkz. PROJECT_ARCHITECTURE.md §4.
+
 ## Eksik olan (henüz tablo YOK)
 
-- `conversations` / `conversation_summaries` — provider-bağımsız görüşme geçmişi (bkz. PROJECT_ARCHITECTURE.md §4).
-- `customers` (ayrı, `leads`'ten daha zengin bir tablo — budget/preferences/interested_units/consent_status gibi).
 - `payments`, `contracts` — ödeme planı ve sözleşme kayıtları (portal.html'in Payments/Contracts ekranları şu an `units` tablosundaki status'a bakıyor, ayrı bir finansal kayıt tutmuyor).
 - `tasks` — 65 maddelik promptun 47. maddesindeki "AI önerdiği işler task olarak oluşturulsun" isteği için.
 
