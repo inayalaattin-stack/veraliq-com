@@ -69,3 +69,13 @@
 # default long asset cache (previously 4h) causing stale JS on live visits.
 /script.js
   Cache-Control: no-cache, must-revalidate
+
+# GÜNCELLEME (2026-08-27) — GERÇEK CANLI BUG: i18n.js'te bugün düzeltilen bir
+# metin (FAQ "İnsan satış ekibinin yerini mi alıyor?" cevabı) origin'de ve
+# Claude'un kendi taze fetch'inde doğru görünüyordu, ama kullanıcının kendi
+# tarayıcısı platformun varsayılan uzun asset cache'i yüzünden saatler önceki
+# ESKİ i18n.js kopyasını gösteriyordu — kod hiç bozuk değildi, önbellek
+# bayattı. i18n.js de script.js gibi sık değişen, kullanıcıya doğrudan görünen
+# içerik taşıyor; aynı no-cache kuralı buraya da uygulanıyor.
+/i18n.js
+  Cache-Control: no-cache, must-revalidate
