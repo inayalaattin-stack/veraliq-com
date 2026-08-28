@@ -24,7 +24,7 @@
     --line: #252C28;        /* Border */
     --text:#EDE9DF;         /* Warm White — primary text */
     --text-dim:#8A918C;     /* Muted Text — secondary text */
-    --text-dim-soft: rgba(138,145,140,0.65);
+    --text-dim-soft: rgba(138,145,140,0.92); /* WCAG AA: 0.65 idi, koyu zeminde ~3.2:1 kontrast veriyordu — footer bildirimi ve "Şirket Girişi" linki için 4.5:1 eşiğine çekildi */
     --accent:#BFA16A;       /* Champagne — primary accent */
     --accent-text:#D4BB87;  /* Champagne Hover — brighter, for small mono labels */
     --accent-dim: rgba(191,161,106,0.14);
@@ -290,7 +290,7 @@
   .pm-fbar i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w);background:linear-gradient(90deg,var(--accent-text),var(--accent));border-radius:3px;}
   .pm-fbar b{width:24px;text-align:right;color:var(--text);font-weight:600;font-family:'Space Grotesk',sans-serif;flex-shrink:0;font-size:10px;}
   .pm-feed-row{font-size:9px;line-height:1.75;color:var(--text-dim);}
-  .pm-feed-row b{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);opacity:0.75;margin-right:4px;}
+  .pm-feed-row b{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);opacity:0.9;margin-right:4px;}
   .pm-feed-row em{font-style:normal;font-weight:600;color:var(--accent-text);margin-right:3px;}
   .portal-note{
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;
@@ -341,7 +341,7 @@
   .wf-metric b{color:var(--accent-text);font-size:16px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:0;margin-right:5px;}
   .wf-total{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--panel);}
   .wf-total-num{font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;color:var(--accent-text);margin:6px 0 2px;}
-  .wf-note{text-align:center;font-size:11px;color:var(--text-dim);opacity:0.7;margin-top:14px;}
+  .wf-note{text-align:center;font-size:11px;color:var(--text-dim);opacity:0.9;margin-top:14px;}
   .wf-handoff{margin-top:40px;}
   .wf-handoff-title{font-size:11px;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:16px;text-align:center;}
   .wf-handoff .flow-row{overflow-x:auto;flex-wrap:nowrap;padding-bottom:8px;}
@@ -729,7 +729,10 @@
       <div class="hero-footnote" data-i18n="hero.footnote">Sağ altta Elif Kaya hazır bekliyor — hemen canlı konuşabilirsiniz.</div>
     </div>
     <div class="hero-showcase">
-      <img src="assets/hero-showcase-platforms.jpg" data-i18n-alt="hero.imgAlt" alt="VERALIQ web sitesi, canlı yönetim paneli ve mobil uygulama önizlemesi" width="1400" height="763" loading="eager">
+      <picture>
+        <source srcset="assets/hero-showcase-platforms.webp" type="image/webp">
+        <img src="assets/hero-showcase-platforms.jpg" data-i18n-alt="hero.imgAlt" alt="VERALIQ web sitesi, canlı yönetim paneli ve mobil uygulama önizlemesi" width="1400" height="763" loading="eager">
+      </picture>
     </div>
   </div>
 </section>
@@ -910,38 +913,38 @@
           <span class="pmc-dot" style="background:#D93A40;"></span>
           <span class="pmc-dot" style="background:#BFA16A;"></span>
           <span class="pmc-dot" style="background:#7EE0B2;"></span>
-          <span class="pmc-url">portal.veraliq.com/dashboard</span>
+          <span class="pmc-url">portal.veraliq.com/panel</span>
         </div>
         <div class="pm-body">
           <aside class="pm-sidebar">
             <div class="pm-slogo"><span class="pm-slogo-dot"></span>VERALIQ</div>
             <nav class="pm-nav">
-              <span class="pm-nav-item active">Dashboard</span>
-              <span class="pm-nav-item">AI Workforce</span>
-              <span class="pm-nav-item">Leads</span>
-              <span class="pm-nav-item">Customers</span>
-              <span class="pm-nav-item">Properties</span>
-              <span class="pm-nav-item">Sales</span>
-              <span class="pm-nav-item">Reports</span>
+              <span class="pm-nav-item active">Panel</span>
+              <span class="pm-nav-item">AI Asistan</span>
+              <span class="pm-nav-item">Lead'ler</span>
+              <span class="pm-nav-item">Müşteriler</span>
+              <span class="pm-nav-item">Envanter</span>
+              <span class="pm-nav-item">Satışlar</span>
+              <span class="pm-nav-item">Raporlar</span>
             </nav>
           </aside>
           <div class="pm-main">
             <div class="pm-kpis">
-              <div class="pm-kpi"><span class="pm-kpi-label">REVENUE</span><span class="pm-kpi-val gold">₺2.4M</span><span class="pm-kpi-delta">▲ 18%</span></div>
-              <div class="pm-kpi"><span class="pm-kpi-label">LEADS</span><span class="pm-kpi-val">312</span><span class="pm-kpi-delta">▲ 9%</span></div>
-              <div class="pm-kpi"><span class="pm-kpi-label">CONVERSION</span><span class="pm-kpi-val">%24</span><span class="pm-kpi-delta">▲ 3%</span></div>
-              <div class="pm-kpi"><span class="pm-kpi-label">APPOINTMENTS</span><span class="pm-kpi-val">47</span><span class="pm-kpi-delta neutral">bu hafta</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">CİRO</span><span class="pm-kpi-val gold">₺2.4M</span><span class="pm-kpi-delta">▲ 18%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">LEAD'LER</span><span class="pm-kpi-val">312</span><span class="pm-kpi-delta">▲ 9%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">DÖNÜŞÜM</span><span class="pm-kpi-val">%24</span><span class="pm-kpi-delta">▲ 3%</span></div>
+              <div class="pm-kpi"><span class="pm-kpi-label">RANDEVU</span><span class="pm-kpi-val">47</span><span class="pm-kpi-delta neutral">bu hafta</span></div>
             </div>
             <div class="pm-row">
               <div class="pm-panel">
-                <div class="pm-panel-title">SALES FUNNEL</div>
+                <div class="pm-panel-title">SATIŞ HATTI</div>
                 <div class="pm-fbar"><span>Lead</span><i style="--w:100%"></i><b>312</b></div>
                 <div class="pm-fbar"><span>Nitelikli</span><i style="--w:68%"></i><b>212</b></div>
                 <div class="pm-fbar"><span>Randevu</span><i style="--w:41%"></i><b>128</b></div>
                 <div class="pm-fbar"><span>Satış</span><i style="--w:19%"></i><b>59</b></div>
               </div>
               <div class="pm-panel">
-                <div class="pm-panel-title">AI ACTIVITY</div>
+                <div class="pm-panel-title">AI AKTİVİTESİ</div>
                 <div class="pm-feed">
                   <div class="pm-feed-row"><b>09:42</b> <em>Elif Kaya</em> Yeni lead analiz edildi.</div>
                   <div class="pm-feed-row"><b>09:45</b> <em>Ahmet Demir</em> WhatsApp follow-up gönderildi.</div>
