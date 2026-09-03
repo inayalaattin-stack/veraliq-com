@@ -79,3 +79,8 @@
 # içerik taşıyor; aynı no-cache kuralı buraya da uygulanıyor.
 /i18n.js
   Cache-Control: no-cache, must-revalidate
+
+# three-canvas.js (hero 3D scene) — same reasoning as script.js/i18n.js above:
+# avoid a stale cached copy surviving a live edit.
+/three-canvas.js
+  Cache-Control: no-cache, must-revalidate
