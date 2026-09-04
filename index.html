@@ -300,6 +300,20 @@
   .portal-list li{display:flex;gap:12px;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,0.82);}
   .portal-list li::before{content:'●';color:var(--accent);font-size:8px;margin-top:6px;flex-shrink:0;}
 
+  /* COMPLIANCE & COST — kurumsal ek modül tanıtımı. Fiyat kasıtlı olarak
+     gösterilmiyor: önce şirketin özelliğin değerini görmesi, sonra
+     fiyatlandırmanın görüşmede paylaşılması hedefleniyor. */
+  .cc-panel{
+    margin-top:8px;padding:32px;border:1px solid var(--accent-dim);
+    border-left:3px solid var(--accent);border-radius:var(--radius);
+    background:var(--panel);
+  }
+  .cc-list{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:14px;max-width:640px;}
+  .cc-list li{display:flex;gap:12px;font-size:15px;line-height:1.5;color:var(--text-dim);}
+  .cc-list li::before{content:'●';color:var(--accent);font-size:8px;margin-top:7px;flex-shrink:0;}
+  .cc-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .cc-note{font-size:13px;color:var(--text-dim);opacity:0.85;}
+
   /* Problem block */
   .problem-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px 56px;margin-bottom:48px;}
   @media(max-width:760px){.problem-grid{grid-template-columns:1fr;gap:22px;}}
@@ -699,6 +713,7 @@
     <div class="nav-links" id="navLinks">
       <a href="#workforce" data-i18n="nav.workforce">AI Workforce</a>
       <a href="#modules" data-i18n="nav.modules">Modüller</a>
+      <a href="#compliance-cost" data-i18n="nav.compliance">Uyum &amp; Maliyet</a>
       <a href="#compare" data-i18n="nav.compare">CRM Farkı</a>
       <a href="#channels" data-i18n="nav.channels">Entegrasyon</a>
       <a href="#trust" data-i18n="nav.trust">Güvenlik</a>
@@ -879,6 +894,31 @@
     <div class="service"><div class="idx mono">06</div><h3 data-i18n="modules.svc6Title">Automated Follow-up</h3><p data-i18n="modules.svc6Desc">Karar vermeyen müşteriyi nazikçe hatırlatır, özel günleri not alır.</p></div>
     <div class="service"><div class="idx mono">07</div><h3 data-i18n="modules.svc7Title">Sales Analytics</h3><p data-i18n="modules.svc7Desc">Konuşma, dönüşüm ve fırsat verileri tek panelde raporlanır.</p></div>
     <div class="service"><div class="idx mono">08</div><h3 data-i18n="modules.svc8Title">Agent Management</h3><p data-i18n="modules.svc8Desc">Admin panelinden Agent'ların ismini, görevini, sesini ve yetkilerini yönetin.</p></div>
+  </div>
+</section>
+
+<!-- COMPLIANCE & COST — kurumsal ek modül tanıtımı. Fiyat bilinçli olarak
+     gösterilmiyor: önce şirketin özelliğin değerini görmesi hedefleniyor,
+     fiyatlandırma "Bu Modülü Deneyelim" görüşmesinde paylaşılıyor. -->
+<section id="compliance-cost">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow" data-i18n="cc.eyebrow">YENİ · KURUMSAL EK MODÜL</div>
+      <h2 data-i18n="cc.h2">Mevzuat, deprem yönetmeliği ve emtia fiyatları sizi şaşırtmasın.</h2>
+      <p data-i18n="cc.p">İnşaat ve gayrimenkul projeleriniz için resmi mevzuatı, TBDY güncellemelerini ve demir/çelik fiyatlarını günlük takip eden bir karar destek katmanı. Yatırım tavsiyesi veya kesin hukuki görüş vermez — ilgili maddeye ve veriye dikkatinizi çeker, kararı size bırakır.</p>
+    </div>
+    <div class="cc-panel">
+      <ul class="cc-list">
+        <li data-i18n="cc.li1">Resmi Gazete ve imar mevzuatını her gün tarar, projenizle eşleşeni işaretler</li>
+        <li data-i18n="cc.li2">TBDY (deprem yönetmeliği) güncellemelerinde ilgili maddeye anında dikkat çeker</li>
+        <li data-i18n="cc.li3">Demir, çelik ve temel inşaat emtialarının fiyatını canlı izler</li>
+        <li data-i18n="cc.li4">Bürokratik evrak sürecinizi tek panelde takip eder</li>
+      </ul>
+      <div class="cc-actions">
+        <a href="#contact" class="btn btn-primary" data-i18n="cc.cta">Bu Modülü Deneyelim →</a>
+        <span class="cc-note" data-i18n="cc.note">Fiyatlandırma, modülü birlikte değerlendirdikten sonra netleşir.</span>
+      </div>
+    </div>
   </div>
 </section>
 

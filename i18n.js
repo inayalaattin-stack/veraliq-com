@@ -16,7 +16,7 @@ window.VERALIQ_I18N = {
   ],
   dict: {
     tr: {
-      "nav.workforce":"AI Workforce","nav.modules":"Modüller","nav.compare":"CRM Farkı","nav.channels":"Entegrasyon","nav.trust":"Güvenlik","nav.faq":"SSS","nav.contact":"İletişim",
+      "nav.workforce":"AI Workforce","nav.modules":"Modüller","nav.compliance":"Uyum & Maliyet","nav.compare":"CRM Farkı","nav.channels":"Entegrasyon","nav.trust":"Güvenlik","nav.faq":"SSS","nav.contact":"İletişim",
       "logo.sub":"Teknoloji & Dijital Satış Çözümleri",
       "lang.switcherLabel":"Dil seçin",
       "hero.eyebrow":"YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU",
@@ -73,6 +73,7 @@ window.VERALIQ_I18N = {
       "portal.p":"Şirketinize özel portal canlıdır — aşağıda tasarım dilini gösteren basitleştirilmiş bir önizleme yer alıyor. Gerçek ekranlara \"Şirket Girişi\" üzerinden ulaşabilirsiniz.",
       "portal.note":"NELER GÖRECEKSİNİZ",
       "portal.li1":"Proje ve portföy yönetimi tek ekranda","portal.li2":"Lead, randevu ve satış hattı (pipeline) canlı takibi","portal.li3":"Agent performansı ve konuşma analitiği","portal.li4":"Şirketinizin markasıyla PDF/Excel raporlama",
+      "cc.eyebrow":"YENİ · KURUMSAL EK MODÜL","cc.h2":"Mevzuat, deprem yönetmeliği ve emtia fiyatları sizi şaşırtmasın.","cc.p":"İnşaat ve gayrimenkul projeleriniz için resmi mevzuatı, TBDY güncellemelerini ve demir/çelik fiyatlarını günlük takip eden bir karar destek katmanı. Yatırım tavsiyesi veya kesin hukuki görüş vermez — ilgili maddeye ve veriye dikkatinizi çeker, kararı size bırakır.","cc.li1":"Resmi Gazete ve imar mevzuatını her gün tarar, projenizle eşleşeni işaretler","cc.li2":"TBDY (deprem yönetmeliği) güncellemelerinde ilgili maddeye anında dikkat çeker","cc.li3":"Demir, çelik ve temel inşaat emtialarının fiyatını canlı izler","cc.li4":"Bürokratik evrak sürecinizi tek panelde takip eder","cc.cta":"Bu Modülü Deneyelim →","cc.note":"Fiyatlandırma, modülü birlikte değerlendirdikten sonra netleşir.",
       "portal.imgAlt":"VERALIQ şirket portalı tasarım vizyonu",
       "results.eyebrow":"SONUÇ","results.h2":"Teknoloji değil, sonuç satıyoruz.",
       "results.li1":"Daha hızlı lead dönüşü","results.li2":"Daha az kaçan müşteri","results.li3":"7/24 iletişim","results.li4":"Daha fazla follow-up","results.li5":"Daha az tekrar eden iş","results.li6":"Daha yüksek satış fırsatı","results.li7":"Daha düşük operasyon yükü","results.li8":"Daha yüksek kapanış oranı",
@@ -117,7 +118,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● Canlı AI Satış Asistanı"
     },
     en: {
-      "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compare":"CRM Difference","nav.channels":"Integration","nav.trust":"Security","nav.faq":"FAQ","nav.contact":"Contact",
+      "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compliance":"Compliance & Cost","nav.compare":"CRM Difference","nav.channels":"Integration","nav.trust":"Security","nav.faq":"FAQ","nav.contact":"Contact",
       "logo.sub":"Technology & Digital Sales Solutions",
       "lang.switcherLabel":"Select language",
       "hero.eyebrow":"AI-POWERED DIGITAL SALES PLATFORM",
@@ -174,6 +175,7 @@ window.VERALIQ_I18N = {
       "portal.p":"Your company's own portal is live — below is a simplified preview of its design language. Reach the real screens via \"Company Login.\"",
       "portal.note":"WHAT YOU'LL SEE",
       "portal.li1":"Project and portfolio management in one screen","portal.li2":"Live tracking of leads, appointments and the sales pipeline","portal.li3":"Agent performance and conversation analytics","portal.li4":"PDF/Excel reporting with your company's branding",
+      "cc.eyebrow":"NEW · ENTERPRISE ADD-ON","cc.h2":"Never be caught off guard by regulation, seismic code, or material prices.","cc.p":"A decision-support layer for your construction and real-estate projects that tracks official regulations, Turkish seismic code (TBDY) updates, and steel/rebar prices every day. It never gives investment advice or a final legal opinion — it flags the relevant clause or data point and leaves the decision to you.","cc.li1":"Scans the Official Gazette and zoning regulations daily, flagging what matches your projects","cc.li2":"Alerts you the moment a TBDY (seismic code) update touches a relevant clause","cc.li3":"Tracks live prices for steel, rebar, and core construction materials","cc.li4":"Keeps your bureaucratic paperwork in one panel","cc.cta":"Let's Try This Module →","cc.note":"Pricing is shared once we've walked through the module together.",
       "portal.imgAlt":"VERALIQ company portal design preview",
       "results.eyebrow":"RESULTS","results.h2":"We sell outcomes, not technology.",
       "results.li1":"Faster lead response","results.li2":"Fewer lost customers","results.li3":"24/7 communication","results.li4":"More follow-ups","results.li5":"Less repetitive work","results.li6":"Higher sales opportunity","results.li7":"Lower operational load","results.li8":"Higher closing rate",
@@ -218,7 +220,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● Live AI Sales Agent"
     },
     ar: {
-      "nav.workforce":"AI Workforce","nav.modules":"الوحدات","nav.compare":"الفرق مع CRM","nav.channels":"التكامل","nav.trust":"الأمان","nav.faq":"الأسئلة الشائعة","nav.contact":"تواصل معنا",
+      "nav.workforce":"AI Workforce","nav.modules":"الوحدات","nav.compliance":"الامتثال والتكلفة","nav.compare":"الفرق مع CRM","nav.channels":"التكامل","nav.trust":"الأمان","nav.faq":"الأسئلة الشائعة","nav.contact":"تواصل معنا",
       "logo.sub":"حلول التكنولوجيا والمبيعات الرقمية",
       "lang.switcherLabel":"اختر اللغة",
       "hero.eyebrow":"منصة مبيعات رقمية مدعومة بالذكاء الاصطناعي",
@@ -275,6 +277,7 @@ window.VERALIQ_I18N = {
       "portal.p":"بوابة شركتك الخاصة مباشرة (حية) — أدناه معاينة مبسّطة توضّح لغة التصميم. يمكنك الوصول إلى الشاشات الفعلية عبر \"دخول الشركة\".",
       "portal.note":"ما الذي ستراه",
       "portal.li1":"إدارة المشاريع والمحفظة في شاشة واحدة","portal.li2":"متابعة حية للعملاء المحتملين والمواعيد ومسار المبيعات","portal.li3":"أداء الوكيل وتحليلات المحادثات","portal.li4":"تقارير PDF/Excel بعلامة شركتك التجارية",
+      "cc.eyebrow":"جديد · وحدة إضافية للمؤسسات","cc.h2":"لا تدع اللوائح أو كود الزلازل أو أسعار المواد تفاجئكم.","cc.p":"طبقة دعم قرار لمشاريعكم العقارية والإنشائية تتابع يومياً اللوائح الرسمية وتحديثات كود الزلازل التركي (TBDY) وأسعار الحديد والصلب. لا تقدم أبداً نصيحة استثمارية أو رأياً قانونياً نهائياً — فقط تلفت انتباهكم إلى المادة أو البيانات ذات الصلة وتترك القرار لكم.","cc.li1":"يفحص الجريدة الرسمية ولوائح التنظيم العمراني يومياً، ويحدد ما يطابق مشاريعكم","cc.li2":"ينبهكم فوراً عند تحديث مادة ذات صلة في كود الزلازل TBDY","cc.li3":"يتابع بشكل حي أسعار الحديد والصلب ومواد البناء الأساسية","cc.li4":"يتابع إجراءاتكم البيروقراطية الورقية في لوحة واحدة","cc.cta":"لنجرّب هذه الوحدة ←","cc.note":"تُشارك الأسعار بعد أن نستعرض الوحدة معاً.",
       "portal.imgAlt":"رؤية تصميمية لبوابة شركة VERALIQ",
       "results.eyebrow":"النتيجة","results.h2":"نحن نبيع نتائج، لا تقنية.",
       "results.li1":"استجابة أسرع للعملاء المحتملين","results.li2":"عملاء أقل ضياعاً","results.li3":"تواصل على مدار الساعة","results.li4":"متابعات أكثر","results.li5":"عمل متكرر أقل","results.li6":"فرص بيع أعلى","results.li7":"عبء تشغيلي أقل","results.li8":"معدل إغلاق أعلى",
@@ -319,7 +322,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● مساعد مبيعات ذكاء اصطناعي مباشر"
     },
     ru: {
-      "nav.workforce":"AI Workforce","nav.modules":"Модули","nav.compare":"Отличие от CRM","nav.channels":"Интеграция","nav.trust":"Безопасность","nav.faq":"Вопросы","nav.contact":"Контакты",
+      "nav.workforce":"AI Workforce","nav.modules":"Модули","nav.compliance":"Комплаенс и затраты","nav.compare":"Отличие от CRM","nav.channels":"Интеграция","nav.trust":"Безопасность","nav.faq":"Вопросы","nav.contact":"Контакты",
       "logo.sub":"Технологии и решения для цифровых продаж",
       "lang.switcherLabel":"Выбрать язык",
       "hero.eyebrow":"ЦИФРОВАЯ ПЛАТФОРМА ПРОДАЖ НА ОСНОВЕ ИИ",
@@ -376,6 +379,7 @@ window.VERALIQ_I18N = {
       "portal.p":"Собственный портал вашей компании уже работает — ниже упрощённый предпросмотр языка дизайна. Реальные экраны доступны через «Вход для компаний».",
       "portal.note":"ЧТО ВЫ УВИДИТЕ",
       "portal.li1":"Управление проектами и портфелем на одном экране","portal.li2":"Живое отслеживание лидов, встреч и воронки продаж","portal.li3":"Эффективность агентов и аналитика разговоров","portal.li4":"PDF/Excel-отчётность с брендингом вашей компании",
+      "cc.eyebrow":"НОВОЕ · КОРПОРАТИВНЫЙ МОДУЛЬ","cc.h2":"Пусть законодательство, сейсмические нормы и цены на металл больше вас не удивляют.","cc.p":"Слой поддержки решений для ваших строительных и девелоперских проектов: ежедневно отслеживает официальные нормативные акты, обновления турецких сейсмических норм (TBDY) и цены на сталь/арматуру. Никогда не даёт инвестиционных советов или окончательных юридических заключений — только указывает на нужную статью или данные, решение остаётся за вами.","cc.li1":"Ежедневно сканирует Официальную газету и градостроительные нормы, отмечая то, что касается ваших проектов","cc.li2":"Мгновенно предупреждает при обновлении статьи TBDY (сейсмические нормы), имеющей отношение к вам","cc.li3":"Отслеживает в реальном времени цены на сталь, арматуру и основные стройматериалы","cc.li4":"Ведёт учёт бюрократических документов в одной панели","cc.cta":"Попробуем этот модуль →","cc.note":"Стоимость озвучивается после совместного знакомства с модулем.",
       "portal.imgAlt":"Дизайн-превью портала компании VERALIQ",
       "results.eyebrow":"РЕЗУЛЬТАТ","results.h2":"Мы продаём результат, а не технологию.",
       "results.li1":"Более быстрый отклик на лиды","results.li2":"Меньше потерянных клиентов","results.li3":"Связь 24/7","results.li4":"Больше сопровождения","results.li5":"Меньше повторяющейся работы","results.li6":"Больше возможностей для продаж","results.li7":"Ниже операционная нагрузка","results.li8":"Более высокий процент закрытия сделок",
@@ -420,7 +424,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● ИИ-ассистент онлайн"
     },
     de: {
-      "nav.workforce":"AI Workforce","nav.modules":"Module","nav.compare":"CRM-Unterschied","nav.channels":"Integration","nav.trust":"Sicherheit","nav.faq":"FAQ","nav.contact":"Kontakt",
+      "nav.workforce":"AI Workforce","nav.modules":"Module","nav.compliance":"Compliance & Kosten","nav.compare":"CRM-Unterschied","nav.channels":"Integration","nav.trust":"Sicherheit","nav.faq":"FAQ","nav.contact":"Kontakt",
       "logo.sub":"Technologie & digitale Vertriebslösungen",
       "lang.switcherLabel":"Sprache wählen",
       "hero.eyebrow":"KI-GESTÜTZTE DIGITALE VERTRIEBSPLATTFORM",
@@ -477,6 +481,7 @@ window.VERALIQ_I18N = {
       "portal.p":"Ihr eigenes Unternehmensportal ist live — unten sehen Sie eine vereinfachte Vorschau der Designsprache. Die echten Bildschirme erreichen Sie über „Firmenanmeldung“.",
       "portal.note":"WAS SIE SEHEN WERDEN",
       "portal.li1":"Projekt- und Portfolioverwaltung auf einem Bildschirm","portal.li2":"Live-Verfolgung von Leads, Terminen und Vertriebspipeline","portal.li3":"Agentenleistung und Gesprächsanalyse","portal.li4":"PDF/Excel-Reporting mit dem Branding Ihres Unternehmens",
+      "cc.eyebrow":"NEU · ENTERPRISE-ZUSATZMODUL","cc.h2":"Lassen Sie sich nicht von Vorschriften, Erdbebennormen oder Materialpreisen überraschen.","cc.p":"Eine Entscheidungshilfe für Ihre Bau- und Immobilienprojekte, die täglich amtliche Vorschriften, Updates der türkischen Erdbebennorm (TBDY) und Stahl-/Betonstahlpreise verfolgt. Sie gibt niemals Anlageberatung oder eine verbindliche Rechtsauskunft — sie macht auf die relevante Vorschrift oder Daten aufmerksam und überlässt die Entscheidung Ihnen.","cc.li1":"Durchsucht täglich das Amtsblatt und Bebauungsvorschriften und markiert, was zu Ihren Projekten passt","cc.li2":"Warnt sofort, wenn ein TBDY-Update (Erdbebennorm) eine relevante Klausel betrifft","cc.li3":"Verfolgt live die Preise für Stahl, Betonstahl und zentrale Baumaterialien","cc.li4":"Behält Ihren bürokratischen Papierkram in einem einzigen Panel im Blick","cc.cta":"Modul ausprobieren →","cc.note":"Die Preisgestaltung besprechen wir, sobald wir das Modul gemeinsam durchgegangen sind.",
       "portal.imgAlt":"Design-Vorschau des VERALIQ-Unternehmensportals",
       "results.eyebrow":"ERGEBNIS","results.h2":"Wir verkaufen Ergebnisse, keine Technologie.",
       "results.li1":"Schnellere Lead-Reaktion","results.li2":"Weniger verlorene Kunden","results.li3":"24/7-Kommunikation","results.li4":"Mehr Nachverfolgung","results.li5":"Weniger sich wiederholende Arbeit","results.li6":"Höhere Verkaufschancen","results.li7":"Geringere Betriebslast","results.li8":"Höhere Abschlussquote",
@@ -521,7 +526,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● Live KI-Vertriebsassistent"
     },
     fa: {
-      "nav.workforce":"AI Workforce","nav.modules":"ماژول‌ها","nav.compare":"تفاوت با CRM","nav.channels":"یکپارچه‌سازی","nav.trust":"امنیت","nav.faq":"سوالات متداول","nav.contact":"تماس با ما",
+      "nav.workforce":"AI Workforce","nav.modules":"ماژول‌ها","nav.compliance":"انطباق و هزینه","nav.compare":"تفاوت با CRM","nav.channels":"یکپارچه‌سازی","nav.trust":"امنیت","nav.faq":"سوالات متداول","nav.contact":"تماس با ما",
       "logo.sub":"فناوری و راهکارهای فروش دیجیتال",
       "lang.switcherLabel":"انتخاب زبان",
       "hero.eyebrow":"پلتفرم فروش دیجیتال مبتنی بر هوش مصنوعی",
@@ -578,6 +583,7 @@ window.VERALIQ_I18N = {
       "portal.p":"پرتال اختصاصی شرکت شما هم‌اکنون فعال است — در زیر پیش‌نمایشی ساده‌شده از زبان طراحی آن را می‌بینید. به صفحات واقعی از طریق «ورود شرکت» دسترسی دارید.",
       "portal.note":"چه چیزی خواهید دید",
       "portal.li1":"مدیریت پروژه و پرتفوی در یک صفحه","portal.li2":"پیگیری زنده سرنخ‌ها، وقت‌های ملاقات و قیف فروش","portal.li3":"عملکرد ایجنت و تحلیل گفتگو","portal.li4":"گزارش‌گیری PDF/Excel با برند شرکت شما",
+      "cc.eyebrow":"جدید · ماژول اضافه سازمانی","cc.h2":"اجازه ندهید مقررات، آیین‌نامه زلزله یا قیمت مصالح شما را غافلگیر کند.","cc.p":"یک لایه پشتیبان تصمیم‌گیری برای پروژه‌های ساختمانی و املاک شما که روزانه مقررات رسمی، به‌روزرسانی‌های آیین‌نامه زلزله ترکیه (TBDY) و قیمت آهن/فولاد را پیگیری می‌کند. هرگز توصیه سرمایه‌گذاری یا نظر حقوقی قطعی نمی‌دهد — فقط توجه شما را به ماده یا داده مرتبط جلب می‌کند و تصمیم را به شما وامی‌گذارد.","cc.li1":"روزنامه رسمی و مقررات شهرسازی را هر روز بررسی کرده و موارد مرتبط با پروژه‌های شما را علامت‌گذاری می‌کند","cc.li2":"به محض به‌روزرسانی ماده‌ای مرتبط در آیین‌نامه زلزله TBDY فوراً هشدار می‌دهد","cc.li3":"قیمت آهن، فولاد و مصالح اصلی ساختمانی را به‌صورت زنده پیگیری می‌کند","cc.li4":"روند اداری کاغذبازی شما را در یک پنل پیگیری می‌کند","cc.cta":"این ماژول را امتحان کنیم ←","cc.note":"قیمت‌گذاری پس از بررسی مشترک ماژول مشخص می‌شود.",
       "portal.imgAlt":"چشم‌انداز طراحی پرتال شرکت VERALIQ",
       "results.eyebrow":"نتیجه","results.h2":"ما نتیجه می‌فروشیم، نه فناوری.",
       "results.li1":"پاسخ‌دهی سریع‌تر به سرنخ‌ها","results.li2":"از دست دادن مشتری کمتر","results.li3":"ارتباط ۲۴/۷","results.li4":"پیگیری بیشتر","results.li5":"کار تکراری کمتر","results.li6":"فرصت فروش بیشتر","results.li7":"بار عملیاتی کمتر","results.li8":"نرخ نهایی‌سازی بالاتر",
@@ -622,7 +628,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● دستیار فروش هوش مصنوعی زنده"
     },
     fr: {
-      "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compare":"Différence CRM","nav.channels":"Intégration","nav.trust":"Sécurité","nav.faq":"FAQ","nav.contact":"Contact",
+      "nav.workforce":"AI Workforce","nav.modules":"Modules","nav.compliance":"Conformité & Coûts","nav.compare":"Différence CRM","nav.channels":"Intégration","nav.trust":"Sécurité","nav.faq":"FAQ","nav.contact":"Contact",
       "logo.sub":"Technologie & Solutions de Vente Digitale",
       "lang.switcherLabel":"Choisir la langue",
       "hero.eyebrow":"PLATEFORME DE VENTE DIGITALE PROPULSÉE PAR L'IA",
@@ -679,6 +685,7 @@ window.VERALIQ_I18N = {
       "portal.p":"Le portail propre à votre entreprise est en ligne — ci-dessous un aperçu simplifié de son langage de design. Accédez aux écrans réels via « Connexion Entreprise ».",
       "portal.note":"CE QUE VOUS VERREZ",
       "portal.li1":"Gestion des projets et du portefeuille sur un seul écran","portal.li2":"Suivi en direct des prospects, rendez-vous et pipeline de vente","portal.li3":"Performance des Agents et analyse des conversations","portal.li4":"Reporting PDF/Excel avec l'image de votre entreprise",
+      "cc.eyebrow":"NOUVEAU · MODULE COMPLÉMENTAIRE ENTREPRISE","cc.h2":"Ne soyez plus surpris par la réglementation, les normes sismiques ou les prix des matériaux.","cc.p":"Une couche d'aide à la décision pour vos projets de construction et d'immobilier qui suit chaque jour la réglementation officielle, les mises à jour de la norme sismique turque (TBDY) et les prix de l'acier/du fer à béton. Elle ne donne jamais de conseil d'investissement ni d'avis juridique définitif — elle attire votre attention sur l'article ou la donnée pertinente et vous laisse la décision.","cc.li1":"Scanne chaque jour le Journal officiel et la réglementation d'urbanisme, en signalant ce qui concerne vos projets","cc.li2":"Vous alerte dès qu'une mise à jour TBDY (norme sismique) touche une clause pertinente","cc.li3":"Suit en direct les prix de l'acier, du fer à béton et des matériaux de construction essentiels","cc.li4":"Centralise le suivi de vos démarches administratives dans un seul panneau","cc.cta":"Essayons ce module →","cc.note":"La tarification est partagée une fois le module passé en revue ensemble.",
       "portal.imgAlt":"Aperçu de design du portail entreprise VERALIQ",
       "results.eyebrow":"RÉSULTAT","results.h2":"Nous vendons des résultats, pas de la technologie.",
       "results.li1":"Réponse plus rapide aux prospects","results.li2":"Moins de clients perdus","results.li3":"Communication 24/7","results.li4":"Plus de relances","results.li5":"Moins de travail répétitif","results.li6":"Plus d'opportunités de vente","results.li7":"Charge opérationnelle réduite","results.li8":"Taux de conclusion plus élevé",
@@ -723,7 +730,7 @@ window.VERALIQ_I18N = {
       "agent.liveBadge":"● Assistant commercial IA en direct"
     },
     es: {
-      "nav.workforce":"AI Workforce","nav.modules":"Módulos","nav.compare":"Diferencia con CRM","nav.channels":"Integración","nav.trust":"Seguridad","nav.faq":"Preguntas","nav.contact":"Contacto",
+      "nav.workforce":"AI Workforce","nav.modules":"Módulos","nav.compliance":"Cumplimiento y Costos","nav.compare":"Diferencia con CRM","nav.channels":"Integración","nav.trust":"Seguridad","nav.faq":"Preguntas","nav.contact":"Contacto",
       "logo.sub":"Tecnología y Soluciones de Venta Digital",
       "lang.switcherLabel":"Elegir idioma",
       "hero.eyebrow":"PLATAFORMA DE VENTAS DIGITALES CON IA",
@@ -780,6 +787,7 @@ window.VERALIQ_I18N = {
       "portal.p":"El portal propio de tu empresa ya está en vivo — abajo tienes una vista previa simplificada de su lenguaje de diseño. Accede a las pantallas reales mediante «Acceso Empresas».",
       "portal.note":"LO QUE VERÁS",
       "portal.li1":"Gestión de proyectos y cartera en una sola pantalla","portal.li2":"Seguimiento en vivo de leads, citas y el embudo de ventas","portal.li3":"Rendimiento de los Agentes y análisis de conversaciones","portal.li4":"Informes en PDF/Excel con la marca de tu empresa",
+      "cc.eyebrow":"NUEVO · MÓDULO ADICIONAL EMPRESARIAL","cc.h2":"Que la normativa, el código sísmico o los precios de los materiales no le tomen por sorpresa.","cc.p":"Una capa de apoyo a la decisión para sus proyectos de construcción e inmobiliarios que rastrea a diario la normativa oficial, las actualizaciones del código sísmico turco (TBDY) y los precios del acero/hierro. Nunca da asesoramiento de inversión ni una opinión legal definitiva — señala el artículo o dato relevante y deja la decisión en sus manos.","cc.li1":"Escanea a diario el Boletín Oficial y la normativa urbanística, marcando lo que coincide con sus proyectos","cc.li2":"Le avisa al instante cuando una actualización del TBDY (código sísmico) afecta una cláusula relevante","cc.li3":"Sigue en vivo los precios del acero, el hierro y los materiales de construcción clave","cc.li4":"Centraliza el seguimiento de sus trámites burocráticos en un solo panel","cc.cta":"Probemos este módulo →","cc.note":"El precio se comparte después de revisar juntos el módulo.",
       "portal.imgAlt":"Vista previa de diseño del portal de empresa VERALIQ",
       "results.eyebrow":"RESULTADO","results.h2":"Vendemos resultados, no tecnología.",
       "results.li1":"Respuesta más rápida a los leads","results.li2":"Menos clientes perdidos","results.li3":"Comunicación 24/7","results.li4":"Más seguimiento","results.li5":"Menos trabajo repetitivo","results.li6":"Mayor oportunidad de venta","results.li7":"Menor carga operativa","results.li8":"Mayor tasa de cierre",
