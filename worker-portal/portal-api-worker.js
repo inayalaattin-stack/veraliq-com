@@ -60,6 +60,17 @@ async function writeAudit(env, { company_id, user_id, action, entity_type, entit
   } catch (e) { /* audit log yazımı başarısız olsa bile ana işlemi engelleme */ }
 }
 
+// Bir şirketin bir ek modülü (addon) satın alıp almadığını kontrol eder —
+// bkz. migrations/0003_contract_risk_lock.sql (company_addons tablosu) ve
+// Compliance & Cost tasarım raporu §12. company_addons'ta satırı olmayan
+// (hiç aktifleştirilmemiş) şirket için de false döner.
+async function hasAddon(env, companyId, addonKey) {
+  const row = await env.DB.prepare(
+    `SELECT active FROM company_addons WHERE company_id = ? AND addon_key = ?`
+  ).bind(companyId, addonKey).first();
+  return !!(row && row.active);
+}
+
 // RBAC GENİŞLEMESİ (2026-08-27, 65 maddelik master promptun RBAC maddesi —
 // Owner/Admin/Manager/Sales Manager/Sales Agent/Viewer). Mevcut üç rol
 // (veraliq_admin/company_owner/company_staff) HİÇBİR ŞEKİLDE DEĞİŞMEDİ —
@@ -1126,6 +1137,123 @@ async function route(request, url, env) {
     return json({ entries: results });
   }
 
+  // ---- MODÜL 8: İÇ SÖZLEŞME & VADE RİSK KİLİDİ ---------------------------
+  // Zero Trust AI: bu route'ların hiçbiri LLM çağırmaz. Üç denetim kuralı
+  // (metraj_uyumsuz, fiyat_kilidi_doldu, odeme_gecikmesi) salt SQL/JS ile
+  // hesaplanır — bkz. tasarım raporu §09. Erişim, company_addons üzerinden
+  // 'contract_risk_lock' addon'unun aktif olmasını gerektirir (ek ücretli
+  // modül, madde §12).
+  if (path === '/api/contracts' && method === 'GET') {
+    // Hassas finansal veri: yalnızca owner+manager (company_staff tier'ının
+    // tamamı DEĞİL — sales_agent/sales_manager/viewer bu uca erişemez).
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    if (!(await hasAddon(env, auth.company_id, 'contract_risk_lock'))) return json({ error: 'addon_not_active' }, 403);
+    const { results } = await env.DB.prepare(
+      `SELECT ic.*, u.unit_no, u.net_area
+       FROM internal_contracts ic JOIN units u ON u.id = ic.unit_id
+       WHERE ic.company_id = ? ORDER BY ic.created_at DESC LIMIT 200`
+    ).bind(auth.company_id).all();
+    return json({ contracts: results });
+  }
+  if (path === '/api/contracts' && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    if (!(await hasAddon(env, auth.company_id, 'contract_risk_lock'))) return json({ error: 'addon_not_active' }, 403);
+    const body = await request.json();
+    if (!body.unit_id || !body.contract_price || !body.price_lock_date || !body.metraj_m2 || !Array.isArray(body.payment_schedule)) {
+      return json({ error: 'missing_fields' }, 400);
+    }
+    const unit = await env.DB.prepare(`SELECT id FROM units WHERE id = ? AND company_id = ?`).bind(body.unit_id, auth.company_id).first();
+    if (!unit) return json({ error: 'unit_not_found' }, 404);
+    const id = generateId('ictr');
+    await env.DB.prepare(
+      `INSERT INTO internal_contracts (id, company_id, unit_id, contract_price, price_lock_date, price_lock_expires_at, payment_schedule, metraj_m2, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+    ).bind(id, auth.company_id, body.unit_id, body.contract_price, body.price_lock_date, body.price_lock_expires_at || null, JSON.stringify(body.payment_schedule), body.metraj_m2).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'contract.create', entity_type: 'internal_contract', entity_id: id, new_value: body, request });
+    return json({ id }, 201);
+  }
+  if (path === '/api/contracts/risk-flags' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    if (!(await hasAddon(env, auth.company_id, 'contract_risk_lock'))) return json({ error: 'addon_not_active' }, 403);
+    const { results } = await env.DB.prepare(
+      `SELECT f.*, ic.unit_id, u.unit_no
+       FROM contract_risk_flags f
+       JOIN internal_contracts ic ON ic.id = f.contract_id
+       JOIN units u ON u.id = ic.unit_id
+       WHERE f.company_id = ? ORDER BY f.created_at DESC LIMIT 200`
+    ).bind(auth.company_id).all();
+    return json({ flags: results });
+  }
+  if (path === '/api/contracts/evaluate-risk' && method === 'POST') {
+    // Üç kuralı da bu şirketin sözleşmelerine karşı çalıştırır, yeni tespit
+    // edilen (aynı tip için hâlâ 'open' bir flag'i olmayan) her sorunu
+    // contract_risk_flags'e yazar. Cron değil — şimdilik elle/portal'dan
+    // "yenile" tetiklemesiyle çalışır (bkz. tasarım raporu §13, Faz 2'de
+    // Cloudflare Cron Trigger'a bağlanabilir).
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    if (!(await hasAddon(env, auth.company_id, 'contract_risk_lock'))) return json({ error: 'addon_not_active' }, 403);
+
+    const { results: contracts } = await env.DB.prepare(
+      `SELECT ic.id, ic.metraj_m2, ic.price_lock_expires_at, ic.payment_schedule, u.net_area
+       FROM internal_contracts ic JOIN units u ON u.id = ic.unit_id WHERE ic.company_id = ?`
+    ).bind(auth.company_id).all();
+
+    async function hasOpenFlag(contractId, flagType) {
+      const row = await env.DB.prepare(
+        `SELECT id FROM contract_risk_flags WHERE contract_id = ? AND flag_type = ? AND status = 'open'`
+      ).bind(contractId, flagType).first();
+      return !!row;
+    }
+    async function raiseFlag(contractId, flagType, severity, detail) {
+      if (await hasOpenFlag(contractId, flagType)) return false;
+      await env.DB.prepare(
+        `INSERT INTO contract_risk_flags (id, company_id, contract_id, flag_type, severity, detail, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'open', datetime('now'))`
+      ).bind(generateId('crf'), auth.company_id, contractId, flagType, severity, detail).run();
+      return true;
+    }
+
+    const now = new Date();
+    let flagsCreated = 0;
+    for (const c of contracts) {
+      // Kural 1 — metraj_uyumsuz: sözleşmedeki m2, envanterdeki net_area'dan farklı.
+      if (c.net_area != null && Number(c.metraj_m2) !== Number(c.net_area)) {
+        if (await raiseFlag(c.id, 'metraj_uyumsuz', 'kritik', `Sözleşmede ${c.metraj_m2} m², envanterde ${c.net_area} m² kayıtlı.`)) flagsCreated++;
+      }
+      // Kural 2 — fiyat_kilidi_doldu: vade geçti ve son taksit ödenmemiş.
+      let schedule = [];
+      try { schedule = JSON.parse(c.payment_schedule || '[]'); } catch { schedule = []; }
+      const lastInstallment = schedule[schedule.length - 1];
+      const finalPaid = lastInstallment ? !!lastInstallment.paid : false;
+      if (c.price_lock_expires_at && new Date(c.price_lock_expires_at) < now && !finalPaid) {
+        if (await raiseFlag(c.id, 'fiyat_kilidi_doldu', 'dikkat', `Fiyat kilidi ${c.price_lock_expires_at} tarihinde doldu, final ödeme henüz alınmadı.`)) flagsCreated++;
+      }
+      // Kural 3 — odeme_gecikmesi: vadesi geçmiş, ödenmemiş taksit var.
+      const overdue = schedule.filter(p => p && p.due_at && !p.paid && new Date(p.due_at) < now);
+      if (overdue.length > 0) {
+        const severity = overdue.some(p => (now - new Date(p.due_at)) > 30 * 24 * 60 * 60 * 1000) ? 'kritik' : 'dikkat';
+        if (await raiseFlag(c.id, 'odeme_gecikmesi', severity, `${overdue.length} taksit vadesi geçti, ödeme kaydı yok.`)) flagsCreated++;
+      }
+    }
+    return json({ evaluated: contracts.length, flags_created: flagsCreated });
+  }
+  if ((m = path.match(/^\/api\/contracts\/risk-flags\/([^/]+)\/resolve$/)) && method === 'POST') {
+    // Onaylama/karar niteliğinde bir aksiyon — approvals/:id/decide ile aynı
+    // gerekçeyle sales_agent/viewer değil, yalnızca owner+manager.
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const flagId = m[1];
+    const flag = await env.DB.prepare(`SELECT id FROM contract_risk_flags WHERE id = ? AND company_id = ?`).bind(flagId, auth.company_id).first();
+    if (!flag) return json({ error: 'not_found' }, 404);
+    await env.DB.prepare(`UPDATE contract_risk_flags SET status = 'resolved' WHERE id = ?`).bind(flagId).run();
+    await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'contract_risk_flag.resolve', entity_type: 'contract_risk_flag', entity_id: flagId, request });
+    return json({ ok: true });
+  }
+
   // ---- ADMIN: platform-genelinde ekranlar (madde 45) ---------------------
   if (path === '/api/admin/users' && method === 'GET') {
     const auth = await requireAuth(request, env, ['veraliq_admin']);
@@ -1171,6 +1299,27 @@ async function route(request, url, env) {
       ai_agent_presentations: aiPres.n, human_agent_presentations: humanPres.n,
       plans: planRows.results,
     });
+  }
+
+  // Ek modül (addon) aktifleştirme — yalnızca veraliq_admin. Bir şirket
+  // ₺7.500+KDV paketini satın aldığında bu uçla ilgili addon_key'ler
+  // aktifleştirilir; şirketin kendisi bunu kendi başına açamaz (upsell
+  // kontrolü VERALIQ tarafında kalır, bkz. tasarım raporu §12).
+  if ((m = path.match(/^\/api\/admin\/companies\/([^/]+)\/addons$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    const companyId = m[1];
+    const body = await request.json();
+    if (!body.addon_key) return json({ error: 'missing_fields' }, 400);
+    const company = await env.DB.prepare(`SELECT id FROM companies WHERE id = ?`).bind(companyId).first();
+    if (!company) return json({ error: 'company_not_found' }, 404);
+    const active = body.active === false ? 0 : 1;
+    await env.DB.prepare(
+      `INSERT INTO company_addons (company_id, addon_key, active, activated_at) VALUES (?, ?, ?, datetime('now'))
+       ON CONFLICT(company_id, addon_key) DO UPDATE SET active = excluded.active, activated_at = excluded.activated_at`
+    ).bind(companyId, body.addon_key, active).run();
+    await writeAudit(env, { company_id: companyId, user_id: auth.sub, action: 'addon.toggle', entity_type: 'company_addon', entity_id: body.addon_key, new_value: { active: !!active }, request });
+    return json({ ok: true });
   }
 
   if (path === '/api/admin/assistant/query' && method === 'POST') {
