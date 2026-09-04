@@ -46,6 +46,13 @@ export const AGENT_PROVIDER_CONFIG = {
   // hard-coded secret, and nothing in this repo should silently point at a
   // stranger's server if it's left empty.
   selfHostedBaseUrl: '',
+
+  // Separate from selfHostedBaseUrl on purpose: the LLM proxy (worker-llm/,
+  // holding ANTHROPIC_API_KEY/OPENAI_API_KEY server-side — see
+  // anthropic-provider.js's header comment) is a small Cloudflare Worker,
+  // not your GPU machine. Using one shared URL for both would break the
+  // moment avatar/tts/stt point at a GPU server while llm points at Claude.
+  llmBaseUrl: '',
 };
 
 const LOADERS = {
@@ -109,7 +116,7 @@ export async function createProviders(overrides) {
     avatar: new AvatarCls({ baseUrl: cfg.selfHostedBaseUrl }),
     tts: new TTSCls({ baseUrl: cfg.selfHostedBaseUrl }),
     stt: new STTCls({ baseUrl: cfg.selfHostedBaseUrl }),
-    llm: new LLMCls({ baseUrl: cfg.selfHostedBaseUrl }),
+    llm: new LLMCls({ baseUrl: cfg.llmBaseUrl }),
     config: cfg,
   };
 }

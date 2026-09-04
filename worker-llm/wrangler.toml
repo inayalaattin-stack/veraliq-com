@@ -1,0 +1,14 @@
+name = "veraliq-llm"
+main = "llm-worker.js"
+compatibility_date = "2026-08-01"
+
+# Required secret (set via `wrangler secret put ANTHROPIC_API_KEY` from this
+# folder, or the Cloudflare dashboard -> Workers & Pages -> veraliq-llm ->
+# Settings -> Variables and Secrets): an Anthropic API key
+# (https://console.anthropic.com/settings/keys).
+#
+# This worker deliberately has no bindings (no KV/D1/R2) -- it does exactly
+# one thing: hold ANTHROPIC_API_KEY server-side and proxy chat turns to
+# Claude, so the key is never shipped to the browser. See
+# agent-core/llm-providers/anthropic-provider.js's header comment and
+# docs/SELF_HOSTED_DEPLOYMENT.md step 5 for how the frontend points at this.
