@@ -47,7 +47,9 @@ CREATE INDEX IF NOT EXISTS idx_contract_risk_flags_contract ON contract_risk_fla
 
 CREATE TABLE IF NOT EXISTS company_addons (
   company_id    TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  addon_key     TEXT NOT NULL,   -- 'compliance_cost' | 'punch_list' | 'title_bureaucracy' | 'contract_risk_lock' | 'market_intel'
+  addon_key     TEXT NOT NULL,   -- 'compliance_cost' | 'punch_list' | 'contract_risk_lock'
+                                  -- ('title_bureaucracy' ve 'market_intel' kasıtlı olarak yok — hukuki risk
+                                  -- gerekçesiyle 04.09.2026'da tamamen iptal edildi, bkz. tasarım raporu §08/§10)
   active        INTEGER NOT NULL DEFAULT 1,
   activated_at  TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (company_id, addon_key)
