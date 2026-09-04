@@ -80,6 +80,9 @@ export async function initAgentWidget(opts) {
     joinGate: document.getElementById('agentJoinGate'),
     joinBtn: document.getElementById('agentJoinBtn'),
     captions: document.getElementById('agentCaptions'),
+    stage: document.getElementById('agentStage'),
+    textForm: document.getElementById('agentTextForm'),
+    textInput: document.getElementById('agentTextInput'),
   };
 
   if (!els.win || !els.video) return null;
@@ -95,6 +98,11 @@ export async function initAgentWidget(opts) {
   let intentionalClose = false;
   let reconnectAttempts = 0;
   let reconnectTimer = null;
+  // Video avatarı (Spatius/Anam/vb.) bağlanamadığında (kota bitti, hesap
+  // askıda, ...) enableTextModeFallback() bir kez devreye girer ve true
+  // olur — initAgent() bir daha video yoluna dönmeyi denemez, sayfa
+  // yenilenene kadar metin sohbette kalır. Bkz. o fonksiyonun başındaki not.
+  let textModeActive = false;
 
   function setWindowState(state) {
     els.win.hidden = false;
@@ -272,6 +280,7 @@ export async function initAgentWidget(opts) {
   }
 
   async function initAgent() {
+    if (textModeActive) return; // bkz. enableTextModeFallback() — sayfa yenilenene kadar video yoluna dönmüyoruz
     if (orchestrator) { try { await orchestrator.stop(); } catch (e) {} orchestrator = null; }
     try { els.video.srcObject = null; } catch (e) {}
     els.micBlocked.hidden = true;
@@ -320,8 +329,78 @@ export async function initAgentWidget(opts) {
       await orchestrator.start();
       markLive(true);
     } catch (err) {
-      onOrchestratorError(err);
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[VeraliqAgent] video avatar failed, falling back to text mode:', err);
+      }
+      var fellBack = await enableTextModeFallback();
+      if (!fellBack) onOrchestratorError(err);
     }
+  }
+
+  // Video avatarı (Spatius/Anam/vb.) bağlanamadığında devreye giren yedek:
+  // aynı orchestrator/STT/LLM/TTS hattı, sadece görsel avatar yerine
+  // MockAvatarProvider'ın <video>'ya HİÇ bağlanmayan sessiz sürümü + bir
+  // yazı kutusu (bkz. index.html #agentTextForm, _handleCustomerUtterance
+  // orchestrator.js'de zaten mevcut — burada doğrudan çağrılıyor, tıpkı
+  // STT'nin onFinal callback'inin yaptığı gibi). Video avatarın kendisi
+  // hiç DENENMİYOR (MockAvatarProvider.connect() çağrılmıyor) — bu yüzden
+  // ekranda hiçbir zaman "MOCK MODE" filigranı görünmez, sadece metin.
+  async function enableTextModeFallback() {
+    try {
+      var providers = await createProviders(Object.assign({}, PROVIDER_OVERRIDES, { avatarProvider: 'mock' }));
+      // Kasıtlı olarak avatar.init()/.connect() ÇAĞRILMIYOR — video hiç
+      // başlamasın diye. Orchestrator'ın avatar.setEmotion()/.speak()/.on()
+      // çağırdığı yerler MockAvatarProvider'da güvenli no-op'lardır.
+      fsm = new ConversationStateMachine();
+      orchestrator = new AgentOrchestrator({
+        providers: providers,
+        stateMachine: fsm,
+        agentIdentity: AGENT_IDENTITY,
+        lang: I18N.getLang(),
+        onError: function (e) { if (typeof console !== 'undefined' && console.warn) console.warn('[VeraliqAgent] text-mode error:', e); },
+        onTranscript: addCaption,
+        autoListen: false,
+      });
+      // orchestrator.start() normalde avatar.connect()'i çağırır — Mock için
+      // bu zararsız (canvas oluşturur ama hiçbir <video>'ya bağlanmaz, bkz.
+      // yukarıdaki not: videoEl/bubbleVideoEl hiç set edilmediği için
+      // connect() içindeki `if (this._videoEl)` bloğu çalışmaz).
+      await orchestrator.start();
+
+      textModeActive = true;
+      els.stage.classList.add('text-mode');
+      els.loading.classList.add('hide');
+      els.micBlocked.hidden = true;
+      els.textForm.hidden = false;
+      markLive(true);
+      hideJoinGate(); // markLive(true) çağırdığı showJoinGate()'i geçersiz kılar — CSS .text-mode zaten gizliyor ama JS tarafını da tutarlı tutuyoruz
+      return true;
+    } catch (err2) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[VeraliqAgent] text-mode fallback also failed:', err2);
+      }
+      return false;
+    }
+  }
+
+  if (els.textForm) {
+    els.textForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = (els.textInput.value || '').trim();
+      if (!text || !orchestrator) return;
+      els.textInput.value = '';
+      // Ses akışında SPEAKING'den THINKING'e geçiş STT'nin barge-in'i
+      // üzerinden oluyor (_handleBargeIn: SPEAKING -> INTERRUPTED ->
+      // LISTENING). Yazı kutusu STT'yi hiç kullanmadığı için (özellikle
+      // açılış karşılamasından hemen sonra) aynı geçişi burada elle
+      // tetiklemezsek fsm.transition(THINKING) sessizce reddedilip mesaj
+      // hiç yanıtlanmaz. _handleBargeIn zaten var olan, test edilmiş
+      // geçişi kullanıyor — burada yeniden icat etmiyoruz.
+      if (fsm && fsm.state === AgentState.SPEAKING && typeof orchestrator._handleBargeIn === 'function') {
+        orchestrator._handleBargeIn();
+      }
+      orchestrator._handleCustomerUtterance(text);
+    });
   }
 
   document.addEventListener('visibilitychange', function () {

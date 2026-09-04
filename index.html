@@ -613,6 +613,39 @@
   }
   @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
 
+  /* Metin sohbet yedeği (video avatar bağlanamadığında) — bkz.
+     widget-runtime.js enableTextModeFallback(). Video/join-gate/mic-blocked
+     gizlenir, altyazı alanı (.agent-captions) tüm sahneyi kaplayan gerçek
+     bir mesaj listesine dönüşür, altına bir yazı kutusu eklenir. */
+  .agent-stage.text-mode .agent-video,
+  .agent-stage.text-mode .agent-join-gate,
+  .agent-stage.text-mode .agent-mic-blocked,
+  .agent-stage.text-mode .agent-indicator{ display:none; }
+  .agent-stage.text-mode{ background:#0B1220; }
+  .agent-stage.text-mode .agent-captions{
+    position:absolute; inset:0 0 52px 0; max-height:none;
+    background:none; padding:16px 12px 8px;
+  }
+  .agent-text-form{
+    position:absolute; left:0; right:0; bottom:0; z-index:3;
+    display:flex; gap:8px; padding:10px 12px;
+    background:#0B1220; border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .agent-text-form[hidden]{ display:none; }
+  .agent-text-input{
+    flex:1; min-width:0; padding:10px 12px; border-radius:999px;
+    border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);
+    color:#F5EEDD; font-family:'Inter',sans-serif; font-size:13px;
+  }
+  .agent-text-input:focus{ outline:none; border-color:var(--accent); }
+  .agent-text-input::placeholder{ color:rgba(245,238,221,0.4); }
+  .agent-text-send{
+    width:38px; height:38px; flex-shrink:0; border-radius:50%; border:none;
+    background:var(--accent); color:var(--accent-ink); font-size:15px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .agent-text-send:hover{ background:var(--accent-text); }
+
   /* "● CANLI AI SATIŞ ASİSTANI" badge (design system §7) — purely CSS-driven
      off :has(), no widget.js change needed: shows only once agentStatusDot
      actually carries the .live class (i.e. the agent is really connected),
@@ -1198,7 +1231,7 @@
       <button type="button" class="agent-btn agent-btn-close" id="agentCloseBtn" data-i18n-title="agent.closeTitle" data-i18n-aria="agent.closeTitle" title="Kapat" aria-label="Kapat">✕</button>
     </div>
   </div>
-  <div class="agent-stage">
+  <div class="agent-stage" id="agentStage">
     <video id="agentVideo" class="agent-video" autoplay playsinline></video>
     <div class="agent-live-badge" data-i18n="agent.liveBadge">● CANLI AI SATIŞ ASİSTANI</div>
     <div class="agent-loading" id="agentLoading">
@@ -1217,6 +1250,13 @@
       </button>
       <div class="agent-join-hint" data-i18n="agent.joinHint">Mikrofonunuzu kullanmak için tıklayın</div>
     </div>
+    <!-- Video avatarı bağlanamadığında (bkz. widget-runtime.js
+         enableTextModeFallback) devreye giren metin sohbet yedeği —
+         .agent-stage.text-mode altında video/join-gate yerine gösterilir. -->
+    <form class="agent-text-form" id="agentTextForm" hidden>
+      <input type="text" id="agentTextInput" class="agent-text-input" autocomplete="off" data-i18n-placeholder="agent.textPlaceholder" placeholder="Mesajınızı yazın…">
+      <button type="submit" class="agent-text-send" data-i18n-aria="agent.textSend" aria-label="Gönder">➤</button>
+    </form>
   </div>
 </div>
 

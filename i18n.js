@@ -112,7 +112,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"VERALIQ AI Agent","agent.halfTitle":"Yarım ekran","agent.fullTitle":"Tam ekran","agent.minTitle":"Küçült","agent.closeTitle":"Kapat",
       "agent.loadingText":"Agent hazırlanıyor…",
       "agent.micBlocked":"Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz.",
-      "agent.joinBtn":"Görüşmeye Katıl","agent.joinHint":"Mikrofonunuzu kullanmak için tıklayın",
+      "agent.joinBtn":"Görüşmeye Katıl","agent.joinHint":"Mikrofonunuzu kullanmak için tıklayın","agent.textPlaceholder":"Mesajınızı yazın…","agent.textSend":"Gönder",
       "agent.bubbleAria":"Elif Kaya'yı genişlet","agent.reopenBtn":"Agent'ı Aç",
       "agent.reconnecting":"Bağlantı yeniden kuruluyor…","agent.unavailable":"Agent şu anda bağlanamıyor.",
       "agent.liveBadge":"● Canlı AI Satış Asistanı"
@@ -214,7 +214,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"VERALIQ AI Agent","agent.halfTitle":"Half screen","agent.fullTitle":"Full screen","agent.minTitle":"Minimize","agent.closeTitle":"Close",
       "agent.loadingText":"Preparing the Agent…",
       "agent.micBlocked":"Microphone access was denied. Elif Kaya can't hear you — enable microphone access in your browser settings and refresh the page. You can also continue by typing.",
-      "agent.joinBtn":"Join the Conversation","agent.joinHint":"Tap to use your microphone",
+      "agent.joinBtn":"Join the Conversation","agent.joinHint":"Tap to use your microphone","agent.textPlaceholder":"Type your message…","agent.textSend":"Send",
       "agent.bubbleAria":"Expand Elif Kaya","agent.reopenBtn":"Open Agent",
       "agent.reconnecting":"Reconnecting…","agent.unavailable":"The Agent is unavailable right now.",
       "agent.liveBadge":"● Live AI Sales Agent"
@@ -316,7 +316,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"وكيل VERALIQ بالذكاء الاصطناعي","agent.halfTitle":"نصف الشاشة","agent.fullTitle":"ملء الشاشة","agent.minTitle":"تصغير","agent.closeTitle":"إغلاق",
       "agent.loadingText":"جارٍ تجهيز الوكيل…",
       "agent.micBlocked":"لم يتم منح إذن الميكروفون. لا تستطيع إيليف كايا سماعك — فعّل إذن الميكروفون من إعدادات المتصفح وأعد تحميل الصفحة. يمكنك أيضاً المتابعة بالكتابة.",
-      "agent.joinBtn":"انضم إلى المحادثة","agent.joinHint":"اضغط لاستخدام الميكروفون",
+      "agent.joinBtn":"انضم إلى المحادثة","agent.joinHint":"اضغط لاستخدام الميكروفون","agent.textPlaceholder":"اكتب رسالتك…","agent.textSend":"إرسال",
       "agent.bubbleAria":"توسيع إيليف كايا","agent.reopenBtn":"فتح الوكيل",
       "agent.reconnecting":"جارٍ إعادة الاتصال…","agent.unavailable":"الوكيل غير متاح حالياً.",
       "agent.liveBadge":"● مساعد مبيعات ذكاء اصطناعي مباشر"
@@ -418,7 +418,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"ИИ-агент VERALIQ","agent.halfTitle":"Половина экрана","agent.fullTitle":"Во весь экран","agent.minTitle":"Свернуть","agent.closeTitle":"Закрыть",
       "agent.loadingText":"Подготовка агента…",
       "agent.micBlocked":"Доступ к микрофону не предоставлен. Элиф Кая вас не слышит — включите доступ к микрофону в настройках браузера и обновите страницу. Вы также можете продолжить, печатая текст.",
-      "agent.joinBtn":"Присоединиться к разговору","agent.joinHint":"Нажмите, чтобы включить микрофон",
+      "agent.joinBtn":"Присоединиться к разговору","agent.joinHint":"Нажмите, чтобы включить микрофон","agent.textPlaceholder":"Введите сообщение…","agent.textSend":"Отправить",
       "agent.bubbleAria":"Развернуть Элиф Кая","agent.reopenBtn":"Открыть агента",
       "agent.reconnecting":"Переподключение…","agent.unavailable":"Агент сейчас недоступен.",
       "agent.liveBadge":"● ИИ-ассистент онлайн"
@@ -520,7 +520,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"VERALIQ KI-Agent","agent.halfTitle":"Halber Bildschirm","agent.fullTitle":"Vollbild","agent.minTitle":"Minimieren","agent.closeTitle":"Schließen",
       "agent.loadingText":"Agent wird vorbereitet…",
       "agent.micBlocked":"Mikrofonzugriff wurde verweigert. Elif Kaya kann Sie nicht hören — aktivieren Sie den Mikrofonzugriff in Ihren Browsereinstellungen und laden Sie die Seite neu. Sie können auch per Texteingabe fortfahren.",
-      "agent.joinBtn":"Am Gespräch teilnehmen","agent.joinHint":"Tippen, um Ihr Mikrofon zu verwenden",
+      "agent.joinBtn":"Am Gespräch teilnehmen","agent.joinHint":"Tippen, um Ihr Mikrofon zu verwenden","agent.textPlaceholder":"Nachricht eingeben…","agent.textSend":"Senden",
       "agent.bubbleAria":"Elif Kaya erweitern","agent.reopenBtn":"Agent öffnen",
       "agent.reconnecting":"Verbindung wird wiederhergestellt…","agent.unavailable":"Der Agent ist derzeit nicht erreichbar.",
       "agent.liveBadge":"● Live KI-Vertriebsassistent"
@@ -622,7 +622,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"ایجنت هوش مصنوعی VERALIQ","agent.halfTitle":"نیمه صفحه","agent.fullTitle":"تمام صفحه","agent.minTitle":"کوچک کردن","agent.closeTitle":"بستن",
       "agent.loadingText":"در حال آماده‌سازی ایجنت…",
       "agent.micBlocked":"دسترسی میکروفون داده نشده است. الیف کایا صدای شما را نمی‌شنود — دسترسی میکروفون را در تنظیمات مرورگر فعال کرده و صفحه را رفرش کنید. می‌توانید با تایپ کردن نیز ادامه دهید.",
-      "agent.joinBtn":"به گفتگو بپیوندید","agent.joinHint":"برای استفاده از میکروفون ضربه بزنید",
+      "agent.joinBtn":"به گفتگو بپیوندید","agent.joinHint":"برای استفاده از میکروفون ضربه بزنید","agent.textPlaceholder":"پیام خود را بنویسید…","agent.textSend":"ارسال",
       "agent.bubbleAria":"بزرگ کردن الیف کایا","agent.reopenBtn":"باز کردن ایجنت",
       "agent.reconnecting":"در حال اتصال مجدد…","agent.unavailable":"ایجنت در حال حاضر در دسترس نیست.",
       "agent.liveBadge":"● دستیار فروش هوش مصنوعی زنده"
@@ -724,7 +724,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"Agent IA VERALIQ","agent.halfTitle":"Demi-écran","agent.fullTitle":"Plein écran","agent.minTitle":"Réduire","agent.closeTitle":"Fermer",
       "agent.loadingText":"Préparation de l'Agent…",
       "agent.micBlocked":"L'accès au microphone a été refusé. Elif Kaya ne peut pas vous entendre — activez l'accès au microphone dans les réglages de votre navigateur et actualisez la page. Vous pouvez aussi continuer en écrivant.",
-      "agent.joinBtn":"Rejoindre la conversation","agent.joinHint":"Appuyez pour utiliser votre microphone",
+      "agent.joinBtn":"Rejoindre la conversation","agent.joinHint":"Appuyez pour utiliser votre microphone","agent.textPlaceholder":"Écrivez votre message…","agent.textSend":"Envoyer",
       "agent.bubbleAria":"Agrandir Elif Kaya","agent.reopenBtn":"Ouvrir l'Agent",
       "agent.reconnecting":"Reconnexion en cours…","agent.unavailable":"L'Agent est actuellement indisponible.",
       "agent.liveBadge":"● Assistant commercial IA en direct"
@@ -826,7 +826,7 @@ window.VERALIQ_I18N = {
       "agent.roleLabel":"Agente de IA VERALIQ","agent.halfTitle":"Media pantalla","agent.fullTitle":"Pantalla completa","agent.minTitle":"Minimizar","agent.closeTitle":"Cerrar",
       "agent.loadingText":"Preparando al Agente…",
       "agent.micBlocked":"No se concedió acceso al micrófono. Elif Kaya no puede oírte — habilita el acceso al micrófono en la configuración de tu navegador y actualiza la página. También puedes continuar escribiendo.",
-      "agent.joinBtn":"Unirse a la conversación","agent.joinHint":"Toca para usar tu micrófono",
+      "agent.joinBtn":"Unirse a la conversación","agent.joinHint":"Toca para usar tu micrófono","agent.textPlaceholder":"Escribe tu mensaje…","agent.textSend":"Enviar",
       "agent.bubbleAria":"Expandir a Elif Kaya","agent.reopenBtn":"Abrir Agente",
       "agent.reconnecting":"Reconectando…","agent.unavailable":"El Agente no está disponible en este momento.",
       "agent.liveBadge":"● Asistente de ventas IA en vivo"
