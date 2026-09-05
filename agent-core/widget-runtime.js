@@ -26,6 +26,7 @@ import { createProviders } from './config.js';
 import { ConversationStateMachine, AgentState } from './state-machine.js';
 import { AgentOrchestrator } from './orchestrator.js';
 import { ConversationLogger } from './conversation-logger.js';
+import { isProviderBlocked } from './avatar-pool/free-tier-guard.js';
 
 // index.html loads i18n.js (window.VeraliqI18N) for its 8-language site chrome.
 // Internal panels (admin.html, portal.html) are Turkish-only today and do NOT
@@ -289,6 +290,17 @@ export async function initAgentWidget(opts) {
 
     try {
       var providers = await createProviders(PROVIDER_OVERRIDES);
+      // GERÇEK CANLI BUG (2026-09-06): free-tier-guard.js bir provider'ı
+      // PAYMENT_REQUIRED olarak işaretlediğinde (ör. Spatius "insufficient
+      // credits" dediğinde) bu kontrol olmadan initAgent() onu SESSİZCE
+      // yeniden deniyordu — her reconnect aynı hatayla başarısız oluyor,
+      // greet() her seferinde yeni bir karşılama mesajı ekliyor ve sonuç
+      // sonsuz bir "Bağlantı yeniden kuruluyor" + üst üste yığılan tekrarlı
+      // mesaj döngüsü oluyordu. Bloklu bir provider'ı denemeden ATLA, metin
+      // sohbet yedeğine düş (aşağıdaki catch bloğu zaten bunu yapıyor).
+      if (isProviderBlocked(providers.config.avatarProvider)) {
+        throw new Error('avatar_provider_blocked:' + providers.config.avatarProvider);
+      }
       await providers.avatar.init({ videoEl: els.video, bubbleVideoEl: els.bubbleVideo, agentIdentity: AGENT_IDENTITY });
 
       providers.avatar.on('live', function () { markLive(true); });
@@ -347,6 +359,11 @@ export async function initAgentWidget(opts) {
   // ekranda hiçbir zaman "MOCK MODE" filigranı görünmez, sadece metin.
   async function enableTextModeFallback() {
     try {
+      // Video avatar denemeleri sırasında (bloklanmadan önceki son deneme
+      // dahil) eklenmiş olabilecek karşılama mesajlarını temizle — yazı
+      // moduna TEMİZ bir karşılamayla giriyoruz, üst üste yığılmış tekrarlı
+      // mesajlarla değil (bkz. yukarıdaki initAgent() notu).
+      if (els.captions) { els.captions.innerHTML = ''; els.captions.hidden = true; }
       var providers = await createProviders(Object.assign({}, PROVIDER_OVERRIDES, { avatarProvider: 'mock' }));
       // Kasıtlı olarak avatar.init()/.connect() ÇAĞRILMIYOR — video hiç
       // başlamasın diye. Orchestrator'ın avatar.setEmotion()/.speak()/.on()

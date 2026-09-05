@@ -63,6 +63,26 @@ export function isProviderUsable(status) {
   return status === PROVIDER_STATUS.FREE_AVAILABLE;
 }
 
+// Bir provider bir kez PAYMENT_REQUIRED sinyali verdiğinde bu sayfa
+// oturumu boyunca (tam sayfa yenilemesine kadar) bir daha DENENMEZ.
+// GERÇEK CANLI BUG (2026-09-06): refusePaymentPrompt() öncesinde sadece
+// console.warn ATIYORDU ve çağıran kodu durdurmuyordu — widget-runtime.js
+// her reconnect'te spatius'u yeniden deniyor, spatius her seferinde aynı
+// "insufficient credits" hatasını veriyor, bu da sonsuz bir "Bağlantı
+// yeniden kuruluyor" döngüsüne ve (her denemede greet() tekrar çağrıldığı
+// için) üst üste yığılan tekrarlı karşılama mesajlarına yol açıyordu.
+// Router (avatar-router.js) hâlâ yok, ama bu tek satırlık kara liste asıl
+// zararı (aynı bozuk provider'a sonsuz tekrar bağlanma) önlüyor.
+const blockedProviders = new Set();
+
+/**
+ * @param {string} providerName
+ * @returns {boolean} true ise bu provider bu oturumda bir daha denenmemeli.
+ */
+export function isProviderBlocked(providerName) {
+  return blockedProviders.has(providerName);
+}
+
 /**
  * Bir provider entegrasyonu, kod akışının herhangi bir noktasında bir
  * ödeme ekranı / "Upgrade" isteği / kredi kartı formu / otomatik ödeme
@@ -73,11 +93,12 @@ export function isProviderUsable(status) {
  * @param {string} reason - örn. "credit_card_form_detected", "upgrade_prompt"
  */
 export function refusePaymentPrompt(providerName, reason) {
+  blockedProviders.add(providerName);
   if (typeof console !== 'undefined' && console.warn) {
     console.warn(
       '[FreeTierGuard] ' + providerName + ' ödeme/upgrade istedi (' + reason + ') — ' +
-      'PAYMENTS_ENABLED=false olduğu için bu provider KULLANILMAYACAK. Sıradaki ücretsiz ' +
-      'provider\'a geçilmeli.'
+      'PAYMENTS_ENABLED=false olduğu için bu provider bu oturumda BİR DAHA DENENMEYECEK. ' +
+      'Sıradaki ücretsiz provider\'a (metin sohbet yedeği) geçilmeli.'
     );
   }
   return PROVIDER_STATUS.PAYMENT_REQUIRED;
