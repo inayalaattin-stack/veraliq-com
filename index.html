@@ -505,11 +505,11 @@
     cursor:grab;user-select:none;flex-shrink:0;
   }
   .agent-header.grabbing{cursor:grabbing;}
-  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;}
+  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;}
   .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
   .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
-  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;}
-  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;flex-shrink:0;}
+  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1;}
   .agent-controls{display:flex;gap:4px;flex-shrink:0;}
   .agent-btn{
     width:26px;height:26px;border-radius:6px;border:none;
@@ -521,7 +521,16 @@
   .agent-btn-close:hover{background:rgba(217,58,64,0.25);color:#ff9098;}
 
   .agent-stage{position:relative;flex:1;min-height:0;background:#050810;}
-  .agent-video{width:100%;height:100%;object-fit:cover;display:block;background:#050810;}
+  .agent-video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block;background:transparent;}
+  /* GEÇİCİ avatar görseli (İmparator isteği, 2026-09-06): gerçek video avatar
+     (Spatius kota bitti / anam.ai henüz yok) bağlanana kadar, avatarın hiç
+     yüzü olmayan siyah kutu/boş video yerine gerçek bir kişi görünsün diye.
+     Video şeffaf olduğundan (üstteki background:transparent) canlı yayın
+     geldiğinde bu görsel otomatik olarak video karelerinin ALTINDA kalır —
+     ekstra JS state gerekmez. Gerçek avatar (anam.ai vb.) devreye girdiğinde
+     bu <img> etiketini kaldırmak yeterli olacak. */
+  .agent-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
+  .agent-stage.text-mode .agent-avatar-static{opacity:0.16;filter:saturate(0.7);}
   .agent-loading{
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:14px;background:#0B1220;transition:opacity .3s ease;
@@ -681,7 +690,8 @@
   .agent-bubble[data-corner="bl"]{left:20px;bottom:20px;}
   .agent-bubble[data-corner="tr"]{right:20px;top:88px;}
   .agent-bubble[data-corner="tl"]{left:20px;top:88px;}
-  .agent-bubble-video{width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
   .agent-bubble-dot{
     position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;
     background:#5B6479;border:2px solid #0B1220;
@@ -1290,6 +1300,7 @@
   </div>
   <div class="agent-stage" id="agentStage">
     <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <img class="agent-avatar-static" src="assets/elif-kaya-temp.jpg" alt="" aria-hidden="true">
     <div class="agent-live-badge" data-i18n="agent.liveBadge">● CANLI AI SATIŞ ASİSTANI</div>
     <div class="agent-loading" id="agentLoading">
       <div class="agent-spinner"></div>
@@ -1320,6 +1331,7 @@
 <!-- Küçültülmüş hâl: köşede küçük, sitenin tamamı görünür kalır -->
 <button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden data-i18n-aria="agent.bubbleAria" aria-label="Elif Kaya'yı genişlet">
   <video id="agentBubbleVideo" class="agent-bubble-video" autoplay playsinline muted></video>
+  <img class="agent-bubble-avatar-static" src="assets/elif-kaya-temp.jpg" alt="" aria-hidden="true">
   <span class="agent-bubble-dot" id="agentBubbleDot"></span>
 </button>
 

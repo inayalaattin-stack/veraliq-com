@@ -138,17 +138,20 @@
   .agent-window[data-state="fullscreen"]{top:0;right:0;left:0;bottom:0;width:100vw;height:100vh;height:100dvh;border-radius:0;z-index:1600;}
   .agent-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);cursor:grab;user-select:none;flex-shrink:0;}
   .agent-header.grabbing{cursor:grabbing;}
-  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;}
+  .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;}
   .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
   .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
-  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;}
-  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1;}
   .agent-controls{display:flex;gap:4px;flex-shrink:0;}
   .agent-btn{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:#C6CCDB;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;}
   .agent-btn:hover{background:rgba(255,255,255,0.10);color:#fff;}
   .agent-btn-close:hover{background:rgba(217,58,64,0.25);color:#ff9098;}
   .agent-stage{position:relative;flex:1;min-height:0;background:#050810;}
-  .agent-video{width:100%;height:100%;object-fit:cover;display:block;background:#050810;}
+  .agent-video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block;background:transparent;}
+  /* GEÇİCİ avatar görseli — bkz. index.html'deki aynı not (2026-09-06). */
+  .agent-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
+  .agent-stage.text-mode .agent-avatar-static{opacity:0.16;filter:saturate(0.7);}
   .agent-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0B1220;transition:opacity .3s ease;}
   .agent-loading.hide{opacity:0;pointer-events:none;}
   .agent-spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--accent);animation:agent-spin 0.85s linear infinite;}
@@ -177,13 +180,34 @@
   .agent-caption-line.customer{align-self:flex-end;text-align:right;background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);color:#F5EEDD;border-bottom-right-radius:3px;}
   .agent-caption-line.agent{align-self:flex-start;text-align:left;background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);color:#E7F7EF;border-bottom-left-radius:3px;}
   @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
+  /* Metin sohbet yedeği (video avatar bağlanamadığında) — index.html'deki
+     enableTextModeFallback() ile AYNI mekanizma. Bu blok admin.html'de
+     eksikti: widget-runtime.js els.textForm.hidden'ı null bir elemana
+     yazmaya çalışıp hata fırlatıyor, fallback sessizce başarısız oluyordu
+     ve asistan Spatius kotası bittiğinde sonsuz "yeniden bağlanılıyor"
+     döngüsünde TAKILI KALIYORDU (2026-09-06'da tespit edildi/düzeltildi). */
+  .agent-stage.text-mode .agent-video,
+  .agent-stage.text-mode .agent-join-gate,
+  .agent-stage.text-mode .agent-mic-blocked,
+  .agent-stage.text-mode .agent-indicator{display:none;}
+  .agent-stage.text-mode{background:#0B1220;}
+  .agent-stage.text-mode .agent-captions{position:absolute;inset:0 0 60px 0;max-height:none;background:none;padding:16px 12px 8px;}
+  .agent-text-form{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px;background:#0B1220;border-top:1px solid rgba(255,255,255,0.08);}
+  .agent-text-form[hidden]{display:none;}
+  .agent-text-input{flex:1;min-width:0;padding:10px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#F5EEDD;font-family:'Inter',sans-serif;font-size:13px;}
+  .agent-text-input:focus{outline:none;border-color:var(--accent);}
+  .agent-text-input::placeholder{color:rgba(245,238,221,0.4);}
+  .agent-text-send{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:none;background:var(--accent);color:var(--accent-ink);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition-property:background-color,transform;transition-duration:.15s;transition-timing-function:ease-out;}
+  .agent-text-send:hover{background:var(--accent-text);}
+  .agent-text-send:active{transform:scale(0.92);}
   .agent-bubble{position:fixed;z-index:1010;width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;}
   .agent-bubble[hidden]{display:none;}
   .agent-bubble[data-corner="br"]{right:20px;bottom:20px;}
   .agent-bubble[data-corner="bl"]{left:20px;bottom:20px;}
   .agent-bubble[data-corner="tr"]{right:20px;top:88px;}
   .agent-bubble[data-corner="tl"]{left:20px;top:88px;}
-  .agent-bubble-video{width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;}
+  .agent-bubble-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
   .agent-bubble-dot{position:absolute;right:3px;bottom:3px;width:12px;height:12px;border-radius:50%;background:#5B6479;border:2px solid #0B1220;}
   .agent-bubble-dot.live{background:var(--green);}
   .agent-reopen{position:fixed;right:20px;bottom:20px;z-index:1010;padding:12px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.14);display:flex;align-items:center;gap:8px;}
@@ -258,8 +282,9 @@
       <button type="button" class="agent-btn agent-btn-close" id="agentCloseBtn" title="Kapat" aria-label="Kapat">✕</button>
     </div>
   </div>
-  <div class="agent-stage">
+  <div class="agent-stage" id="agentStage">
     <video id="agentVideo" class="agent-video" autoplay playsinline></video>
+    <img class="agent-avatar-static" src="assets/elif-kaya-temp.jpg" alt="" aria-hidden="true">
     <div class="agent-loading" id="agentLoading">
       <div class="agent-spinner"></div>
       <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
@@ -273,10 +298,15 @@
       <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
       <div class="agent-join-hint">Mikrofonunuzu kullanmak için tıklayın</div>
     </div>
+    <form class="agent-text-form" id="agentTextForm" hidden>
+      <input type="text" id="agentTextInput" class="agent-text-input" autocomplete="off" placeholder="Mesajınızı yazın…">
+      <button type="submit" class="agent-text-send" aria-label="Gönder">➤</button>
+    </form>
   </div>
 </div>
 <button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden aria-label="VERALIQ Admin AI'yı genişlet">
   <video id="agentBubbleVideo" class="agent-bubble-video" autoplay playsinline muted></video>
+  <img class="agent-bubble-avatar-static" src="assets/elif-kaya-temp.jpg" alt="" aria-hidden="true">
   <span class="agent-bubble-dot" id="agentBubbleDot"></span>
 </button>
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Asistanı Aç</button>
