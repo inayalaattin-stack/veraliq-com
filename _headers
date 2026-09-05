@@ -79,3 +79,15 @@
 # içerik taşıyor; aynı no-cache kuralı buraya da uygulanıyor.
 /i18n.js
   Cache-Control: no-cache, must-revalidate
+
+# GÜNCELLEME (2026-09-06) — AYNI SINIF GERÇEK CANLI BUG, agent-core/ İÇİN HİÇ
+# EKLENMEMİŞTİ: widget.js/widget-runtime.js/faq-sales-brain-provider.js gibi
+# tüm ajan modülleri de script.js/i18n.js gibi sık değişiyor ama bu no-cache
+# kuralı onlara hiç uygulanmamıştı. Sonuç: bugün deploy edilen metin-tekrarı
+# ve sonsuz-yeniden-bağlanma düzeltmeleri origin'de doğruydu ama ziyaretçilerin
+# (İmparator'ın kendi tarayıcısı dahil) platformun varsayılan uzun asset
+# cache'i yüzünden SAATLER ÖNCEKİ bozuk agent-core kopyasını çalıştırmaya
+# devam ediyordu — kod bozuk değildi, önbellek bayattı (i18n.js'teki
+# 2026-08-27 vakasıyla birebir aynı kök neden).
+/agent-core/*
+  Cache-Control: no-cache, must-revalidate
