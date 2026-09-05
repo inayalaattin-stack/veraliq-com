@@ -98,11 +98,19 @@ These apply on top of the generic guidelines above and take precedence where the
   alongside `schema.sql` (the source of truth for fresh installs). `ALTER TABLE ADD COLUMN`
   migrations are NOT safely re-runnable (SQLite has no `ADD COLUMN IF NOT EXISTS`) — document
   that plainly in the migration file's header comment.
-- **Deploy/credential boundary.** This sandbox (and the device-bridge shell) has no Cloudflare
-  (`wrangler login`) or GitHub push credentials. Ship code changes via: sandbox commit →
-  `git format-patch` → `SendUserFile` → `device_commit_files` to the user's checkout →
-  `git am --keep-cr` via device_bash. The user runs `git push`, `wrangler d1 execute`
-  (migrations), and `wrangler deploy` themselves from their own PowerShell.
+- **Deploy/credential boundary.** Claude does not run `wrangler login`, `git push`, or
+  `wrangler deploy` — those stay manual, on the user's own PowerShell, even when a session
+  happens to have shell/filesystem access that could technically run them. Two delivery shapes
+  depending on the session:
+  - **Same filesystem as the user's checkout** (verify with a path/tool check first): commit
+    directly there. The commits already exist locally the moment they land — the user only
+    needs to run `git push` (and `wrangler d1 execute` / `wrangler deploy` if a migration or
+    worker changed) themselves.
+  - **Isolated sandbox with no access to the user's machine**: use the patch relay — sandbox
+    commit → `git format-patch` → `SendUserFile` → the user applies it to their own checkout
+    with `git am --keep-cr`, then pushes/deploys themselves.
+  Either way, the user is the one who pushes and deploys — this is a deliberate manual gate
+  before code reaches the auto-deploying Cloudflare Pages project, not a credential limitation.
 - **Business positioning ("insansız satış" / unmanned sales).** Customer-facing copy (index.html,
   i18n.js, terms.html) must never imply the client company still needs a human sales team to
   qualify, negotiate, or close. The Agent runs the full sales process end-to-end; the only human
