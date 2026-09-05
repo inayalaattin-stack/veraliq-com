@@ -736,6 +736,58 @@
   [dir="rtl"] .wf-agent-top{flex-direction:row-reverse;}
   [dir="rtl"] .faq-q{text-align:right;}
   [dir="rtl"] .footer-bottom{text-align:right;}
+
+  /* ===================================================================
+     MOTION LAYER — added for the "sector-authentic, not AI-generic" visual
+     pass. Pure CSS/IntersectionObserver (see motion.js); no external 3D
+     asset or WebGL dependency. Everything here is additive: it does not
+     rename or remove any existing selector/id/data-i18n hook above.
+     =================================================================== */
+  @media (prefers-reduced-motion: no-preference){
+    [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);}
+    [data-reveal].in-view{opacity:1;transform:translateY(0);}
+    [data-reveal="rise"]{transition-delay:calc(var(--reveal-i,0) * 70ms);}
+    [data-reveal-immediate]{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--reveal-i,0) * 120ms);}
+    [data-reveal-immediate].in-view{opacity:1;transform:translateY(0);}
+  }
+
+  /* Architectural background: a faint blueprint-style grid + a single warm
+     champagne glow, replacing the old AI-mint dual radial gradient — reads
+     as "construction/plan" rather than "neural network". */
+  .hero-visual{
+    background-image:
+      linear-gradient(rgba(191,161,106,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(191,161,106,0.055) 1px, transparent 1px),
+      radial-gradient(ellipse 900px 620px at 14% 4%, rgba(191,161,106,0.10) 0%, transparent 62%);
+    background-size:48px 48px,48px 48px,100% 100%;
+    background-position:-1px -1px,-1px -1px,0 0;
+  }
+  .hero-visual::before{
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+    background-image:radial-gradient(rgba(237,233,223,0.05) 1px, transparent 0);
+    background-size:3px 3px;mix-blend-mode:overlay;opacity:.5;
+  }
+  .hero-showcase{will-change:transform;}
+
+  /* Tilt cards — subtle 3D response to cursor position, set via motion.js
+     as --tiltX/--tiltY custom properties. Falls back to flat/static when
+     JS doesn't run or reduced-motion is on. */
+  .tilt-card{
+    transform:perspective(900px) rotateX(var(--tiltY,0deg)) rotateY(var(--tiltX,0deg)) translateZ(0);
+    transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s ease;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .service.tilt-card:hover,.wf-dept.tilt-card:hover,.trust-item.tilt-card:hover{
+      box-shadow:0 24px 48px -20px rgba(0,0,0,0.55);
+    }
+  }
+
+  /* Section eyebrow gets a thin animated rule instead of a static dash —
+     small, premium detail used across agency-grade sites. */
+  @media (prefers-reduced-motion: no-preference){
+    .section-head.in-view .eyebrow::before{animation:eyebrow-grow .6s cubic-bezier(.16,1,.3,1) both;}
+  }
+  @keyframes eyebrow-grow{from{width:0;}to{width:20px;}}
 </style>
 </head>
 <body>
@@ -765,7 +817,7 @@
 
 <section class="hero-visual" id="heroVisual">
   <div class="wrap hero-grid">
-    <div class="hv-copy">
+    <div class="hv-copy" data-reveal-immediate>
       <div class="eyebrow" data-i18n="hero.eyebrow">YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU</div>
       <h1 data-i18n="hero.h1" data-i18n-html="1">Kendi <span>Yapay Zekâ Satış Ekibinizi</span> Kurun.</h1>
       <p class="hero-en" data-i18n="hero.en">İnsan Ekibe İhtiyaç Duymadan Satışı Uçtan Uca Yürütün.</p>
@@ -776,7 +828,7 @@
       <p class="hero-support" data-i18n="hero.support">Projelerinizi, fiyatlarınızı, ödeme planlarınızı ve satış kurallarınızı VERALIQ'a öğretin — dijital satış asistanlarınız müşterilerinizle çalışmaya başlasın.</p>
       <div class="hero-footnote" data-i18n="hero.footnote">Sağ altta Elif Kaya hazır bekliyor — hemen canlı konuşabilirsiniz.</div>
     </div>
-    <div class="hero-showcase">
+    <div class="hero-showcase" data-reveal-immediate style="--reveal-i:3;">
       <picture>
         <source srcset="assets/hero-showcase-platforms.webp" type="image/webp">
         <img src="assets/hero-showcase-platforms.jpg" data-i18n-alt="hero.imgAlt" alt="VERALIQ web sitesi, canlı yönetim paneli ve mobil uygulama önizlemesi" width="1400" height="763" loading="eager">
@@ -810,7 +862,7 @@
 <!-- SORUN -->
 <section id="problem">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="problem.eyebrow">TANIDIK GELİYOR MU?</div>
       <h2 data-i18n="problem.h2">Satış operasyonunuzda her gün tekrar eden sorunlar.</h2>
     </div>
@@ -829,7 +881,7 @@
 <!-- AKIŞ -->
 <section id="flow" style="padding:72px 0;">
   <div class="wrap">
-    <div class="section-head" style="margin-bottom:40px;">
+    <div class="section-head" style="margin-bottom:40px;" data-reveal>
       <div class="eyebrow" data-i18n="flow.eyebrow">SÜREÇ</div>
       <h2 data-i18n="flow.h2">Lead'den satışa, tek akış.</h2>
     </div>
@@ -850,26 +902,26 @@
 <!-- AI WORKFORCE / DEPARTMAN -->
 <section id="workforce">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="wf.eyebrow">AI WORKFORCE</div>
       <h2 data-i18n="wf.h2">Tek Agent değil, komple bir AI satış departmanı.</h2>
       <p data-i18n="wf.p">Şirketiniz tek bir Agent ile sınırlı kalmaz — görev bazlı birden fazla dijital çalışanı bir araya getirip kendi "AI Departmanı"nızı kurabilirsiniz. Agent'lar gerektiğinde birbirine görev devreder.</p>
     </div>
     <div class="workforce-grid">
-      <div class="wf-dept">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept1head">SATIŞ · 3 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top">Elif Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role1">Müşteri Karşılama</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Zeynep Arslan <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role2">Yatırım Danışmanı</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Ahmet Demir <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role3">Satış Agent'ı</span></div>
         <div class="wf-metric" data-i18n="wf.metric1" data-i18n-html><b>24</b> LEAD · BU AY</div>
       </div>
-      <div class="wf-dept">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept2head">OPERASYON · 2 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top">Mehmet Yılmaz <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role4">Follow-up</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Ayşe Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role5">Randevu Koordinasyonu</span></div>
         <div class="wf-metric" data-i18n="wf.metric2" data-i18n-html><b>8</b> FOLLOW-UP · TAMAMLANDI</div>
       </div>
-      <div class="wf-dept">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept3head">PAZARLAMA · 1 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top"><span data-i18n="wf.agent6">İçerik Agent'ı</span> <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role6">Kampanya &amp; İçerik</span></div>
         <div class="wf-metric" data-i18n="wf.metric3" data-i18n-html><b>3</b> KAMPANYA · AKTİF</div>
@@ -897,36 +949,36 @@
 <!-- CRM FARKI -->
 <section id="compare">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="compare.eyebrow">CRM MI? CHATBOT MU?</div>
       <h2 data-i18n="compare.h2">Hiçbiri değil.</h2>
     </div>
   </div>
   <div class="compare-grid">
-    <div class="compare-item"><div class="old" data-i18n="compare.old1">CRM müşteriyi kaydeder.</div><div class="new" data-i18n="compare.new1">VERALIQ müşterinizle konuşur.</div></div>
-    <div class="compare-item"><div class="old" data-i18n="compare.old2">Chatbot soruyu yanıtlar.</div><div class="new" data-i18n="compare.new2">VERALIQ satış sürecini yürütür.</div></div>
-    <div class="compare-item"><div class="old" data-i18n="compare.old3">CRM satış ekibinin aracıdır.</div><div class="new" data-i18n="compare.new3">VERALIQ'in kendisi satış ekibinizdir.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old1">CRM müşteriyi kaydeder.</div><div class="new" data-i18n="compare.new1">VERALIQ müşterinizle konuşur.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old2">Chatbot soruyu yanıtlar.</div><div class="new" data-i18n="compare.new2">VERALIQ satış sürecini yürütür.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old3">CRM satış ekibinin aracıdır.</div><div class="new" data-i18n="compare.new3">VERALIQ'in kendisi satış ekibinizdir.</div></div>
   </div>
 </section>
 
 <!-- MODÜLLER -->
 <section id="modules">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="modules.eyebrow">ÜRÜN MODÜLLERİ</div>
       <h2 data-i18n="modules.h2">Tek platformda dijital satış ekibi.</h2>
       <p data-i18n="modules.p">Her modül bağımsız çalışacak şekilde tasarlanmıştır; ihtiyacınıza göre tek başına ya da birlikte devreye alınabilir.</p>
     </div>
   </div>
   <div class="services">
-    <div class="service"><div class="idx mono">01</div><h3 data-i18n="modules.svc1Title">AI Sales Agent</h3><p data-i18n="modules.svc1Desc">İsimlendirilmiş, şirketinize özel eğitilmiş dijital satış temsilcisi.</p></div>
-    <div class="service"><div class="idx mono">02</div><h3 data-i18n="modules.svc2Title">AI Lead Management</h3><p data-i18n="modules.svc2Desc">Gelen her lead otomatik karşılanır, nitelendirilir ve önceliklendirilir.</p></div>
-    <div class="service"><div class="idx mono">03</div><h3 data-i18n="modules.svc3Title">AI Portfolio Matching</h3><p data-i18n="modules.svc3Desc">Müşterinin bütçe ve tercihine göre uygun proje/portföy otomatik eşleşir.</p></div>
-    <div class="service"><div class="idx mono">04</div><h3 data-i18n="modules.svc4Title">Voice &amp; Video Interaction</h3><p data-i18n="modules.svc4Desc">Gerçek zamanlı sesli konuşma; yazıya dökülü klasik chat deneyimi değil.</p></div>
-    <div class="service"><div class="idx mono">05</div><h3 data-i18n="modules.svc5Title">CRM Integration</h3><p data-i18n="modules.svc5Desc">Kendi CRM'inizi bağlayın veya dahili CRM'i kullanın — stok/fiyat otomatik senkronize olur.</p></div>
-    <div class="service"><div class="idx mono">06</div><h3 data-i18n="modules.svc6Title">Automated Follow-up</h3><p data-i18n="modules.svc6Desc">Karar vermeyen müşteriyi nazikçe hatırlatır, özel günleri not alır.</p></div>
-    <div class="service"><div class="idx mono">07</div><h3 data-i18n="modules.svc7Title">Sales Analytics</h3><p data-i18n="modules.svc7Desc">Konuşma, dönüşüm ve fırsat verileri tek panelde raporlanır.</p></div>
-    <div class="service"><div class="idx mono">08</div><h3 data-i18n="modules.svc8Title">Agent Management</h3><p data-i18n="modules.svc8Desc">Admin panelinden Agent'ların ismini, görevini, sesini ve yetkilerini yönetin.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">01</div><h3 data-i18n="modules.svc1Title">AI Sales Agent</h3><p data-i18n="modules.svc1Desc">İsimlendirilmiş, şirketinize özel eğitilmiş dijital satış temsilcisi.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">02</div><h3 data-i18n="modules.svc2Title">AI Lead Management</h3><p data-i18n="modules.svc2Desc">Gelen her lead otomatik karşılanır, nitelendirilir ve önceliklendirilir.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">03</div><h3 data-i18n="modules.svc3Title">AI Portfolio Matching</h3><p data-i18n="modules.svc3Desc">Müşterinin bütçe ve tercihine göre uygun proje/portföy otomatik eşleşir.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">04</div><h3 data-i18n="modules.svc4Title">Voice &amp; Video Interaction</h3><p data-i18n="modules.svc4Desc">Gerçek zamanlı sesli konuşma; yazıya dökülü klasik chat deneyimi değil.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">05</div><h3 data-i18n="modules.svc5Title">CRM Integration</h3><p data-i18n="modules.svc5Desc">Kendi CRM'inizi bağlayın veya dahili CRM'i kullanın — stok/fiyat otomatik senkronize olur.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">06</div><h3 data-i18n="modules.svc6Title">Automated Follow-up</h3><p data-i18n="modules.svc6Desc">Karar vermeyen müşteriyi nazikçe hatırlatır, özel günleri not alır.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">07</div><h3 data-i18n="modules.svc7Title">Sales Analytics</h3><p data-i18n="modules.svc7Desc">Konuşma, dönüşüm ve fırsat verileri tek panelde raporlanır.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">08</div><h3 data-i18n="modules.svc8Title">Agent Management</h3><p data-i18n="modules.svc8Desc">Admin panelinden Agent'ların ismini, görevini, sesini ve yetkilerini yönetin.</p></div>
   </div>
 </section>
 
@@ -935,7 +987,7 @@
      fiyatlandırma "Bu Modülü Deneyelim" görüşmesinde paylaşılıyor. -->
 <section id="compliance-cost">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="cc.eyebrow">YENİ · KURUMSAL EK MODÜL</div>
       <h2 data-i18n="cc.h2">Mevzuat, deprem yönetmeliği ve emtia fiyatları sizi şaşırtmasın.</h2>
       <p data-i18n="cc.p">İnşaat ve gayrimenkul projeleriniz için resmi mevzuatı, TBDY güncellemelerini ve demir/çelik fiyatlarını günlük takip eden bir karar destek katmanı. Yatırım tavsiyesi veya kesin hukuki görüş vermez — ilgili maddeye ve veriye dikkatinizi çeker, kararı size bırakır.</p>
@@ -960,7 +1012,7 @@
      dilini ve kapsamı gösterir. -->
 <section id="portal-preview" class="portal-preview">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="portal.eyebrow">ŞİRKET PORTALI</div>
       <h2 data-i18n="portal.h2">Projeleriniz, satışlarınız ve Agent performansınız tek panelde.</h2>
       <p data-i18n="portal.p">Şirketinize özel portal canlıdır — aşağıda tasarım dilini gösteren basitleştirilmiş bir önizleme yer alıyor. Gerçek ekranlara "Şirket Girişi" üzerinden ulaşabilirsiniz.</p>
@@ -1036,7 +1088,7 @@
 <!-- ROI -->
 <section id="results">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="results.eyebrow">SONUÇ</div>
       <h2 data-i18n="results.h2">Teknoloji değil, sonuç satıyoruz.</h2>
     </div>
@@ -1056,7 +1108,7 @@
 <!-- ÇOKLU KANAL -->
 <section id="channels">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="channels.eyebrow">TEK AGENT, ÇOKLU KANAL</div>
       <h2 data-i18n="channels.h2">Aynı Agent, her ortamda çalışır.</h2>
       <p data-i18n="channels.p">Agent mimarisi platform seviyesinde tasarlandı — tek satır kodla kendi web sitenize, portalınıza veya mobil uygulamanıza ekleyin.</p>
@@ -1076,15 +1128,15 @@
 <!-- GÜVENLİK -->
 <section id="trust">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="trust.eyebrow">GÜVENLİK &amp; VERİ</div>
       <h2 data-i18n="trust.h2">Kurumsal güven, sade altyapı.</h2>
     </div>
     <div class="trust-grid">
-      <div class="trust-item"><div class="trust-icon mono">ISO</div><div><h4 data-i18n="trust.item1Title">Şirket Verisi İzolasyonu</h4><p data-i18n="trust.item1Desc">Her şirketin proje ve müşteri verisi ayrı tutulur; Agent yalnızca kendi şirketinizin verisiyle konuşur.</p></div></div>
-      <div class="trust-item"><div class="trust-icon mono">AUT</div><div><h4 data-i18n="trust.item2Title">Yetkilendirme</h4><p data-i18n="trust.item2Desc">Admin, portal ve CRM erişimleri rol bazlı yetkilendirmeyle kontrol edilir.</p></div></div>
-      <div class="trust-item"><div class="trust-icon mono">KVK</div><div><h4 data-i18n="trust.item3Title">KVKK Yaklaşımı</h4><p data-i18n="trust.item3Desc">Müşteri verisi açık rıza ile toplanır; saklama ve silme talepleri için hazır süreç.</p></div></div>
-      <div class="trust-item"><div class="trust-icon mono">LOG</div><div><h4 data-i18n="trust.item4Title">Denetlenebilir Erişim</h4><p data-i18n="trust.item4Desc">Konuşma ve işlem kayıtları zaman damgalı olarak tutulur, denetlenebilir.</p></div></div>
+      <div class="trust-item tilt-card" data-reveal="rise"><div class="trust-icon mono">ISO</div><div><h4 data-i18n="trust.item1Title">Şirket Verisi İzolasyonu</h4><p data-i18n="trust.item1Desc">Her şirketin proje ve müşteri verisi ayrı tutulur; Agent yalnızca kendi şirketinizin verisiyle konuşur.</p></div></div>
+      <div class="trust-item tilt-card" data-reveal="rise"><div class="trust-icon mono">AUT</div><div><h4 data-i18n="trust.item2Title">Yetkilendirme</h4><p data-i18n="trust.item2Desc">Admin, portal ve CRM erişimleri rol bazlı yetkilendirmeyle kontrol edilir.</p></div></div>
+      <div class="trust-item tilt-card" data-reveal="rise"><div class="trust-icon mono">KVK</div><div><h4 data-i18n="trust.item3Title">KVKK Yaklaşımı</h4><p data-i18n="trust.item3Desc">Müşteri verisi açık rıza ile toplanır; saklama ve silme talepleri için hazır süreç.</p></div></div>
+      <div class="trust-item tilt-card" data-reveal="rise"><div class="trust-icon mono">LOG</div><div><h4 data-i18n="trust.item4Title">Denetlenebilir Erişim</h4><p data-i18n="trust.item4Desc">Konuşma ve işlem kayıtları zaman damgalı olarak tutulur, denetlenebilir.</p></div></div>
     </div>
   </div>
 </section>
@@ -1092,7 +1144,7 @@
 <!-- SSS -->
 <section id="faq">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head" data-reveal>
       <div class="eyebrow" data-i18n="faq.eyebrow">SIKÇA SORULAN SORULAR</div>
       <h2 data-i18n="faq.h2">Merak edilenler.</h2>
     </div>
@@ -1271,6 +1323,7 @@
 
 <script src="i18n.js?v=1"></script>
 <script src="script.js?v=9"></script>
+<script src="motion.js?v=1" defer></script>
 <script type="module" src="agent-core/widget.js?v=1"></script>
 </body>
 </html>
