@@ -54,7 +54,7 @@
 // varsayilan yapilirsa, o zaman audioBuffer'i AudioContext.destination'a
 // baglayip caldirma mantigi eklenmeli - bugun bu KAPSAM DISI.
 
-import { TTSProvider } from '../providers.js';
+import { TTSProvider } from '../providers.js?v=3';
 
 const TTS_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/tts';
 const MAX_CHARS_PER_CHUNK = 180; // upstream ~200 siniri altinda, guvenli pay

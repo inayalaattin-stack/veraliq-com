@@ -75,8 +75,8 @@
 // satır satır karşılaştırılıp düzeltilmeli — o yüzden bu bir "iskelet",
 // "bitmiş entegrasyon" değil.
 
-import { AvatarProvider } from '../providers.js';
-import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js?v=2';
+import { AvatarProvider } from '../providers.js?v=3';
+import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js?v=3';
 
 const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 

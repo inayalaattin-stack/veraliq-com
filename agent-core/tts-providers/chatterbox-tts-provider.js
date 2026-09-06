@@ -18,7 +18,7 @@
 // VERALIQ-owned/consented voice profile — never a raw uploaded sample from
 // this client. See services/tts/README.md for the voice-profile contract.
 
-import { TTSProvider } from '../providers.js';
+import { TTSProvider } from '../providers.js?v=3';
 
 export class ChatterboxTTSProvider extends TTSProvider {
   constructor({ baseUrl } = {}) {

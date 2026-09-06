@@ -20,7 +20,7 @@
 // repo, unused, until a self-hosted replacement has been validated in
 // production. Deleting them is a deliberate, separate, later step.
 
-import { AvatarProvider } from '../providers.js';
+import { AvatarProvider } from '../providers.js?v=3';
 
 const SESSION_ENDPOINT = 'https://veraliq-agent.veraliq-com.workers.dev/session';
 const SDK_URL = 'https://esm.sh/@anam-ai/js-sdk@latest';

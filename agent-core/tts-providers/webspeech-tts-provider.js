@@ -15,7 +15,7 @@
 // matching the requested `lang` and falls back to the browser's default if
 // no exact match exists, rather than silently speaking in the wrong language.
 
-import { TTSProvider } from '../providers.js';
+import { TTSProvider } from '../providers.js?v=3';
 
 export class WebSpeechTTSProvider extends TTSProvider {
   constructor() {

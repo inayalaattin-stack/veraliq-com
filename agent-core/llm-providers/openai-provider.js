@@ -20,7 +20,7 @@
 // (or a dedicated llmBaseUrl) to it. Left as a clearly-marked stub rather
 // than a fake "working" implementation.
 
-import { LLMProvider } from '../providers.js';
+import { LLMProvider } from '../providers.js?v=3';
 
 export class OpenAIProvider extends LLMProvider {
   constructor({ baseUrl } = {}) {

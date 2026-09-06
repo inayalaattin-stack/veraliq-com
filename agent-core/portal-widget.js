@@ -13,7 +13,7 @@
 // "önce giriş yapın" der; hiçbir şirket verisi login olmadan asla ifşa
 // edilmez (Zero Trust AI + tenant izolasyon, JWT sunucu tarafında zorunlu).
 
-import { initAgentWidget } from './widget-runtime.js?v=2';
+import { initAgentWidget } from './widget-runtime.js?v=3';
 
 const AGENT_IDENTITY = {
   first_name: 'Şirket',

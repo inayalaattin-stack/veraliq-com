@@ -6,7 +6,7 @@
 // worker holding ANTHROPIC_API_KEY as a secret. Not wired up yet — no such
 // worker exists in this repo.
 
-import { LLMProvider } from '../providers.js';
+import { LLMProvider } from '../providers.js?v=3';
 
 export class AnthropicProvider extends LLMProvider {
   constructor({ baseUrl } = {}) {

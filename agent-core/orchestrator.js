@@ -12,8 +12,8 @@
 // so it works identically whether the avatar is the mock canvas, a
 // self-hosted QuickTalk server, or (temporarily, opt-in only) Anam.
 
-import { AgentState } from './state-machine.js';
-import { classifyCustomerText, normalizeEmotion } from './emotion-engine.js';
+import { AgentState } from './state-machine.js?v=3';
+import { classifyCustomerText, normalizeEmotion } from './emotion-engine.js?v=3';
 
 // How many characters of an INTERIM transcript we require before treating it
 // as a genuine barge-in rather than mic noise / a stray "uh". Kept low
@@ -23,14 +23,14 @@ const BARGE_IN_MIN_CHARS = 3;
 export class AgentOrchestrator {
   /**
    * @param {{
-   *   providers: {avatar: import('./providers.js').AvatarProvider, tts: import('./providers.js').TTSProvider, stt: import('./providers.js').STTProvider, llm: import('./providers.js').LLMProvider},
-   *   stateMachine: import('./state-machine.js').ConversationStateMachine,
+   *   providers: {avatar: import('./providers.js?v=3').AvatarProvider, tts: import('./providers.js?v=3').TTSProvider, stt: import('./providers.js?v=3').STTProvider, llm: import('./providers.js?v=3').LLMProvider},
+   *   stateMachine: import('./state-machine.js?v=3').ConversationStateMachine,
    *   agentIdentity: object,
    *   lang: string,
    *   onTranscript?: (entry: {role:'customer'|'agent', text:string}) => void,
    *   onError?: (err: any) => void,
    *   autoListen?: boolean,
-   *   conversationLogger?: import('./conversation-logger.js').ConversationLogger,
+   *   conversationLogger?: import('./conversation-logger.js?v=3').ConversationLogger,
    * }} opts
    */
   constructor(opts) {

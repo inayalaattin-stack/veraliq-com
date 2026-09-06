@@ -12,7 +12,7 @@
 //
 // Not selected by default — see agent-core/config.js.
 
-import { OpenTalkingAvatarProviderBase } from './opentalking-base.js';
+import { OpenTalkingAvatarProviderBase } from './opentalking-base.js?v=3';
 
 export class MuseTalkAvatarProvider extends OpenTalkingAvatarProviderBase {
   constructor(opts) {

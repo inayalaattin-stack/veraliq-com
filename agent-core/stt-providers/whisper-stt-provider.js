@@ -29,7 +29,7 @@
 //     {"type":"speech_start"|"speech_end"} (echoed back so UI stays in sync
 //     even if the VAD callback fires slightly before the message round-trips)
 
-import { STTProvider } from '../providers.js';
+import { STTProvider } from '../providers.js?v=3';
 
 const VAD_SPEECH_THRESHOLD = 0.02; // RMS amplitude, 0..1
 const VAD_SILENCE_MS = 700; // how long below threshold before we call it "speech_end"

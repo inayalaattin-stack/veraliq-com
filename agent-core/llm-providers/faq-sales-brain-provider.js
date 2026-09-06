@@ -20,8 +20,8 @@
 // mechanism for taking any action, by design. It only ever produces
 // {replyText, emotion, intent: null}.
 
-import { LLMProvider } from '../providers.js';
-import { classifyCustomerText } from '../emotion-engine.js';
+import { LLMProvider } from '../providers.js?v=3';
+import { classifyCustomerText } from '../emotion-engine.js?v=3';
 
 // Knowledge entries: each has keyword triggers (checked against the lowercased
 // customer message) and TR/EN answers. Other UI languages fall back to EN —

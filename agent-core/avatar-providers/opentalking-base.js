@@ -22,7 +22,7 @@
 //
 // This provider is NOT selected by default (see agent-core/config.js).
 
-import { AvatarProvider } from '../providers.js';
+import { AvatarProvider } from '../providers.js?v=3';
 
 // Best-effort default — OpenTalking's own docs showed a raw WHIP test
 // endpoint at "https://127.0.0.1:8889/whip-test/whep"; a real deployment

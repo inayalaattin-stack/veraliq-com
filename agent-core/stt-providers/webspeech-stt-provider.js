@@ -17,7 +17,7 @@
 // materially better once a self-hosted STT server with proper AEC
 // (acoustic echo cancellation) replaces this via whisper-stt-provider.js.
 
-import { STTProvider } from '../providers.js';
+import { STTProvider } from '../providers.js?v=3';
 
 function getRecognitionCtor() {
   if (typeof window === 'undefined') return null;

@@ -29,7 +29,7 @@
 // genel hata / karşılama) hem backend'e gönderdiği `lang` parametresini o
 // dile göre seçiyor. Backend (answerAssistantQuery) zaten hangi dilde
 // yazıldığına bakılmaksızın niyeti tanıyor — bu yalnızca CEVABIN dilini seçer.
-import { LLMProvider } from '../providers.js';
+import { LLMProvider } from '../providers.js?v=3';
 
 const API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
 const TOKEN_KEY = 'veraliq_company_jwt';

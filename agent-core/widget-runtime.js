@@ -22,11 +22,11 @@
 // and the SAME CSS classes (.agent-window, .agent-bubble, ...). Any page that
 // wants this widget must include that markup + those styles + this module.
 
-import { createProviders } from './config.js';
-import { ConversationStateMachine, AgentState } from './state-machine.js';
-import { AgentOrchestrator } from './orchestrator.js';
-import { ConversationLogger } from './conversation-logger.js';
-import { isProviderBlocked } from './avatar-pool/free-tier-guard.js?v=2';
+import { createProviders } from './config.js?v=3';
+import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
+import { AgentOrchestrator } from './orchestrator.js?v=3';
+import { ConversationLogger } from './conversation-logger.js?v=3';
+import { isProviderBlocked } from './avatar-pool/free-tier-guard.js?v=3';
 
 // index.html loads i18n.js (window.VeraliqI18N) for its 8-language site chrome.
 // Internal panels (admin.html, portal.html) are Turkish-only today and do NOT
@@ -43,7 +43,7 @@ const BARGE_IN_HISTORY_LIMIT = 12; // unused here, kept for parity — real limi
 /**
  * @param {{
  *   agentIdentity: {first_name?:string, last_name?:string, display_name:string, company_name:string, role:string},
- *   providerOverrides?: Partial<import('./config.js').AGENT_PROVIDER_CONFIG>,
+ *   providerOverrides?: Partial<import('./config.js?v=3').AGENT_PROVIDER_CONFIG>,
  *   startMinimized?: boolean,
  *   conversationLogging?: {tokenKey?:string, agentKey?:string, channel?:string},
  * }} opts

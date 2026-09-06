@@ -19,7 +19,7 @@
 // state-changing aksiyonu (plan değişikliği, şirket silme, kullanıcı silme
 // vb.) tetikleyemez, yalnızca salt-okunur platform istatistiklerini okur.
 
-import { LLMProvider } from '../providers.js';
+import { LLMProvider } from '../providers.js?v=3';
 
 const API_BASE = 'https://veraliq-portal-api.veraliq-com.workers.dev';
 const TOKEN_KEY = 'veraliq_admin_jwt';

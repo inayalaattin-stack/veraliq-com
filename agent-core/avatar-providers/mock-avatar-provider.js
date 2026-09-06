@@ -18,7 +18,7 @@
 //
 // No GPU, no model weights, no network calls — pure Canvas2D + rAF.
 
-import { AvatarProvider } from '../providers.js';
+import { AvatarProvider } from '../providers.js?v=3';
 
 const SIZE = 480; // internal canvas resolution (square)
 

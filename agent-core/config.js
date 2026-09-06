@@ -57,35 +57,35 @@ export const AGENT_PROVIDER_CONFIG = {
 
 const LOADERS = {
   avatar: {
-    mock: () => import('./avatar-providers/mock-avatar-provider.js').then((m) => m.MockAvatarProvider),
-    quicktalk: () => import('./avatar-providers/quicktalk-avatar-provider.js').then((m) => m.QuickTalkAvatarProvider),
-    musetalk: () => import('./avatar-providers/musetalk-avatar-provider.js').then((m) => m.MuseTalkAvatarProvider),
-    anam: () => import('./avatar-providers/anam-avatar-provider.js').then((m) => m.AnamAvatarProvider),
+    mock: () => import('./avatar-providers/mock-avatar-provider.js?v=3').then((m) => m.MockAvatarProvider),
+    quicktalk: () => import('./avatar-providers/quicktalk-avatar-provider.js?v=3').then((m) => m.QuickTalkAvatarProvider),
+    musetalk: () => import('./avatar-providers/musetalk-avatar-provider.js?v=3').then((m) => m.MuseTalkAvatarProvider),
+    anam: () => import('./avatar-providers/anam-avatar-provider.js?v=3').then((m) => m.AnamAvatarProvider),
     // Ücretsiz Avatar Havuzu — 1. sağlayıcı (Elif Kaya persona'sı, Spatius'un
     // "Clara" adlı kütüphane avatarını kullanıyor). Bkz. dosyanın
     // başındaki durum notu: production'a bağlanması için önce Spatius
     // hesabı + avatar-id + session-token worker'ı gerekiyor.
-    spatius: () => import('./avatar-providers/spatius-avatar-provider.js').then((m) => m.SpatiusAvatarProvider),
+    spatius: () => import('./avatar-providers/spatius-avatar-provider.js?v=3').then((m) => m.SpatiusAvatarProvider),
   },
   tts: {
-    webspeech: () => import('./tts-providers/webspeech-tts-provider.js').then((m) => m.WebSpeechTTSProvider),
-    chatterbox: () => import('./tts-providers/chatterbox-tts-provider.js').then((m) => m.ChatterboxTTSProvider),
-    googleTranslate: () => import('./tts-providers/google-translate-tts-provider.js').then((m) => m.GoogleTranslateTTSProvider),
+    webspeech: () => import('./tts-providers/webspeech-tts-provider.js?v=3').then((m) => m.WebSpeechTTSProvider),
+    chatterbox: () => import('./tts-providers/chatterbox-tts-provider.js?v=3').then((m) => m.ChatterboxTTSProvider),
+    googleTranslate: () => import('./tts-providers/google-translate-tts-provider.js?v=3').then((m) => m.GoogleTranslateTTSProvider),
   },
   stt: {
-    webspeech: () => import('./stt-providers/webspeech-stt-provider.js').then((m) => m.WebSpeechSTTProvider),
-    whisper: () => import('./stt-providers/whisper-stt-provider.js').then((m) => m.WhisperSTTProvider),
+    webspeech: () => import('./stt-providers/webspeech-stt-provider.js?v=3').then((m) => m.WebSpeechSTTProvider),
+    whisper: () => import('./stt-providers/whisper-stt-provider.js?v=3').then((m) => m.WhisperSTTProvider),
   },
   llm: {
-    faq: () => import('./llm-providers/faq-sales-brain-provider.js?v=2').then((m) => m.FaqSalesBrainProvider),
-    openai: () => import('./llm-providers/openai-provider.js').then((m) => m.OpenAIProvider),
-    anthropic: () => import('./llm-providers/anthropic-provider.js').then((m) => m.AnthropicProvider),
+    faq: () => import('./llm-providers/faq-sales-brain-provider.js?v=3').then((m) => m.FaqSalesBrainProvider),
+    openai: () => import('./llm-providers/openai-provider.js?v=3').then((m) => m.OpenAIProvider),
+    anthropic: () => import('./llm-providers/anthropic-provider.js?v=3').then((m) => m.AnthropicProvider),
     // "VERALIQ Admin AI" (admin.html) — platform-genelinde, salt-okunur,
     // deterministik worker-portal sorguları. Bkz. admin-widget.js.
-    adminAssistant: () => import('./llm-providers/admin-assistant-brain-provider.js').then((m) => m.AdminAssistantBrainProvider),
+    adminAssistant: () => import('./llm-providers/admin-assistant-brain-provider.js?v=3').then((m) => m.AdminAssistantBrainProvider),
     // "Şirket Yönetim Asistanı" (portal.html) — şirkete özel (JWT ile
     // tenant-izole), deterministik worker-portal sorguları. Bkz. portal-widget.js.
-    companyAssistant: () => import('./llm-providers/company-assistant-brain-provider.js').then((m) => m.CompanyAssistantBrainProvider),
+    companyAssistant: () => import('./llm-providers/company-assistant-brain-provider.js?v=3').then((m) => m.CompanyAssistantBrainProvider),
   },
 };
 
