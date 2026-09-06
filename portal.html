@@ -506,6 +506,8 @@
     var agentMicBlockedText = document.getElementById('agentMicBlockedText'); if (agentMicBlockedText) agentMicBlockedText.textContent = T('agentWidget.micBlocked');
     var agentJoinBtn = document.getElementById('agentJoinBtn'); if (agentJoinBtn) agentJoinBtn.innerHTML = '<span class="dot"></span>' + esc(T('agentWidget.joinBtn'));
     var agentJoinHint = document.getElementById('agentJoinHint'); if (agentJoinHint) agentJoinHint.textContent = T('agentWidget.joinHint');
+    var agentStartBtn = document.getElementById('agentStartBtn'); if (agentStartBtn) agentStartBtn.innerHTML = '<span class="dot"></span>' + esc(T('agentWidget.startBtn'));
+    var agentStartHint = document.getElementById('agentStartHint'); if (agentStartHint) agentStartHint.textContent = T('agentWidget.startHint');
     var agentReopenBtn = document.getElementById('agentReopenBtn'); if (agentReopenBtn) agentReopenBtn.textContent = T('agentWidget.reopenBtn');
     var agentBubbleEl = document.getElementById('agentBubble'); if (agentBubbleEl) agentBubbleEl.setAttribute('aria-label', T('agentWidget.expandAria'));
   }
@@ -1234,6 +1236,10 @@
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
     <div class="agent-captions" id="agentCaptions" hidden></div>
+    <div class="agent-join-gate" id="agentStartGate">
+      <button type="button" class="agent-join-btn" id="agentStartBtn"><span class="dot"></span>Görüşmeyi Başlat</button>
+      <div class="agent-join-hint" id="agentStartHint">Asistanla sohbete başlamak için tıklayın</div>
+    </div>
     <div class="agent-join-gate" id="agentJoinGate" hidden>
       <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
       <div class="agent-join-hint" id="agentJoinHint">Mikrofonunuzu kullanmak için tıklayın</div>
@@ -1251,6 +1257,6 @@
 </button>
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Asistanı Aç</button>
 
-<script type="module" src="agent-core/portal-widget.js?v=3"></script>
+<script type="module" src="agent-core/portal-widget.js?v=4"></script>
 </body>
 </html>

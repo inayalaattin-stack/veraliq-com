@@ -151,7 +151,7 @@ window.VERALIQ_PORTAL_I18N = {
       "agentWidget.title":"Şirket Asistanı","agentWidget.halfScreen":"Yarım ekran","agentWidget.fullScreen":"Tam ekran",
       "agentWidget.minimize":"Küçült","agentWidget.close":"Kapat","agentWidget.preparing":"Asistan hazırlanıyor…",
       "agentWidget.micBlocked":"Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Asistan menüsü).",
-      "agentWidget.joinBtn":"Görüşmeye Katıl","agentWidget.joinHint":"Mikrofonunuzu kullanmak için tıklayın",
+      "agentWidget.joinBtn":"Görüşmeye Katıl","agentWidget.joinHint":"Mikrofonunuzu kullanmak için tıklayın","agentWidget.startBtn":"Görüşmeyi Başlat","agentWidget.startHint":"Asistanla sohbete başlamak için tıklayın",
       "agentWidget.reopenBtn":"Asistanı Aç","agentWidget.expandAria":"Şirket Asistanı'nı genişlet",
 
       "lang.switcherLabel":"Dil",
@@ -277,7 +277,7 @@ window.VERALIQ_PORTAL_I18N = {
       "agentWidget.title":"Company Assistant","agentWidget.halfScreen":"Half screen","agentWidget.fullScreen":"Full screen",
       "agentWidget.minimize":"Minimize","agentWidget.close":"Close","agentWidget.preparing":"Assistant is getting ready…",
       "agentWidget.micBlocked":"Microphone access wasn't granted. The assistant can't hear you — enable microphone permission in your browser settings and reload the page. You can also continue by typing (AI Assistant menu).",
-      "agentWidget.joinBtn":"Join Conversation","agentWidget.joinHint":"Click to use your microphone",
+      "agentWidget.joinBtn":"Join Conversation","agentWidget.joinHint":"Click to use your microphone","agentWidget.startBtn":"Start Conversation","agentWidget.startHint":"Click to start chatting with the assistant",
       "agentWidget.reopenBtn":"Open Assistant","agentWidget.expandAria":"Expand Company Assistant",
 
       "lang.switcherLabel":"Language",
@@ -403,7 +403,7 @@ window.VERALIQ_PORTAL_I18N = {
       "agentWidget.title":"Ассистент компании","agentWidget.halfScreen":"Половина экрана","agentWidget.fullScreen":"Полный экран",
       "agentWidget.minimize":"Свернуть","agentWidget.close":"Закрыть","agentWidget.preparing":"Ассистент готовится…",
       "agentWidget.micBlocked":"Доступ к микрофону не предоставлен. Ассистент вас не слышит — включите доступ в настройках браузера и обновите страницу. Вы также можете продолжить, печатая (меню AI-ассистента).",
-      "agentWidget.joinBtn":"Присоединиться","agentWidget.joinHint":"Нажмите, чтобы использовать микрофон",
+      "agentWidget.joinBtn":"Присоединиться","agentWidget.joinHint":"Нажмите, чтобы использовать микрофон","agentWidget.startBtn":"Начать разговор","agentWidget.startHint":"Нажмите, чтобы начать чат с ассистентом",
       "agentWidget.reopenBtn":"Открыть ассистента","agentWidget.expandAria":"Развернуть ассистента компании",
 
       "lang.switcherLabel":"Язык",

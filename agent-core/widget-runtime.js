@@ -84,6 +84,8 @@ export async function initAgentWidget(opts) {
     stage: document.getElementById('agentStage'),
     textForm: document.getElementById('agentTextForm'),
     textInput: document.getElementById('agentTextInput'),
+    startGate: document.getElementById('agentStartGate'),
+    startBtn: document.getElementById('agentStartBtn'),
   };
 
   if (!els.win || !els.video) return null;
@@ -104,6 +106,13 @@ export async function initAgentWidget(opts) {
   // olur — initAgent() bir daha video yoluna dönmeyi denemez, sayfa
   // yenilenene kadar metin sohbette kalır. Bkz. o fonksiyonun başındaki not.
   let textModeActive = false;
+  // Konuşma artık sayfa yüklenir yüklenmez OTOMATİK BAŞLAMIYOR (İmparator
+  // isteği, 2026-09-07): ekranda sadece sabit Elif Kaya/Clara fotoğrafı ve
+  // #agentStartGate'teki "Görüşmeyi Başlat" butonu görünür, ziyaretçi o
+  // butona tıklayana kadar initAgent() hiç çağrılmaz (Spatius'a bağlanmayı
+  // bile denemez). visibilitychange gibi otomatik yeniden-bağlanma yolları
+  // da bu bayrak false iken devre dışı — bkz. aşağıdaki ilgili kontroller.
+  let started = false;
 
   function setWindowState(state) {
     els.win.hidden = false;
@@ -140,9 +149,12 @@ export async function initAgentWidget(opts) {
     reconnectAttempts = 0;
     els.reopenBtn.hidden = true;
     setWindowState('corner');
-    els.loading.classList.remove('hide');
-    setLoadingText(I18N.t('agent.loadingText'));
-    await initAgent();
+    // Tam kapatma sonrası yeniden açılış da otomatik bağlanmıyor — kapanışta
+    // orchestrator zaten durduruldu, ziyaretçi "Görüşmeyi Başlat"a tekrar
+    // tıklamalı (bkz. yukarıdaki `started` notu).
+    started = false;
+    els.loading.classList.add('hide');
+    if (els.startGate) els.startGate.hidden = false;
   }
 
   function setLoadingText(text) {
@@ -165,6 +177,17 @@ export async function initAgentWidget(opts) {
       if (orchestrator && typeof orchestrator.beginListening === 'function') {
         orchestrator.beginListening();
       }
+    });
+  }
+
+  if (els.startBtn) {
+    els.startBtn.addEventListener('click', function () {
+      if (started) return;
+      started = true;
+      if (els.startGate) els.startGate.hidden = true;
+      els.loading.classList.remove('hide');
+      setLoadingText(I18N.t('agent.loadingText'));
+      initAgent();
     });
   }
 
@@ -423,6 +446,7 @@ export async function initAgentWidget(opts) {
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState !== 'visible') return;
     if (intentionalClose) return;
+    if (!started) return;
     if (els.win.hidden && els.bubble.hidden) return;
     if (!els.statusDot.classList.contains('live')) {
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
@@ -467,7 +491,9 @@ export async function initAgentWidget(opts) {
   } else {
     setWindowState('corner');
   }
-  initAgent();
+  // Bağlantı denemesi yok — sadece sabit fotoğraf + start-gate görünür,
+  // bkz. yukarıdaki `started` notu ve #agentStartBtn click handler'ı.
+  els.loading.classList.add('hide');
 
   return {
     close: closeAgent,

@@ -294,6 +294,10 @@
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
     <div class="agent-captions" id="agentCaptions" hidden></div>
+    <div class="agent-join-gate" id="agentStartGate">
+      <button type="button" class="agent-join-btn" id="agentStartBtn"><span class="dot"></span>Görüşmeyi Başlat</button>
+      <div class="agent-join-hint">Asistanla sohbete başlamak için tıklayın</div>
+    </div>
     <div class="agent-join-gate" id="agentJoinGate" hidden>
       <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
       <div class="agent-join-hint">Mikrofonunuzu kullanmak için tıklayın</div>
@@ -781,6 +785,6 @@
   if (isAuthed()) showApp(); else showLogin();
 })();
 </script>
-<script type="module" src="agent-core/admin-widget.js?v=3"></script>
+<script type="module" src="agent-core/admin-widget.js?v=4"></script>
 </body>
 </html>
