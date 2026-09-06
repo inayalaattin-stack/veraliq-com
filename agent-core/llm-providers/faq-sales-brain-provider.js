@@ -134,6 +134,74 @@ const KB = [
     ],
     emotion: 'professional',
   },
+  // Small talk — a mid-conversation "merhaba"/"nasılsın" used to fall through
+  // to FALLBACK ("I'll have our team answer that"), which reads as broken for
+  // plain pleasantries a real visitor types to test the agent (reported after
+  // a live check: greeting/how-are-you/thanks/who-are-you/goodbye all landed
+  // in FALLBACK). These stay 100% deterministic — same KB mechanism, no LLM.
+  {
+    id: 'smalltalk_greeting',
+    keywords: ['merhaba', 'selam', 'günaydın', 'iyi günler', 'iyi akşamlar', 'hello', 'good morning', 'good afternoon', 'good evening'],
+    tr: [
+      'Merhaba! Size VERALIQ hakkında ne anlatabilirim — ürünü, entegrasyonu, fiyatlandırmayı ya da başka bir şeyi mi merak ediyorsunuz?',
+      'Selam! Buradayım — VERALIQ ile ilgili aklınıza takılan bir şey varsa sorun, memnuniyetle anlatayım.',
+    ],
+    en: [
+      'Hello! What can I tell you about VERALIQ — the product, integration, pricing, or something else?',
+      'Hi there! I\'m here — ask me anything about VERALIQ and I\'ll happily walk you through it.',
+    ],
+    emotion: 'greeting',
+  },
+  {
+    id: 'smalltalk_how_are_you',
+    keywords: ['nasılsın', 'nasilsin', 'naber', 'ne haber', 'keyifler nasıl', 'how are you', 'how\'s it going', 'hows it going'],
+    tr: [
+      'İyiyim, sorduğunuz için teşekkürler! Siz VERALIQ\'i mi keşfediyorsunuz, yoksa şirketiniz için mi araştırıyorsunuz?',
+      'Gayet iyiyim, teşekkür ederim! Size nasıl yardımcı olabilirim — VERALIQ hakkında bir sorunuz mu var?',
+    ],
+    en: [
+      'I\'m doing well, thanks for asking! Are you exploring VERALIQ for yourself or researching it for your company?',
+      'Doing great, thank you! How can I help — is there something about VERALIQ you\'d like to know?',
+    ],
+    emotion: 'happy',
+  },
+  {
+    id: 'smalltalk_thanks',
+    keywords: ['teşekkür', 'sağol', 'sagol', 'eyvallah', 'thanks', 'thank you', 'thx'],
+    tr: [
+      'Rica ederim! Başka merak ettiğiniz bir şey olursa buradayım.',
+      'Ne demek, her zaman! Aklınıza başka bir soru gelirse çekinmeyin.',
+    ],
+    en: [
+      'You\'re very welcome! I\'m here if anything else comes to mind.',
+      'Happy to help! Feel free to ask if you have more questions.',
+    ],
+    emotion: 'happy',
+  },
+  {
+    id: 'smalltalk_who_are_you',
+    keywords: ['kimsin', 'sen kimsin', 'adın ne', 'who are you', 'what is your name', 'what\'s your name'],
+    tr: [
+      'Ben Elif Kaya, VERALIQ\'in dijital satış asistanıyım — şirketinizin proje ve fiyat verisiyle çalışan, sitenize gömülen yapay zekâ satış temsilcisinin bir örneğiyim. Size VERALIQ hakkında ne anlatabilirim?',
+    ],
+    en: [
+      'I\'m Elif Kaya, VERALIQ\'s digital sales assistant — a live example of the AI sales rep that embeds on your own site and works from your real project and pricing data. What would you like to know about VERALIQ?',
+    ],
+    emotion: 'professional',
+  },
+  {
+    id: 'smalltalk_farewell',
+    keywords: ['görüşürüz', 'hoşça kal', 'güle güle', 'bye', 'goodbye', 'see you'],
+    tr: [
+      'Görüşmek üzere! Karar vermeden önce başka bir sorunuz olursa buradayım.',
+      'Hoşça kalın! Aklınıza takılan bir şey olursa yine yazabilirsiniz.',
+    ],
+    en: [
+      'Take care! I\'m here if any other questions come up before you decide.',
+      'Goodbye for now! Feel free to come back if anything else comes to mind.',
+    ],
+    emotion: 'happy',
+  },
 ];
 
 const FALLBACK = {
