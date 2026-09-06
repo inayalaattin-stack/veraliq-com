@@ -122,3 +122,15 @@ These apply on top of the generic guidelines above and take precedence where the
   (e.g. "`company_sales_agent` currently has the same access as `company_staff` — no row-level
   restriction yet"). Never claim a script/flow was verified end-to-end if a credential or
   interpreter boundary made that impossible in this environment.
+- **Cross-surface by default.** İmparator's instruction (2026-09-06): once he states a rule about
+  the live agent/persona (behavior, language, UI, what it can or can't do), it applies to EVERY
+  surface that embeds the shared `agent-core/widget-runtime.js` widget — today `index.html`
+  (public site), `admin.html` (VERALIQ Admin AI), and `portal.html` (company portal), and the
+  mobile app once one exists — without him having to repeat it per screen. Apply new instructions
+  to all of them in the same pass; call out explicitly (don't silently skip) any surface a change
+  can't yet reach (e.g. mobile, which has no code yet).
+- **Voice-only, no written chat.** İmparator's instruction (2026-09-06): the live agent
+  (Elif Kaya and any persona built on the same widget) never falls back to a typed-message UI or
+  shows an on-screen text transcript/caption bubbles — the customer's only way to talk to it is
+  voice. If the video avatar can't connect, show the existing error/reconnect state; do not
+  reintroduce a text-chat fallback. Elif Kaya's native/default spoken language is Turkish.
