@@ -12,6 +12,31 @@
 export const AGENT_PROVIDER_CONFIG = {
   // 'anam' (kept live on purpose — see note below) | 'mock' (no GPU, always available, for local dev/testing only) | 'quicktalk' | 'musetalk' | 'spatius'
   //
+  // GEÇİCİ GERİ ALMA (2026-09-06, canlı bug raporu üzerine): 'spatius'
+  // hesabının ücretsiz kredisi tükendi (bkz. free-tier-guard.js'teki
+  // "GERÇEK CANLI BUG (2026-09-06)" notu ve widget-runtime.js'in
+  // enableTextModeFallback()'ı) — controller.onError HER bağlantı
+  // denemesinde "insufficient credits" verip refusePaymentPrompt() ile
+  // provider'ı bloke ediyor. Sonuç: index.html + admin.html + portal.html
+  // (üçü de AYNI avatar/TTS config'ini paylaşıyor) HİÇBİR ziyaretçide sesli/
+  // görüntülü Elif Kaya'yı gösteremiyor, hepsi otomatik metin-moduna
+  // düşüyor — ki bu da İmparator'ın "sesli ve yazılı konuşamıyor, tüm
+  // ekranlarda aynı cevapları veriyor" şikayetinin kök nedeni budur (metin
+  // modunun kendisi çalışıyor, ama önce ~1.5-8sn'lik başarısız Spatius
+  // deneme + "Yeniden bağlanıyor" döngüsünden geçiyor, ayrıca hiç ses
+  // çıkmıyor). PAYMENTS_ENABLED=false kuralı gereği bu otomatik olarak
+  // ödemeye geçilemez (bkz. avatar-pool/free-tier-guard.js başlığı) — kredi
+  // Spatius panelinden (app.spatius.ai) manuel yenilenene/yükseltilene ya da
+  // self-hosted MuseTalk/QuickTalk (bkz. docs/SELF_HOSTED_DEPLOYMENT.md)
+  // hazır olana kadar avatarProvider GEÇİCİ olarak 'mock' + ttsProvider
+  // 'webspeech'e alındı: ikisi de ücretsiz, hesap/kota gerektirmiyor, GERÇEK
+  // sesli konuşma üretiyor (tarayıcı native TTS) — Spatius'un "insan gibi"
+  // görselinden daha kaba/karikatürize ama ÇALIŞIYOR ve anında bağlanıyor
+  // (başarısız deneme/bekleme yok). Spatius kredisi geri geldiğinde bu iki
+  // satırı 'spatius' / 'googleTranslate'e geri almak yeterli — kod tarafında
+  // başka hiçbir değişiklik gerekmiyor (bkz. dosya başındaki "SINGLE SOURCE
+  // OF TRUTH" notu).
+  //
   // Kept on 'anam' deliberately: the new provider-agnostic pipeline below is
   // merged and ready, but the only zero-GPU avatar available today (Mock)
   // was judged not acceptable for real visitors (too crude/cartoonish for a
@@ -26,7 +51,9 @@ export const AGENT_PROVIDER_CONFIG = {
   // yani ses su an ROBOTIK/KLASIK kalitede calisiyor, sessiz DEGIL. Daha iyi
   // bir ucretsiz/GPU'suz Turkce TTS bulununca burada sadece ttsProvider
   // degisecek, avatarProvider ayni kalacak.
-  avatarProvider: 'spatius',
+  // 2026-09-06 itibariyle Spatius kredisi tükendiği için YUKARIDAKI GEÇİCİ
+  // GERİ ALMA notuna bakın — bu iki satır şu an 'mock' / 'webspeech'.
+  avatarProvider: 'mock',
   // 'googleTranslate' ZORUNLU eşleşme: 'spatius' provider'i speak() icinde
   // gercek bir audioBuffer bekliyor (yoksa throw ediyor) ve orchestrator.js
   // bu hatayi sessizce yutuyor — yani 'webspeech' ile birlikte kullanilirsa
@@ -34,7 +61,10 @@ export const AGENT_PROVIDER_CONFIG = {
   // yuzden 'spatius' secili oldugu surece ttsProvider da 'googleTranslate'
   // olmali. Kalite notu: klasik/robotik (insan gibi degil) — bkz.
   // google-translate-tts-provider.js basindaki 4 maddelik risk notu.
-  ttsProvider: 'googleTranslate',
+  // (avatarProvider 'mock' olduğu sürece bu kısıtlama uygulanmaz —
+  // MockAvatarProvider herhangi bir TTS ile çalışır, bkz. yukarıdaki GEÇİCİ
+  // GERİ ALMA notu.)
+  ttsProvider: 'webspeech',
   // 'webspeech' (default today — free, browser-native) | 'whisper'
   sttProvider: 'webspeech',
   // 'faq' (default today — free, deterministic, no API key) | 'openai' | 'anthropic'
