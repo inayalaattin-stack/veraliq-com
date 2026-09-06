@@ -24,3 +24,7 @@ services/tts/voice_profiles/*.wav
 
 __pycache__/
 *.pyc
+
+# Yedekler ve büyük binary'ler repo köküne düþerse görmezden gel (D:\yedekler'e taþýnmalý)
+*.sql
+*.bundle
