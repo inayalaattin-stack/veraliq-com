@@ -26,7 +26,7 @@ import { createProviders } from './config.js';
 import { ConversationStateMachine, AgentState } from './state-machine.js';
 import { AgentOrchestrator } from './orchestrator.js';
 import { ConversationLogger } from './conversation-logger.js';
-import { isProviderBlocked } from './avatar-pool/free-tier-guard.js';
+import { isProviderBlocked } from './avatar-pool/free-tier-guard.js?v=2';
 
 // index.html loads i18n.js (window.VeraliqI18N) for its 8-language site chrome.
 // Internal panels (admin.html, portal.html) are Turkish-only today and do NOT

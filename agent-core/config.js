@@ -77,7 +77,7 @@ const LOADERS = {
     whisper: () => import('./stt-providers/whisper-stt-provider.js').then((m) => m.WhisperSTTProvider),
   },
   llm: {
-    faq: () => import('./llm-providers/faq-sales-brain-provider.js').then((m) => m.FaqSalesBrainProvider),
+    faq: () => import('./llm-providers/faq-sales-brain-provider.js?v=2').then((m) => m.FaqSalesBrainProvider),
     openai: () => import('./llm-providers/openai-provider.js').then((m) => m.OpenAIProvider),
     anthropic: () => import('./llm-providers/anthropic-provider.js').then((m) => m.AnthropicProvider),
     // "VERALIQ Admin AI" (admin.html) — platform-genelinde, salt-okunur,

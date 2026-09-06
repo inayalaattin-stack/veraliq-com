@@ -76,7 +76,7 @@
 // "bitmiş entegrasyon" değil.
 
 import { AvatarProvider } from '../providers.js';
-import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js';
+import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js?v=2';
 
 const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 
