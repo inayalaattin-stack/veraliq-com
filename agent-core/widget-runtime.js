@@ -25,7 +25,7 @@
 import { createProviders } from './config.js?v=3';
 import { createCallConsent } from './call-consent.js?v=1';
 import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
-import { AgentOrchestrator } from './orchestrator.js?v=3';
+import { AgentOrchestrator } from './orchestrator.js?v=5';
 import { ConversationLogger } from './conversation-logger.js?v=3';
 import { isProviderBlocked } from './avatar-pool/free-tier-guard.js?v=3';
 
