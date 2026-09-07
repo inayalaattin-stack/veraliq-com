@@ -171,8 +171,8 @@
     min-height:44px;
   }
   .hv-copy{position:relative;z-index:2;max-width:560px;text-align:left;margin:0;}
-  .hero-visual h1{font-size:clamp(30px,3.6vw,48px);line-height:1.1;margin-bottom:10px;letter-spacing:-0.025em;}
-  .hero-visual h1 span{color:var(--accent);}
+  .hero-visual h1{font-size:clamp(30px,3.6vw,48px);line-height:1.1;margin-bottom:10px;letter-spacing:-0.03em;}
+  .hero-visual h1 span{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-style:italic;color:var(--accent-text);}
   .hero-en{
     font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--text-dim);
     letter-spacing:0.02em;margin:0 0 24px;
@@ -187,6 +187,9 @@
     display:flex;align-items:center;gap:10px;margin-bottom:20px;
   }
   .eyebrow::before{content:'';width:20px;height:1px;background:var(--accent-text);}
+  .eyebrow .live-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(191,161,106,0.55);animation:eyebrow-pulse 2.4s ease-in-out infinite;flex-shrink:0;}
+  @keyframes eyebrow-pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  @media(prefers-reduced-motion:reduce){.eyebrow .live-dot{animation:none;}}
   .hero h1{
     font-size:clamp(30px,3.6vw,44px);
     line-height:1.08;margin-bottom:20px;
@@ -320,10 +323,26 @@
   .cc-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
   .cc-note{font-size:13px;color:var(--text-dim);opacity:0.85;}
 
-  /* Problem block */
-  .problem-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px 56px;margin-bottom:48px;}
-  @media(max-width:760px){.problem-grid{grid-template-columns:1fr;gap:22px;}}
-  .problem-item{padding-left:20px;border-left:2px solid var(--accent-dim);font-size:15.5px;color:var(--text-dim);line-height:1.55;}
+  /* Problem block — editorial bento grid: asymmetric cards instead of a
+     uniform list, first item reads as the "lead" card (bkz. redesign
+     paketinin bento düzeni — VERALIQ-Redesign-Package, 2026-09-07, sadece
+     görsel dil taşındı, veri/i18n metinleri aynen korundu). */
+  .problem-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:14px;margin-bottom:48px;}
+  .problem-item{
+    grid-column:span 2;padding:26px 24px 22px;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(150deg,var(--panel),var(--ink-2));
+    font-size:15px;color:var(--text-dim);line-height:1.55;position:relative;
+    transition-property:border-color,transform;transition-duration:.2s;transition-timing-function:ease-out;
+  }
+  .problem-item:hover{border-color:var(--accent-dim);transform:translateY(-2px);}
+  .problem-item::before{
+    content:attr(data-index);display:block;font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:0.08em;color:var(--accent-text);margin-bottom:14px;opacity:0.8;
+  }
+  .problem-item:first-child{grid-column:span 4;font-size:18px;color:var(--text);}
+  @media(max-width:960px){.problem-item{grid-column:span 4;}.problem-item:first-child{grid-column:span 4;}}
+  @media(max-width:760px){.problem-grid{grid-template-columns:1fr;gap:14px;}.problem-item,.problem-item:first-child{grid-column:1;}}
+  [dir="rtl"] .problem-item::before{text-align:right;}
   .problem-resolve{font-size:20px;font-family:'Space Grotesk',sans-serif;font-weight:600;text-align:center;padding-top:16px;}
 
   /* Flow */
@@ -748,7 +767,7 @@
   [dir="rtl"] .hv-copy{text-align:right;}
   [dir="rtl"] .eyebrow::before{order:2;}
   [dir="rtl"] .cap-list li,[dir="rtl"] .portal-list li,[dir="rtl"] .roi-list li{flex-direction:row-reverse;text-align:right;}
-  [dir="rtl"] .problem-item{border-left:none;border-right:2px solid var(--accent-dim);padding-left:0;padding-right:20px;}
+  [dir="rtl"] .problem-item{text-align:right;}
   [dir="rtl"] .trust-item{flex-direction:row-reverse;text-align:right;}
   [dir="rtl"] .wf-agent{align-items:flex-end;text-align:right;}
   [dir="rtl"] .wf-agent-top{flex-direction:row-reverse;}
@@ -836,7 +855,7 @@
 <section class="hero-visual" id="heroVisual">
   <div class="wrap hero-grid">
     <div class="hv-copy" data-reveal-immediate>
-      <div class="eyebrow" data-i18n="hero.eyebrow">YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU</div>
+      <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-i18n="hero.eyebrow">YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU</span></div>
       <h1 data-i18n="hero.h1" data-i18n-html="1">Kendi <span>Yapay Zekâ Satış Ekibinizi</span> Kurun.</h1>
       <p class="hero-en" data-i18n="hero.en">İnsan Ekibe İhtiyaç Duymadan Satışı Uçtan Uca Yürütün.</p>
       <p class="lede" data-i18n="hero.lede">Müşterilerinizi karşılayan, projelerinizi ve ürünlerinizi canlı sunan, portföy ve fiyat bilgilerini aktaran, ihtiyaçlarını anlayan, lead oluşturan, randevu alan, takip yapan ve şirketinizin kuralları dahilinde satış sürecini kapanışa kadar yürüten yapay zekâ satış asistanları.</p>
@@ -885,12 +904,12 @@
       <h2 data-i18n="problem.h2">Satış operasyonunuzda her gün tekrar eden sorunlar.</h2>
     </div>
     <div class="problem-grid">
-      <div class="problem-item" data-i18n="problem.item1">Lead geliyor ama satış ekibi geç cevaplıyor.</div>
-      <div class="problem-item" data-i18n="problem.item2">Mesai dışında müşteri kaçıyor.</div>
-      <div class="problem-item" data-i18n="problem.item3">WhatsApp, telefon, CRM ve Excel birbirinden kopuk.</div>
-      <div class="problem-item" data-i18n="problem.item4">Follow-up unutuluyor.</div>
-      <div class="problem-item" data-i18n="problem.item5">Satış temsilcileri aynı soruları tekrar tekrar cevaplıyor.</div>
-      <div class="problem-item" data-i18n="problem.item6">Yoğun saatlerde müşteri beklemede kalıyor.</div>
+      <div class="problem-item" data-index="01" data-i18n="problem.item1">Lead geliyor ama satış ekibi geç cevaplıyor.</div>
+      <div class="problem-item" data-index="02" data-i18n="problem.item2">Mesai dışında müşteri kaçıyor.</div>
+      <div class="problem-item" data-index="03" data-i18n="problem.item3">WhatsApp, telefon, CRM ve Excel birbirinden kopuk.</div>
+      <div class="problem-item" data-index="04" data-i18n="problem.item4">Follow-up unutuluyor.</div>
+      <div class="problem-item" data-index="05" data-i18n="problem.item5">Satış temsilcileri aynı soruları tekrar tekrar cevaplıyor.</div>
+      <div class="problem-item" data-index="06" data-i18n="problem.item6">Yoğun saatlerde müşteri beklemede kalıyor.</div>
     </div>
     <div class="problem-resolve" data-i18n="problem.resolve">VERALIQ bu operasyonun içine dijital çalışanlar yerleştirir.</div>
   </div>
