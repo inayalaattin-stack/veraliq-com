@@ -138,6 +138,20 @@
       radial-gradient(ellipse 900px 560px at 18% 8%, rgba(16,20,19,0.9) 0%, transparent 60%),
       radial-gradient(ellipse 640px 480px at 92% 18%, rgba(126,224,178,0.05) 0%, transparent 65%);
   }
+  /* Decorative isometric building render — atmosphere only, faded into the
+     dark background on the right; not presented as a real client project
+     (bkz. VERALIQ-Redesign-Package'daki bento-architecture kartı, 2026-09-07). */
+  .hero-visual::after{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-image:url('assets/architecture.jpg');
+    background-position:right -80px bottom -60px;background-repeat:no-repeat;background-size:900px auto;
+    opacity:0.22;mix-blend-mode:screen;
+    mask-image:linear-gradient(100deg,transparent 30%,#000 60%);
+    -webkit-mask-image:linear-gradient(100deg,transparent 30%,#000 60%);
+  }
+  @media(max-width:960px){.hero-visual::after{display:none;}}
+  .hero-visual .wrap{position:relative;z-index:1;
+  }
   .hero-grid{
     display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;
     padding:148px 0 76px;
