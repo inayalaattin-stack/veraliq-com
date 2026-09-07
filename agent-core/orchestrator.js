@@ -55,6 +55,7 @@ export class AgentOrchestrator {
     // kullanıcı jesti içinde olmadığı için sessizce reddedebiliyor — bu da
     // "seslenmeme rağmen avatar cevap vermiyor" şikayetinin bir parçasıydı.
     this.autoListen = opts.autoListen !== false;
+    this._listeningEnabled = this.autoListen;
 
     this.history = [];
     this._activeTts = null;
@@ -72,10 +73,12 @@ export class AgentOrchestrator {
       // avatar provider owns STT+LLM+TTS internally. We do not touch our
       // own providers.stt/llm/tts at all in this mode.
       await avatar.connect();
+      if (!this._started) await avatar.disconnect();
       return;
     }
 
     await avatar.connect();
+    if (!this._started) { await avatar.disconnect(); return; }
 
     if (this.conversationLogger) {
       try { await this.conversationLogger.start(); } catch (e) { /* best-effort, never blocks startup */ }
@@ -89,6 +92,7 @@ export class AgentOrchestrator {
     if (typeof this.providers.llm.greet === 'function') {
       try {
         const greeting = await this.providers.llm.greet({ lang: this.lang, agentIdentity: this.agentIdentity });
+        if (!this._started) return;
         if (greeting && greeting.replyText) {
           this.history.push({ role: 'agent', text: greeting.replyText });
           this.onTranscript({ role: 'agent', text: greeting.replyText });
@@ -109,11 +113,14 @@ export class AgentOrchestrator {
    */
   beginListening() {
     if (!this._started) return;
+    this._listeningEnabled = true;
     this._listenLoop();
   }
 
   async stop() {
     this._started = false;
+    this._listeningEnabled = false;
+    if (this._activeTts) { try { this._activeTts.stop(); } catch (e) {} this._activeTts = null; }
     const { avatar, stt } = this.providers;
     try { stt.stop && stt.stop(); } catch (e) {}
     try { avatar.stopSpeaking(); } catch (e) {}
@@ -127,6 +134,7 @@ export class AgentOrchestrator {
   /** Restart STT + reset FSM after a language switch, without a full reconnect. */
   async setLanguage(lang) {
     this.lang = lang;
+    if (!this._started || !this._listeningEnabled) return;
     if (this.providers.avatar.providesOwnPipeline) return; // Anam handles its own language session
     const { stt } = this.providers;
     try { stt.stop(); } catch (e) {}
@@ -140,6 +148,7 @@ export class AgentOrchestrator {
   }
 
   _runStt() {
+    if (!this._started || !this._listeningEnabled) return;
     const { stt } = this.providers;
     if (!stt.isSupported || !stt.isSupported()) {
       this.onError(new Error('stt_not_supported'));
@@ -182,6 +191,7 @@ export class AgentOrchestrator {
   }
 
   async _handleCustomerUtterance(text) {
+    if (!this._started) return;
     this.history.push({ role: 'customer', text });
     this.onTranscript({ role: 'customer', text });
     if (this.conversationLogger) this.conversationLogger.appendMessage('customer', text).catch(function () {});
@@ -201,6 +211,7 @@ export class AgentOrchestrator {
       return;
     }
 
+    if (!this._started) return;
     const emotion = normalizeEmotion(result.emotion || classifyCustomerText(text));
     this.providers.avatar.setEmotion(emotion);
 
@@ -226,6 +237,7 @@ export class AgentOrchestrator {
 
   /** Shared by the opening greeting and every conversational turn. */
   async _speakReply(replyText, emotion) {
+    if (!this._started) return;
     try {
       if (this.providers.avatar.rendersOwnAudioFromText) {
         // Server-side-TTS avatar backend (OpenTalking/QuickTalk/MuseTalk) —

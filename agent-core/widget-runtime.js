@@ -23,6 +23,7 @@
 // wants this widget must include that markup + those styles + this module.
 
 import { createProviders } from './config.js?v=3';
+import { createCallConsent } from './call-consent.js?v=1';
 import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
 import { AgentOrchestrator } from './orchestrator.js?v=3';
 import { ConversationLogger } from './conversation-logger.js?v=3';
@@ -113,6 +114,9 @@ export async function initAgentWidget(opts) {
   // bile denemez). visibilitychange gibi otomatik yeniden-bağlanma yolları
   // da bu bayrak false iken devre dışı — bkz. aşağıdaki ilgili kontroller.
   let started = false;
+  let lifecycle = 0;
+  let initializing = false;
+  const callConsent = createCallConsent({ win: els.win, conversationLogging: !!opts.conversationLogging });
 
   function setWindowState(state) {
     els.win.hidden = false;
@@ -135,6 +139,10 @@ export async function initAgentWidget(opts) {
 
   async function closeAgent() {
     intentionalClose = true;
+    started = false;
+    lifecycle++;
+    callConsent.revoke();
+    listeningStarted = false;
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     els.win.hidden = true;
     els.bubble.hidden = true;
@@ -153,6 +161,9 @@ export async function initAgentWidget(opts) {
     // orchestrator zaten durduruldu, ziyaretçi "Görüşmeyi Başlat"a tekrar
     // tıklamalı (bkz. yukarıdaki `started` notu).
     started = false;
+    textModeActive = false;
+    els.stage.classList.remove('text-mode');
+    if (els.textForm) els.textForm.hidden = true;
     els.loading.classList.add('hide');
     if (els.startGate) els.startGate.hidden = false;
   }
@@ -172,6 +183,7 @@ export async function initAgentWidget(opts) {
   }
   if (els.joinBtn) {
     els.joinBtn.addEventListener('click', function () {
+      if (!started || !callConsent.accepted || intentionalClose) return;
       listeningStarted = true;
       hideJoinGate();
       if (orchestrator && typeof orchestrator.beginListening === 'function') {
@@ -181,8 +193,10 @@ export async function initAgentWidget(opts) {
   }
 
   if (els.startBtn) {
-    els.startBtn.addEventListener('click', function () {
-      if (started) return;
+    els.startBtn.addEventListener('click', async function () {
+      if (started || initializing) return;
+      if (!(await callConsent.request())) return;
+      intentionalClose = false;
       started = true;
       if (els.startGate) els.startGate.hidden = true;
       els.loading.classList.remove('hide');
@@ -206,7 +220,7 @@ export async function initAgentWidget(opts) {
   }
 
   function scheduleReconnect() {
-    if (intentionalClose) return;
+    if (intentionalClose || !started || !callConsent.accepted) return;
     if (els.win.hidden && els.bubble.hidden) return;
     if (reconnectTimer) return;
     if (reconnectAttempts >= 5) return;
@@ -304,7 +318,12 @@ export async function initAgentWidget(opts) {
   }
 
   async function initAgent() {
+    if (!started || intentionalClose || !callConsent.accepted || initializing) return;
     if (textModeActive) return; // bkz. enableTextModeFallback() — sayfa yenilenene kadar video yoluna dönmüyoruz
+    initializing = true;
+    const generation = lifecycle;
+    const active = () => generation === lifecycle && started && callConsent.accepted && !intentionalClose;
+    let providers = null;
     if (orchestrator) { try { await orchestrator.stop(); } catch (e) {} orchestrator = null; }
     try { els.video.srcObject = null; } catch (e) {}
     els.micBlocked.hidden = true;
@@ -312,7 +331,9 @@ export async function initAgentWidget(opts) {
     hideJoinGate();
 
     try {
-      var providers = await createProviders(PROVIDER_OVERRIDES);
+      if (!active()) return;
+      providers = await createProviders(PROVIDER_OVERRIDES);
+      if (!active()) return;
       // GERÇEK CANLI BUG (2026-09-06): free-tier-guard.js bir provider'ı
       // PAYMENT_REQUIRED olarak işaretlediğinde (ör. Spatius "insufficient
       // credits" dediğinde) bu kontrol olmadan initAgent() onu SESSİZCE
@@ -325,6 +346,7 @@ export async function initAgentWidget(opts) {
         throw new Error('avatar_provider_blocked:' + providers.config.avatarProvider);
       }
       await providers.avatar.init({ videoEl: els.video, bubbleVideoEl: els.bubbleVideo, agentIdentity: AGENT_IDENTITY });
+      if (!active()) { await providers.avatar.disconnect(); return; }
 
       providers.avatar.on('live', function () { markLive(true); });
       providers.avatar.on('lost', function () { markLive(false); scheduleReconnect(); });
@@ -362,13 +384,18 @@ export async function initAgentWidget(opts) {
       });
 
       await orchestrator.start();
+      if (!active()) { await orchestrator.stop(); return; }
       markLive(true);
     } catch (err) {
+      if (providers) { try { await providers.avatar.disconnect(); } catch (e) {} }
+      if (!active()) return;
       if (typeof console !== 'undefined' && console.warn) {
         console.warn('[VeraliqAgent] video avatar failed, falling back to text mode:', err);
       }
       var fellBack = await enableTextModeFallback();
-      if (!fellBack) onOrchestratorError(err);
+      if (!fellBack && active()) onOrchestratorError(err);
+    } finally {
+      initializing = false;
     }
   }
 
@@ -388,6 +415,7 @@ export async function initAgentWidget(opts) {
       // mesajlarla değil (bkz. yukarıdaki initAgent() notu).
       if (els.captions) { els.captions.innerHTML = ''; els.captions.hidden = true; }
       var providers = await createProviders(Object.assign({}, PROVIDER_OVERRIDES, { avatarProvider: 'mock' }));
+      if (!started || !callConsent.accepted || intentionalClose) return false;
       // Kasıtlı olarak avatar.init()/.connect() ÇAĞRILMIYOR — video hiç
       // başlamasın diye. Orchestrator'ın avatar.setEmotion()/.speak()/.on()
       // çağırdığı yerler MockAvatarProvider'da güvenli no-op'lardır.
@@ -406,6 +434,7 @@ export async function initAgentWidget(opts) {
       // yukarıdaki not: videoEl/bubbleVideoEl hiç set edilmediği için
       // connect() içindeki `if (this._videoEl)` bloğu çalışmaz).
       await orchestrator.start();
+      if (!started || !callConsent.accepted || intentionalClose) { await orchestrator.stop(); return false; }
 
       textModeActive = true;
       els.stage.classList.add('text-mode');
@@ -427,7 +456,7 @@ export async function initAgentWidget(opts) {
     els.textForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var text = (els.textInput.value || '').trim();
-      if (!text || !orchestrator) return;
+      if (!text || !orchestrator || !started || !callConsent.accepted || intentionalClose) return;
       els.textInput.value = '';
       // Ses akışında SPEAKING'den THINKING'e geçiş STT'nin barge-in'i
       // üzerinden oluyor (_handleBargeIn: SPEAKING -> INTERRUPTED ->
@@ -444,7 +473,7 @@ export async function initAgentWidget(opts) {
   }
 
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== 'visible') { closeAgent(); return; }
     if (intentionalClose) return;
     if (!started) return;
     if (els.win.hidden && els.bubble.hidden) return;
@@ -454,6 +483,8 @@ export async function initAgentWidget(opts) {
       initAgent();
     }
   });
+
+  window.addEventListener('pagehide', closeAgent);
 
   document.addEventListener('veraliq:langchange', function (e) {
     if (intentionalClose) return;

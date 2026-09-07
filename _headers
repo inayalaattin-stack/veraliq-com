@@ -61,7 +61,7 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(self), geolocation=()
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://esm.sh https://*.spatius.ai https://*.spatialwalk.top https://*.spatialwalk.ai https://*.spatialwalk.cloud blob:; worker-src 'self' 'wasm-unsafe-eval' blob:; connect-src 'self' https://veraliq-agent.veraliq-com.workers.dev https://veraliq-spatius-session.veraliq-com.workers.dev https://veraliq-portal-api.veraliq-com.workers.dev https://esm.sh https://*.anam.ai wss://*.anam.ai https://*.spatius.ai wss://*.spatius.ai https://*.spatialwalk.top wss://*.spatialwalk.top https://*.spatialwalk.ai wss://*.spatialwalk.ai https://*.spatialwalk.cloud wss://*.spatialwalk.cloud; img-src 'self' data: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud https://*.spatialwalk.ai; media-src 'self' blob: https://*.anam.ai https://*.spatius.ai https://*.spatialwalk.cloud; frame-src https://www.openstreetmap.org https://*.anam.ai; frame-ancestors 'none'
 
