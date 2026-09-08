@@ -29,7 +29,7 @@ button,input,select,textarea,.btn,.lang-opt,.agent-join-btn{font-family:var(--ui
    font-family override upstream at all, so the Google Fonts removal below
    would otherwise leave them on the browser's generic monospace fallback
    instead of the intended system-UI stack. */
-.pm-feed-row b,.agent-caption-line,.agent-text-input,.badge-dot,.chat-msg.assistant b.tag{font-family:var(--ui-font)}
+.pm-feed-row b,.badge-dot,.chat-msg.assistant b.tag{font-family:var(--ui-font)}
 a,button,input,select,textarea{touch-action:manipulation}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #2d5368;outline-offset:3px}
 input,select,textarea{border-color:#a8b4b7!important;font-size:16px!important;min-height:46px;background:#fff;color:var(--text)}
@@ -181,11 +181,6 @@ tbody tr:hover{background:#f5f8f7}.pill{font-family:var(--ui-font);font-size:14p
 .agent-join-hint{font-family:var(--ui-font);font-size:14px;line-height:1.5;color:#fff}
 .agent-loading{background:#edf2f2}.agent-loading-text{color:#435d68;font-family:var(--ui-font);font-size:14px}
 .agent-spinner{border-color:#c8d4d8;border-top-color:#2d5368}
-.agent-text-form,.agent-stage.text-mode{background:#f5f7f6;border-color:#c9d3d6}
-.agent-caption-line{font-size:15px;line-height:1.6;border-radius:5px}
-.agent-caption-line.customer{background:#e5edf1;color:#254a60;border-color:#b4c8d0}.agent-caption-line.agent{background:#fff;color:#202c32;border-color:#c9d3d6}
-.agent-text-input{background:#fff;color:#202c32;border-radius:4px;font-size:16px}.agent-text-input::placeholder{color:#536168}
-.agent-text-send{width:44px;height:46px;min-height:46px;border-radius:4px;font-size:18px}
 .agent-bubble{border-color:#fff;background:#fff;box-shadow:0 4px 16px #243b4526}.agent-bubble-dot{border-color:#fff}
 .agent-reopen{font-family:var(--ui-font);font-size:15px;border-radius:4px;background:#fff;border-color:#9caeb4;box-shadow:0 4px 16px #243b451a}
 .agent-live-badge{font-family:var(--ui-font);font-size:14px;letter-spacing:0;border-radius:3px;background:#fff;color:#246a4d}
