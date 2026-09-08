@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 40" width="640" height="40" role="img" aria-hidden="true">
+  <!-- Section / slide divider #2: a restrained stepped-massing skyline outline. -->
+  <path d="M0 32 H60 V18 H140 V26 H210 V10 H300 V22 H380 V16 H460 V28 H540 V20 H640"
+        fill="none" stroke="#9caeb4" stroke-width="1.4" stroke-linejoin="miter"/>
+  <line x1="0" y1="32" x2="640" y2="32" stroke="#ced5d4" stroke-width="1"/>
+</svg>

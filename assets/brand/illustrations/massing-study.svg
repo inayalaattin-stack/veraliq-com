@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340" role="img" aria-hidden="true">
+  <!-- Understated architectural editorial illustration: abstract isometric
+       building masses and parcel relationships. Pale stone background,
+       graphite linework, muted blue-grey accents. No text, numbers, logos,
+       people, devices or photographic content — conceptual only, not a
+       representation of a real property or a product screenshot.
+       Source brief: specs/03-VISUAL-ASSETS.md "Üretim brief'i". -->
+  <rect width="600" height="340" fill="#f6f6f2"/>
+
+  <!-- ground datum + parcel division ticks -->
+  <line x1="60" y1="300" x2="540" y2="300" stroke="#c7d0cf" stroke-width="1"/>
+  <line x1="240" y1="300" x2="240" y2="308" stroke="#9caeb4" stroke-width="1" stroke-dasharray="1.5 3"/>
+  <line x1="368" y1="300" x2="368" y2="308" stroke="#9caeb4" stroke-width="1" stroke-dasharray="1.5 3"/>
+
+  <!-- Box B: mid block, left -->
+  <g stroke="#3f4f56" stroke-width="1.4" stroke-linejoin="round">
+    <polygon points="170,290 130,267 130,167 170,190" fill="#b7c3c3"/>
+    <polygon points="170,290 210,267 210,167 170,190" fill="#c9d3d3"/>
+    <polygon points="170,190 210,167 170,144 130,167" fill="#e3e9e8"/>
+  </g>
+
+  <!-- Box A: tall tower, center -->
+  <g stroke="#3f4f56" stroke-width="1.4" stroke-linejoin="round">
+    <polygon points="300,260 254,234 254,74 300,100" fill="#b7c3c3"/>
+    <polygon points="300,260 346,234 346,74 300,100" fill="#c9d3d3"/>
+    <polygon points="300,100 346,74 300,48 254,74" fill="#e3e9e8"/>
+  </g>
+
+  <!-- Box C: low block, right -->
+  <g stroke="#3f4f56" stroke-width="1.4" stroke-linejoin="round">
+    <polygon points="430,300 396,281 396,221 430,240" fill="#b7c3c3"/>
+    <polygon points="430,300 464,281 464,221 430,240" fill="#c9d3d3"/>
+    <polygon points="430,240 464,221 430,202 396,221" fill="#e3e9e8"/>
+  </g>
+</svg>

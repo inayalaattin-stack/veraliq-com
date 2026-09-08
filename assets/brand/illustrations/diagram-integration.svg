@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" width="760" height="260" font-family="Arial, 'Segoe UI', sans-serif" role="img"
+     aria-label="Şirket web sitesi, müşteri portalı ve admin portalı VERALIQ Core'a bağlanır; VERALIQ Core şirket verilerine ve izinli araçlara sabit fonksiyonlarla erişir">
+  <!-- Editable integration/architecture diagram. Left-column labels reuse the
+       real existing channel names (channels.chip2/3/4 in index.html). Right
+       side reflects the actual Zero Trust AI rule from CLAUDE.md: the brain
+       never runs raw SQL or arbitrary intent, only fixed deterministic
+       backend functions — this is not a new architecture claim. -->
+  <rect width="760" height="260" fill="#f6f6f2"/>
+  <defs>
+    <marker id="arrow2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L8 4 L0 8 z" fill="#536168"/>
+    </marker>
+  </defs>
+
+  <!-- left: entry channels -->
+  <g font-size="13" fill="#202c32">
+    <rect x="20" y="30" width="190" height="42" rx="4" fill="#fff" stroke="#ced5d4"/>
+    <text x="115" y="56" text-anchor="middle">Şirket Web Sitesi</text>
+    <rect x="20" y="109" width="190" height="42" rx="4" fill="#fff" stroke="#ced5d4"/>
+    <text x="115" y="135" text-anchor="middle">Müşteri Portalı</text>
+    <rect x="20" y="188" width="190" height="42" rx="4" fill="#fff" stroke="#ced5d4"/>
+    <text x="115" y="214" text-anchor="middle">Admin Portalı</text>
+  </g>
+  <path d="M210 51 H255 V130 M210 130 H255 M210 209 H255 V130" fill="none" stroke="#9caeb4" stroke-width="1.6"/>
+  <line x1="255" y1="130" x2="300" y2="130" stroke="#536168" stroke-width="1.6" marker-end="url(#arrow2)"/>
+
+  <!-- center: core -->
+  <rect x="300" y="90" width="180" height="80" rx="4" fill="#2d5368"/>
+  <text x="390" y="126" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff">VERALIQ Core</text>
+  <text x="390" y="146" text-anchor="middle" font-size="11.5" fill="#dbe6ea">Durum · Bellek · Kurallar</text>
+
+  <line x1="480" y1="110" x2="530" y2="110" stroke="#536168" stroke-width="1.6" marker-end="url(#arrow2)"/>
+  <line x1="480" y1="150" x2="530" y2="150" stroke="#536168" stroke-width="1.6" marker-end="url(#arrow2)"/>
+
+  <!-- right: data + permitted tools -->
+  <g font-size="12.5" fill="#202c32">
+    <rect x="530" y="88" width="210" height="44" rx="4" fill="#fff" stroke="#ced5d4"/>
+    <text x="635" y="106" text-anchor="middle">Şirket Verileri</text>
+    <text x="635" y="122" text-anchor="middle" font-size="10.5" fill="#536168">CRM / Veritabanı (D1)</text>
+    <rect x="530" y="140" width="210" height="44" rx="4" fill="#fff" stroke="#ced5d4"/>
+    <text x="635" y="158" text-anchor="middle">İzinli Araçlar</text>
+    <text x="635" y="174" text-anchor="middle" font-size="10.5" fill="#536168">sabit, deterministik fonksiyonlar</text>
+  </g>
+
+  <text x="390" y="225" text-anchor="middle" font-size="11" fill="#536168">Brain hiçbir zaman doğrudan SQL üretmez; yalnızca sabit fonksiyonları çağırır.</text>
+</svg>

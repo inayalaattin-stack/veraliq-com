@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>VERALIQ — Satış / Demo Sunumu</title>
+<style>
+/* Editable presentation source (specs/04-SALES-DECK.md). Plain HTML/CSS —
+   open and edit directly, or paste each .slide's content into PowerPoint/
+   Google Slides. Same design tokens as assets/enterprise-light.css, same
+   SVG icons/diagrams as assets/brand/. Every claim on every slide traces to
+   real, existing site copy (index.html data-i18n keys quoted in HTML
+   comments) or to specs/04-SALES-DECK.md's own ROI methodology section —
+   nothing here is a new number, case study or guarantee. */
+:root{
+  --ink:#f6f6f2;--panel:#fff;--panel-2:#eff1ef;--text:#202c32;--text-dim:#536168;
+  --line:#ced5d4;--accent:#2d5368;--accent-text:#254a60;--accent-dim:#e5edf1;
+  --green:#246a4d;--green-dim:#e6f0e9;--terracotta:#80533f;--ui-font:Arial,'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:#dfe3e1;font-family:var(--ui-font);color:var(--text);}
+.slide{
+  width:1280px;height:720px;margin:24px auto;background:var(--panel);
+  border:1px solid var(--line);position:relative;overflow:hidden;
+  padding:64px 72px;page-break-after:always;
+}
+.slide .no{position:absolute;right:28px;bottom:20px;font-size:13px;color:var(--text-dim);}
+.eyebrow{font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px;}
+h1{font-size:44px;line-height:1.18;margin:0 0 20px;letter-spacing:-.02em;max-width:1020px;}
+h2.msg{font-size:30px;line-height:1.25;margin:0 0 26px;max-width:980px;}
+.body{font-size:22px;line-height:1.6;color:var(--text);max-width:760px;}
+.footnote{position:absolute;left:72px;right:72px;bottom:26px;font-size:16px;line-height:1.5;color:var(--text-dim);border-top:1px solid var(--line);padding-top:14px;}
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px;max-width:820px;}
+ul.list li{font-size:22px;line-height:1.5;padding-left:26px;position:relative;}
+ul.list li::before{content:'';position:absolute;left:0;top:11px;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+.icon-row{display:flex;gap:36px;flex-wrap:wrap;margin-top:8px;}
+.icon-item{width:220px;}
+.icon-item svg{width:36px;height:36px;color:var(--accent);margin-bottom:10px;}
+.icon-item h4{font-size:18px;margin:0 0 6px;}
+.icon-item p{font-size:15px;color:var(--text-dim);line-height:1.5;margin:0;}
+.roster{display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;max-width:900px;margin-top:8px;}
+.roster div{font-size:19px;padding:10px 0;border-bottom:1px solid var(--line);}
+.roster b{display:block;font-size:19px;}
+.roster span{color:var(--text-dim);font-size:15px;}
+.pill{display:inline-block;font-size:13px;background:var(--accent-dim);color:var(--accent-text);border-radius:3px;padding:4px 10px;margin-bottom:18px;}
+.shot{border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:100%;display:block;}
+.method-table{width:100%;border-collapse:collapse;font-size:17px;margin-top:10px;}
+.method-table th{text-align:left;color:var(--text-dim);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid var(--line);padding:8px 10px 8px 0;}
+.method-table td{padding:12px 10px 12px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+.steps{display:flex;gap:0;margin-top:10px;}
+.step{flex:1;border-top:3px solid var(--accent);padding:18px 20px 0 0;}
+.step b{display:block;font-size:19px;margin-bottom:6px;}
+.step p{font-size:15px;color:var(--text-dim);line-height:1.5;margin:0;}
+.cta{margin-top:28px;display:inline-block;background:var(--accent);color:#fff;font-size:20px;font-weight:600;padding:16px 30px;border-radius:4px;}
+.regulatory{color:var(--terracotta);}
+.mass-illustration{width:100%;max-width:420px;}
+@media print{
+  body{background:#fff;}
+  .slide{margin:0;border:none;box-shadow:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- 1 — VERALIQ: şirketinize ait AI satış ekibi -->
+<section class="slide">
+  <div class="eyebrow">VERALIQ</div>
+  <h1>Şirketinize Ait AI Satış Ekibi</h1>
+  <p class="body">Lead'den kapanışa, satışın her adımını sizin yerinize yürütür.<br>
+  <!-- hero.lede, index.html — verbatim --></p>
+  <img class="mass-illustration" src="../illustrations/massing-study.svg" alt="" style="margin-top:24px;">
+  <div class="footnote">Bu sunumdaki modül ve özellik listesi veraliq.com'daki canlı kapsamla birebir aynıdır; "aktif" olarak anılan her modül kaynak koda karşı doğrulanmıştır.</div>
+  <div class="no">1 / 12</div>
+</section>
+
+<!-- 2 — Dağınık satış temasları ve takip kaybı -->
+<section class="slide">
+  <div class="eyebrow">Bugünkü Durum</div>
+  <h2 class="msg">Dağınık Satış Süreci, Kaybolan Takip</h2>
+  <ul class="list">
+    <li>Lead geliyor ama satış ekibi geç cevaplıyor.</li>
+    <li>Mesai dışında müşteri kaçıyor.</li>
+    <li>WhatsApp, telefon, CRM ve Excel birbirinden kopuk.</li>
+    <li>Follow-up unutuluyor.</li>
+  </ul>
+  <div class="footnote">Kaynak: mevcut satış süreci gözlemi (index.html #problem, problem.item1-4). Yeni bir kayıp yüzdesi veya istatistik iddia edilmez.</div>
+  <div class="no">2 / 12</div>
+</section>
+
+<!-- 3 — Lead'den satışa tek süreç -->
+<section class="slide">
+  <div class="eyebrow">Süreç</div>
+  <h2 class="msg">Lead'den Satışa, Tek Kesintisiz Hat</h2>
+  <img src="../illustrations/diagram-sales-workflow.svg" alt="Lead gelir, AI karşılama, ihtiyaç analizi, portföy eşleştirme, canlı sunum, follow-up, nitelikli lead, onay, satış" style="width:100%;max-width:920px;">
+  <div class="footnote">Onay gerektiren adımlar (ör. eşik üstü indirim) mevcut approval_requests akışıyla kayıt altına alınır, gizlenmez.</div>
+  <div class="no">3 / 12</div>
+</section>
+
+<!-- 4 — Tek chatbot değil, görev dağılımı -->
+<section class="slide">
+  <div class="eyebrow">Organizasyon</div>
+  <h2 class="msg">Tek Bir Chatbot Değil, Görev Dağılımı Yapan Bir Ekip</h2>
+  <div class="roster">
+    <div><b>Elif Kaya</b><span>Müşteri Karşılama</span></div>
+    <div><b>Zeynep Arslan</b><span>Yatırım Danışmanı</span></div>
+    <div><b>Ahmet Demir</b><span>Satış Agent'ı</span></div>
+    <div><b>Mehmet Yılmaz</b><span>Follow-up</span></div>
+    <div><b>Ayşe Kaya</b><span>Randevu Koordinasyonu</span></div>
+    <div><b>İçerik Agent'ı</b><span>Kampanya &amp; İçerik</span></div>
+  </div>
+  <div class="footnote">Yukarıdaki roster, veraliq.com'un canlı "AI Workforce" bölümündeki örnek yapılandırmadır (wf.role1-6). Ad, rol ve sayı admin panelinden şirketinize göre düzenlenir.</div>
+  <div class="no">4 / 12</div>
+</section>
+
+<!-- 5 — Şirketin gerçek proje, fiyat ve stok verisi -->
+<section class="slide">
+  <div class="eyebrow">Veri Kaynağı</div>
+  <h2 class="msg">Şirketinizin Gerçek Proje, Fiyat ve Stok Verisiyle Çalışır</h2>
+  <p class="body">Kendi CRM'inizi bağlayın veya dahili CRM'i kullanın — stok/fiyat otomatik senkronize olur.
+  <!-- modules.svc5Desc, index.html — verbatim --></p>
+  <img src="../illustrations/diagram-integration.svg" alt="Şirket web sitesi, müşteri portalı ve admin portalı VERALIQ Core'a bağlanır; Core şirket verilerine ve izinli araçlara sabit fonksiyonlarla erişir" style="width:100%;max-width:820px;margin-top:10px;">
+  <div class="footnote">Hayali proje veya fiyat verisi kullanılmaz; Agent yalnızca bağlı kaynaktaki gerçek veriyle konuşur (Zero Trust AI: brain hiçbir zaman SQL üretmez, sabit fonksiyonları çağırır).</div>
+  <div class="no">5 / 12</div>
+</section>
+
+<!-- 6 — Web sitenize yerleşen satış deneyimi -->
+<section class="slide">
+  <div class="eyebrow">Entegrasyon</div>
+  <h2 class="msg">Web Sitenize Yerleşen Satış Deneyimi</h2>
+  <p class="body">Agent mimarisi platform seviyesinde tasarlandı — kendi web sitenize, portalınıza veya mobil uygulamanıza ekleyin.
+  <!-- channels.p, index.html — verbatim (minus "tek satır kodla", see footnote) --></p>
+  <div class="icon-row" style="margin-top:10px;">
+    <span class="pill">veraliq.com</span>
+    <span class="pill">Şirket Web Sitesi</span>
+    <span class="pill">Müşteri Portalı</span>
+    <span class="pill">Admin Portalı</span>
+    <span class="pill">Mobil Uygulama</span>
+  </div>
+  <div class="footnote">"Tek satır kodla ekleme" mevcut entegrasyon şekline atıfen kullanılır; kurulum adımları her şirket için teknik ekiple birlikte doğrulanır — kurulum süresine dair sabit bir taahhüt bu slaytın konusu değildir.</div>
+  <div class="no">6 / 12</div>
+</section>
+
+<!-- 7 — Şirket portalı ve operasyon görünürlüğü -->
+<section class="slide">
+  <div class="eyebrow">Şirket Portalı</div>
+  <h2 class="msg">Projeleriniz, Satışlarınız ve Agent Performansınız Tek Panelde</h2>
+  <img class="shot" src="../product/portal-login-desktop.png" style="max-width:640px;" alt="VERALIQ Şirket Portalı — gerçek giriş ekranı">
+  <div class="footnote">Görsel, portalın gerçek giriş ekranıdır — bu ortamda kimlik doğrulama bilgisi bulunmadığından panel içi (dashboard) görünüm login ekranı yerine geçirilerek gösterilmemiştir; ayrıca çok kiracılı portalın kendisi henüz canlı değildir (tasarım önizlemesi).</div>
+  <div class="no">7 / 12</div>
+</section>
+
+<!-- 8 — Sesli/görüntülü deneyim -->
+<section class="slide">
+  <div class="eyebrow">Etkileşim</div>
+  <h2 class="msg">Yazı Değil, Gerçek Zamanlı Sesli/Görüntülü Konuşma</h2>
+  <p class="body">Gerçek zamanlı sesli konuşma; yazıya dökülü klasik chat deneyimi değil.
+  <!-- modules.svc4Desc, index.html — verbatim --></p>
+  <img class="shot" src="../product/index-hero-desktop.png" style="max-width:760px;margin-top:6px;" alt="VERALIQ AI Agent widget — gerçek ekran">
+  <div class="footnote">Avatar görseli ve ses kalitesi bağlı sağlayıcıya göre değişir; kusursuz görsel benzerlik veya aksan garantisi verilmez.</div>
+  <div class="no">8 / 12</div>
+</section>
+
+<!-- 9 — Yetkilendirme ve veri kontrolü -->
+<section class="slide">
+  <div class="eyebrow">Güvenlik</div>
+  <h2 class="msg">Yetkilendirme ve Veri Kontrolü</h2>
+  <div class="icon-row">
+    <div class="icon-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="7" height="7" rx="1"/><rect x="13.5" y="10.5" width="7" height="7" rx="1"/><path d="M11 12.5 13 10.5" stroke-dasharray="1.6 1.6"/></svg>
+      <h4>Şirket Verisi İzolasyonu</h4>
+      <p>Her şirketin proje ve müşteri verisi ayrı tutulur; Agent yalnızca kendi şirketinizin verisiyle konuşur.</p>
+    </div>
+    <div class="icon-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.6"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/><circle cx="12" cy="15" r="1.4"/><path d="M12 16.4V18"/></svg>
+      <h4>Yetkilendirme</h4>
+      <p>Admin, portal ve CRM erişimleri rol bazlı yetkilendirmeyle kontrol edilir.</p>
+    </div>
+    <div class="icon-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12S7 6 12 6s8.5 6 8.5 6-3.5 6-8.5 6-8.5-6-8.5-6z"/><circle cx="12" cy="12" r="2.6"/><path d="M4.5 19.5 19.5 4.5"/></svg>
+      <h4>KVKK Yaklaşımı</h4>
+      <p>Müşteri verisi açık rıza ile toplanır; saklama ve silme talepleri için hazır süreç.</p>
+    </div>
+    <div class="icon-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a7.5 7.5 0 1 0 6.5 11.3"/><path d="M18 5v4h-4"/><path d="M12 8.5v4l3 1.8"/></svg>
+      <h4>Denetlenebilir Erişim</h4>
+      <p>Konuşma ve işlem kayıtları zaman damgalı olarak tutulur, denetlenebilir.</p>
+    </div>
+  </div>
+  <div class="footnote">KVKK yaklaşımı süreçseldir; bu slayt E2EE, ISO sertifikasyonu veya tam hukuki uyum garantisi iddia etmez (trust.item1-4, index.html — verbatim).</div>
+  <div class="no">9 / 12</div>
+</section>
+
+<!-- 10 — ROI nasıl ölçülür -->
+<section class="slide">
+  <div class="eyebrow">Ölçüm</div>
+  <h2 class="msg">ROI Nasıl Ölçülür? — Bir Vaat Değil, Bir Yöntem</h2>
+  <table class="method-table">
+    <tr><th>Ölçüt</th><th>Tanım</th></tr>
+    <tr><td>İlk yanıt süresi</td><td>Lead alınması ile ilk anlamlı yanıt arasındaki süre</td></tr>
+    <tr><td>Takip tamamlama</td><td>Tamamlanan planlı takip / planlanan takip</td></tr>
+    <tr><td>Randevu dönüşümü</td><td>Oluşturulan geçerli randevu / uygun lead</td></tr>
+    <tr><td>Randevuya katılım</td><td>Katılımı doğrulanan randevu / planlanan randevu</td></tr>
+    <tr><td>Operasyon zamanı</td><td>Aynı kapsam ve dönemde ölçülmüş iş yükü karşılaştırması</td></tr>
+  </table>
+  <div class="footnote">Pilot öncesi baz dönem ve pilot dönemi birlikte tanımlanır; dönüşüm artışı tek başına VERALIQ'a nedensel olarak bağlanmaz. Sayı yoksa grafik hayalî barla doldurulmaz — yöntem kullanılır. Lisans/altyapı/entegrasyon maliyetleri hesaba dahildir.</div>
+  <div class="no">10 / 12</div>
+</section>
+
+<!-- 11 — Pilot kapsamı -->
+<section class="slide">
+  <div class="eyebrow">Başlangıç</div>
+  <h2 class="msg">Pilot Kapsamı</h2>
+  <div class="steps">
+    <div class="step"><b>1. Başlangıç Verisi</b><p>Proje/portföy, fiyat ve stok verisinin aktarımı.</p></div>
+    <div class="step"><b>2. Bağlantı</b><p>CRM veya dahili veritabanı (D1) entegrasyonu.</p></div>
+    <div class="step"><b>3. Test</b><p>İzinli test ortamında Agent davranışının doğrulanması.</p></div>
+    <div class="step"><b>4. Kabul</b><p>Şirketinizle birlikte tanımlanan kabul kriterlerinin kontrolü.</p></div>
+  </div>
+  <div class="footnote">Süre ve fiyat, kapsam netleşmeden sabit taahhüt olarak verilmez; her pilot şirketin veri ve entegrasyon durumuna göre birlikte planlanır.</div>
+  <div class="no">11 / 12</div>
+</section>
+
+<!-- 12 — kendi proje verinizle demo -->
+<section class="slide">
+  <div class="eyebrow">Sonraki Adım</div>
+  <h1>Kendi Proje Verinizle Demo Görün</h1>
+  <p class="body">Projelerinizi, fiyatlarınızı, ödeme planlarınızı ve satış kurallarınızı VERALIQ'a tanıtın — ekibiniz aynı gün müşterilerinizle çalışmaya başlasın.
+  <!-- hero.support, index.html — verbatim --></p>
+  <a class="cta" href="mailto:info@veraliq.com">info@veraliq.com</a>
+  <div class="footnote">İletişim: info@veraliq.com (footer, index.html — mevcut, gerçek iletişim adresi). Demo talebi veraliq.com üzerindeki mevcut form üzerinden de iletilebilir.</div>
+  <div class="no">12 / 12</div>
+</section>
+
+</body>
+</html>

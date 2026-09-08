@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-hidden="true">
+  <!-- Low-contrast parcel/site-plan grid for section or hero background tiling.
+       Intended use: background-image on a light surface, opacity handled by
+       the consuming page (keep it under ~8% effective contrast against the
+       page canvas). No text, no logos, no property data. -->
+  <rect width="240" height="240" fill="none"/>
+  <g stroke="#9caeb4" stroke-width="1" fill="none" opacity="0.55">
+    <path d="M0 40H240M0 96H240M0 152H240M0 208H240"/>
+    <path d="M40 0V240M96 0V240M152 0V240M208 0V240"/>
+  </g>
+  <g stroke="#9caeb4" stroke-width="1" fill="none" opacity="0.9">
+    <rect x="40" y="40" width="56" height="56"/>
+    <rect x="152" y="96" width="56" height="56"/>
+    <rect x="96" y="152" width="56" height="56"/>
+  </g>
+</svg>
