@@ -23,7 +23,7 @@
 // wants this widget must include that markup + those styles + this module.
 
 import { createProviders } from './config.js?v=3';
-import { createCallConsent } from './call-consent.js?v=1';
+import { createCallConsent } from './call-consent.js?v=2';
 import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
 import { AgentOrchestrator } from './orchestrator.js?v=5';
 import { ConversationLogger } from './conversation-logger.js?v=3';

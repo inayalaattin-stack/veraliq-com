@@ -1,153 +1,61 @@
-// Veraliq — pricing page interactivity (calculator + WebGL network orb).
-// Vanilla JS port of VeraliqPricing.jsx from VERALIQ-Pricing-Package.zip —
-// this repo has no build step and no React runtime, so the JSX component
-// could not be dropped in directly (see CLAUDE.md: plain HTML/CSS/vanilla
-// JS, no framework). Price/commission math and calculator behavior match
-// the reference 1:1; Framer Motion's fade/slide transitions are replaced
-// with plain CSS transitions, and the reference's React refs/useEffect
-// become plain DOM lookups and a single IIFE run on DOMContentLoaded.
+// Veraliq — pricing page interactivity (monthly/annual toggle + WebGL
+// network orb). The cost-comparison calculator that used to live here was
+// removed at the user's request (specs called for the "Maliyet Senaryosu"
+// section to come out of the pricing page entirely) — this file now only
+// drives the plan card's billing-period toggle and the decorative orb.
 (function () {
   'use strict';
 
-  var PRICES = { monthly: 25000, annual: 250000, successRate: 0.005 };
+  var PRICES = { monthly: 25000, annual: 250000 };
   var MONEY = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 });
 
   function tl(n) { return MONEY.format(n) + ' TL'; }
-
-  function clean(value, max, integer) {
-    if (max === undefined) max = 100000000;
-    var n = Math.min(max, Math.max(0, Number(value) || 0));
-    return integer ? Math.floor(n) : Math.round(n * 100) / 100;
-  }
-
-  function calculateCosts(annual, data) {
-    var platform = annual ? PRICES.annual / 12 : PRICES.monthly;
-    var personnel = data.salary + data.sgk + data.meals + data.travel + data.bonus;
-    var success = data.salePrice * data.sales * PRICES.successRate;
-    return {
-      platform: platform,
-      personnel: personnel,
-      success: success,
-      veraliq: platform + success,
-      difference: personnel - (platform + success)
-    };
-  }
-  window.VeraliqPricingCalc = calculateCosts; // exposed for the test harness below
 
   function t(key) {
     return (window.VeraliqI18N && window.VeraliqI18N.t(key)) || key;
   }
 
-  // ---- calculator state ----
-  var state = {
-    annual: false,
-    data: { salary: 60000, sgk: 15000, meals: 2500, travel: 2500, bonus: 0, salePrice: 5000000, sales: 1 }
-  };
-
+  var annual = false;
   var els = {};
-  ['vpToggleMonthly', 'vpToggleAnnual', 'vpPriceAmount', 'vpPriceUnit', 'vpPriceNote',
-   'vpSalary', 'vpSgk', 'vpMeals', 'vpTravel', 'vpBonus', 'vpSalePrice', 'vpSales', 'vpSalesVal',
-   'vpChartNote', 'vpChartAria', 'vpBarPersonnel', 'vpBarPlatform', 'vpBarSuccess',
-   'vpPersonnelVal', 'vpVeraliqVal', 'vpAxisMid', 'vpAxisMax',
-   'vpBdPlatformLabel', 'vpBdPlatform', 'vpBdSuccess', 'vpBdTotal', 'vpDiff'
-  ].forEach(function (id) { els[id] = document.getElementById(id); });
+  ['vpToggleMonthly', 'vpToggleAnnual', 'vpPriceAmount', 'vpPriceUnit', 'vpPriceNote']
+    .forEach(function (id) { els[id] = document.getElementById(id); });
 
   function render() {
-    if (!els.vpPriceAmount) return; // pricing.js loaded on a page without the calculator markup
-    var c = calculateCosts(state.annual, state.data);
-
-    // plan card
-    els.vpPriceAmount.textContent = MONEY.format(state.annual ? PRICES.annual : PRICES.monthly);
-    els.vpPriceUnit.setAttribute('data-i18n', state.annual ? 'pricing.price.unit.annual' : 'pricing.price.unit.monthly');
-    els.vpPriceUnit.textContent = t(state.annual ? 'pricing.price.unit.annual' : 'pricing.price.unit.monthly');
-    if (state.annual) {
+    if (!els.vpPriceAmount) return; // pricing.js loaded on a page without the plan card
+    els.vpPriceAmount.textContent = MONEY.format(annual ? PRICES.annual : PRICES.monthly);
+    els.vpPriceUnit.setAttribute('data-i18n', annual ? 'pricing.price.unit.annual' : 'pricing.price.unit.monthly');
+    els.vpPriceUnit.textContent = t(annual ? 'pricing.price.unit.annual' : 'pricing.price.unit.monthly');
+    if (annual) {
       els.vpPriceNote.removeAttribute('data-i18n');
       els.vpPriceNote.textContent = t('pricing.price.note.annual').replace('{amount}', tl(PRICES.annual / 12));
     } else {
       els.vpPriceNote.setAttribute('data-i18n', 'pricing.price.note.monthly');
       els.vpPriceNote.textContent = t('pricing.price.note.monthly');
     }
-
-    // breakdown label follows the billing period too
-    els.vpBdPlatformLabel.setAttribute('data-i18n', state.annual ? 'pricing.calc.bdplatform.annual' : 'pricing.calc.bdplatform.monthly');
-    els.vpBdPlatformLabel.textContent = t(state.annual ? 'pricing.calc.bdplatform.annual' : 'pricing.calc.bdplatform.monthly');
-    els.vpChartNote.setAttribute('data-i18n', state.annual ? 'pricing.calc.chartnote.annual' : 'pricing.calc.chartnote.monthly');
-    els.vpChartNote.textContent = t(state.annual ? 'pricing.calc.chartnote.annual' : 'pricing.calc.chartnote.monthly');
-
-    // chart
-    var ceiling = Math.max(10000, Math.ceil(Math.max(c.personnel, c.veraliq) / 10000) * 10000);
-    function pct(n) { return (n / ceiling * 100) + '%'; }
-    els.vpBarPersonnel.style.width = pct(c.personnel);
-    els.vpBarPlatform.style.width = pct(c.platform);
-    els.vpBarSuccess.style.width = pct(c.success);
-    els.vpPersonnelVal.textContent = tl(c.personnel);
-    els.vpVeraliqVal.textContent = tl(c.veraliq);
-    els.vpAxisMid.textContent = tl(ceiling / 2);
-    els.vpAxisMax.textContent = tl(ceiling);
-    els.vpBdPlatform.textContent = tl(c.platform);
-    els.vpBdSuccess.textContent = tl(c.success);
-    els.vpBdTotal.textContent = tl(c.veraliq) + ' + KDV';
-
-    if (Math.abs(c.difference) < 0.005) {
-      els.vpDiff.textContent = t('pricing.calc.diffsame');
-    } else {
-      els.vpDiff.textContent = tl(Math.abs(c.difference)) + ' ' + t(c.difference > 0 ? 'pricing.calc.difflower' : 'pricing.calc.diffhigher');
-    }
-
-    els.vpChartAria.setAttribute('aria-label',
-      t('pricing.calc.rowpersonnel') + ': ' + tl(c.personnel) + '. ' +
-      t('pricing.calc.rowveraliq') + ': ' + tl(c.veraliq) + ' (' +
-      t('pricing.calc.legendplatform') + ' ' + tl(c.platform) + ', ' +
-      t('pricing.calc.legendsuccess') + ' ' + tl(c.success) + ').');
   }
 
   function bindToggle() {
     if (!els.vpToggleMonthly) return;
     els.vpToggleMonthly.addEventListener('click', function () {
-      state.annual = false;
+      annual = false;
       els.vpToggleMonthly.setAttribute('aria-pressed', 'true');
       els.vpToggleAnnual.setAttribute('aria-pressed', 'false');
       render();
     });
     els.vpToggleAnnual.addEventListener('click', function () {
-      state.annual = true;
+      annual = true;
       els.vpToggleMonthly.setAttribute('aria-pressed', 'false');
       els.vpToggleAnnual.setAttribute('aria-pressed', 'true');
       render();
     });
   }
 
-  function bindMoneyField(id, key, max) {
-    var el = els[id];
-    if (!el) return;
-    el.addEventListener('input', function () {
-      state.data[key] = clean(el.value, max, false);
-      render();
-    });
-  }
-
-  function bindInputs() {
-    bindMoneyField('vpSalary', 'salary');
-    bindMoneyField('vpSgk', 'sgk');
-    bindMoneyField('vpMeals', 'meals');
-    bindMoneyField('vpTravel', 'travel');
-    bindMoneyField('vpBonus', 'bonus');
-    bindMoneyField('vpSalePrice', 'salePrice');
-    if (els.vpSales) {
-      els.vpSales.addEventListener('input', function () {
-        state.data.sales = clean(els.vpSales.value, 10, true);
-        els.vpSalesVal.textContent = state.data.sales;
-        render();
-      });
-    }
-  }
-
   document.addEventListener('veraliq:langchange', render);
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { bindToggle(); bindInputs(); render(); });
+    document.addEventListener('DOMContentLoaded', function () { bindToggle(); render(); });
   } else {
-    bindToggle(); bindInputs(); render();
+    bindToggle(); render();
   }
 
   // =========================================================================

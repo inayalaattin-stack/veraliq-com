@@ -121,49 +121,13 @@ header nav{display:flex;align-items:center;gap:28px;max-width:1240px;margin:0 au
 .vp-card-foot{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6;}
 .vp-compliance-note{margin-top:18px;padding:14px 16px;border:1px solid #3c3347;border-radius:8px;background:rgba(140,120,220,0.06);font-size:13.5px;color:var(--muted);line-height:1.55;}
 
-/* calculator */
-.vp-calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:8px;}
-@media(max-width:900px){.vp-calc-grid{grid-template-columns:1fr;}}
-.vp-assumption{display:inline-block;font-size:13px;color:#d1c5ee;background:#252033;padding:6px 10px;border:1px solid #514463;border-radius:5px;margin-bottom:18px;}
-.vp-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
-.vp-field{display:block;min-width:0;}
-.vp-field>span{display:block;font-size:13.5px;color:#c1bdce;margin-bottom:7px;}
-.vp-field-input{display:flex;align-items:center;border:1px solid #62626f;border-radius:6px;background:#14141b;padding-right:12px;}
-.vp-field-input input{width:100%;min-width:0;border:0;background:transparent;color:#f8f7fb;min-height:44px;padding:10px 12px;font-size:16px;font-variant-numeric:tabular-nums;}
-.vp-field-input span{font-size:13px;color:#b1aabf;}
-.vp-divider{border-top:1px solid #313039;margin:26px 0;}
-.vp-range-label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;color:#c1bdce;margin-top:22px;}
-.vp-range-label strong{color:#e2d9ff;font-weight:500;}
-.vp-range{width:100%;accent-color:#ad99ff;min-height:40px;cursor:pointer;margin:6px 0 0;}
-.vp-range-ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);}
-.vp-note{font-size:13.5px;line-height:1.65;color:var(--muted);}
-.vp-inputs>.vp-note{margin-top:18px;}
-.vp-chart-panel{min-width:0;border:1px solid #3e3b49;border-radius:12px;background:linear-gradient(155deg,#191820,#121217);padding:26px;}
-.vp-chart-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
-.vp-chart-top>span{font-size:13px;color:var(--muted);}
-.vp-chart{margin-top:26px;}
-.vp-chart-row{margin-bottom:24px;}
-.vp-bar-label{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px;font-size:14.5px;}
-.vp-bar-label strong{font-size:14.5px;font-weight:550;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere;}
-.vp-track{height:28px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 25%);border-left:1px solid #83808d;}
-.vp-bar{height:100%;border-radius:0 4px 4px 0;transition:width .35s ease;}
-.vp-human{background:#89a9d4;}
-.vp-platform{background:#a696ff;}
-.vp-success{background:#8bd5e5;}
-.vp-stack{display:flex;}
-.vp-axis{display:flex;justify-content:space-between;gap:4px;font-size:13px;color:#b8b2c8;font-variant-numeric:tabular-nums;}
-.vp-legend{display:flex;gap:20px;flex-wrap:wrap;margin:18px 0 26px;font-size:13.5px;color:#c7c1d5;}
-.vp-legend span{display:inline-flex;align-items:center;gap:8px;}
-.vp-legend i{display:block;width:10px;height:10px;border-radius:2px;}
-.vp-breakdown{margin:0;}
-.vp-breakdown div{display:flex;justify-content:space-between;gap:20px;padding:9px 0;font-size:13.5px;border-bottom:1px solid #36313f;}
-.vp-breakdown dt{color:var(--muted);}
-.vp-breakdown dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;}
-.vp-breakdown div:last-child{font-weight:600;font-size:14.5px;}
-.vp-difference{margin:24px 0;padding:18px;background:#201c2a;border-left:2px solid #b39aed;border-radius:0 6px 6px 0;}
-.vp-difference>span{font-size:13.5px;color:#c9bedb;}
-.vp-difference strong{display:block;font-size:22px;line-height:1.4;font-weight:550;letter-spacing:-.02em;margin:6px 0;overflow-wrap:anywhere;}
-.vp-difference p{font-size:13.5px;color:var(--muted);margin:0;}
+/* compliance & cost (moved here from index.html's #compliance-cost) */
+.vp-kicker-regulatory{color:#c99a72;}
+.vp-compliance-panel{margin-top:32px;padding:28px 32px;border:1px solid #4a3d38;border-inline-start:4px solid #a3714a;border-radius:8px;background:rgba(163,113,74,0.06);max-width:820px;}
+.vp-compliance-list{list-style:none;margin:0 0 20px;padding:0;display:flex;flex-direction:column;gap:14px;}
+.vp-compliance-list li{display:flex;gap:12px;font-size:16px;line-height:1.55;color:var(--text);}
+.vp-compliance-list li::before{content:'●';color:#c99a72;font-size:8px;margin-top:8px;flex-shrink:0;}
+.vp-compliance-included{margin:0;padding-top:18px;border-top:1px solid #4a3d38;font-size:14.5px;color:var(--muted);line-height:1.6;}
 
 /* closing + footer */
 .vp-closing{display:flex;align-items:center;justify-content:space-between;gap:36px;padding:56px 0;flex-wrap:wrap;}
@@ -223,7 +187,6 @@ footer{border-top:1px solid #24242c;padding:36px 0 28px;}
         <p class="vp-lead" data-i18n="pricing.lead">Gayrimenkul portföyünüz için görüntülü, otonom bir satış deneyimi. Tek platform bedeli. Satışa bağlı, şeffaf başarı primi.</p>
         <div class="vp-hero-actions">
           <a class="vp-primary" href="#fiyatlandirma" data-i18n="pricing.cta.plan">Planı İnceleyin →</a>
-          <a class="vp-text-link" href="#hesapla" data-i18n="pricing.cta.calc">Maliyeti Hesaplayın ↓</a>
         </div>
       </div>
     </div>
@@ -271,59 +234,19 @@ footer{border-top:1px solid #24242c;padding:36px 0 28px;}
     </div>
   </section>
 
-  <section id="hesapla" class="vp-section" style="background:#0d0d11;">
+  <section id="compliance-cost" class="vp-section" style="background:#0d0d11;">
     <div class="vp-container">
-      <p class="vp-kicker" data-i18n="pricing.calc.kicker">MALİYET SENARYOSU</p>
-      <h2 data-i18n="pricing.calc.h2" data-i18n-html="1">Kararı tahminle değil,<br><span>kendi rakamlarınızla verin.</span></h2>
-      <p class="vp-lead" style="font-size:16px;" data-i18n="pricing.calc.lead">Platform bedeli ve başarı primi aynı hesapta. Kendi ekibinizin maliyetini girin; farkı şeffafça görün.</p>
-
-      <div class="vp-calc-grid">
-        <div class="vp-inputs">
-          <p class="vp-assumption" data-i18n="pricing.calc.assumption">Örnek girdiler · Piyasa verisi değildir</p>
-          <h3 data-i18n="pricing.calc.personnelh3">Mevcut personel maliyetiniz</h3>
-          <div class="vp-fields">
-            <label class="vp-field"><span data-i18n="pricing.calc.salary">Aylık brüt maaş</span><div class="vp-field-input"><input type="number" id="vpSalary" min="0" max="100000000" step="100" value="60000"><span>TL</span></div></label>
-            <label class="vp-field"><span data-i18n="pricing.calc.sgk">İşveren SGK / ek yük</span><div class="vp-field-input"><input type="number" id="vpSgk" min="0" max="100000000" step="100" value="15000"><span>TL</span></div></label>
-            <label class="vp-field"><span data-i18n="pricing.calc.meals">Aylık yemek</span><div class="vp-field-input"><input type="number" id="vpMeals" min="0" max="100000000" step="100" value="2500"><span>TL</span></div></label>
-            <label class="vp-field"><span data-i18n="pricing.calc.travel">Aylık yol</span><div class="vp-field-input"><input type="number" id="vpTravel" min="0" max="100000000" step="100" value="2500"><span>TL</span></div></label>
-            <label class="vp-field"><span data-i18n="pricing.calc.bonus">Aylık prim / diğer</span><div class="vp-field-input"><input type="number" id="vpBonus" min="0" max="100000000" step="100" value="0"><span>TL</span></div></label>
-          </div>
-          <div class="vp-divider"></div>
-          <h3 data-i18n="pricing.calc.successh3">Başarı primi senaryosu</h3>
-          <label class="vp-field" style="margin-top:16px;"><span data-i18n="pricing.calc.saleprice">Ortalama satış bedeli</span><div class="vp-field-input"><input type="number" id="vpSalePrice" min="0" max="100000000" step="10000" value="5000000"><span>TL</span></div></label>
-          <label class="vp-range-label" for="vpSales"><span data-i18n="pricing.calc.saleslabel">Aylık prim doğuran satış</span> <strong><span id="vpSalesVal">1</span> <span data-i18n="pricing.calc.unit.sale">adet</span></strong></label>
-          <input id="vpSales" class="vp-range" type="range" min="0" max="10" step="1" value="1">
-          <div class="vp-range-ends"><span data-i18n="pricing.calc.salesmin">0 satış</span><span data-i18n="pricing.calc.salesmax">10 satış</span></div>
-          <p class="vp-note" data-i18n="pricing.calc.salesnote">Bu, satış tahmini değildir. Prim kapsamı ve tahakkuk koşulları sözleşmede belirlenir.</p>
-        </div>
-
-        <div class="vp-chart-panel">
-          <div class="vp-chart-top"><h3 data-i18n="pricing.calc.charth3">Aylık maliyet karşılaştırması</h3><span data-i18n="pricing.calc.vat">KDV hariç</span></div>
-          <p class="vp-note" id="vpChartNote" data-i18n="pricing.calc.chartnote.monthly">Aylık platform bedeli kullanılır. İnsan ve AI için eşdeğer satış performansı varsayılmaz.</p>
-          <div class="vp-chart" role="img" id="vpChartAria" aria-label="">
-            <div class="vp-chart-row">
-              <div class="vp-bar-label"><span data-i18n="pricing.calc.rowpersonnel">Personel</span><strong id="vpPersonnelVal">0 TL</strong></div>
-              <div class="vp-track"><div class="vp-bar vp-human" id="vpBarPersonnel" style="width:0%"></div></div>
-            </div>
-            <div class="vp-chart-row">
-              <div class="vp-bar-label"><span data-i18n="pricing.calc.rowveraliq">Veraliq</span><strong id="vpVeraliqVal">0 TL</strong></div>
-              <div class="vp-track vp-stack"><div class="vp-bar vp-platform" id="vpBarPlatform" style="width:0%"></div><div class="vp-bar vp-success" id="vpBarSuccess" style="width:0%"></div></div>
-            </div>
-            <div class="vp-axis" aria-hidden="true"><span>0 TL</span><span id="vpAxisMid">0 TL</span><span id="vpAxisMax">0 TL</span></div>
-          </div>
-          <div class="vp-legend"><span><i style="background:#a696ff;"></i><span data-i18n="pricing.calc.legendplatform">Platform</span></span><span><i style="background:#8bd5e5;"></i><span data-i18n="pricing.calc.legendsuccess">Başarı primi</span></span></div>
-          <dl class="vp-breakdown">
-            <div><dt id="vpBdPlatformLabel" data-i18n="pricing.calc.bdplatform.monthly">Platform / ay</dt><dd id="vpBdPlatform">0 TL</dd></div>
-            <div><dt data-i18n="pricing.calc.bdsuccess">Başarı primi / ay</dt><dd id="vpBdSuccess">0 TL</dd></div>
-            <div><dt data-i18n="pricing.calc.bdtotal">Veraliq toplam / ay</dt><dd id="vpBdTotal">0 TL + KDV</dd></div>
-          </dl>
-          <div class="vp-difference" aria-live="polite">
-            <span data-i18n="pricing.calc.difflabel">Bu senaryoda Veraliq</span>
-            <strong id="vpDiff">—</strong>
-            <p data-i18n="pricing.calc.diffnote">Bu bir maliyet farkıdır; yatırım getirisi veya ek satış garantisi değildir.</p>
-          </div>
-          <p class="vp-note" data-i18n="pricing.calc.footnote">Maaş ve SGK, KDV'li hizmet faturasıyla aynı vergi rejiminde değildir. Personel maliyetlerinde kendi brüt işveren toplamınızı kullanın. Yorgunluğa parasal değer atanmaz; vergi etkileri, ek entegrasyon/altyapı maliyetleri ve hizmet kapsamı ayrıca değerlendirilmelidir.</p>
-        </div>
+      <p class="vp-kicker vp-kicker-regulatory" data-i18n="cc.eyebrow">YENİ · KURUMSAL EK MODÜL</p>
+      <h2 data-i18n="cc.h2">Mevzuat, deprem yönetmeliği ve emtia fiyatları sizi şaşırtmasın.</h2>
+      <p class="vp-lead" style="font-size:16px;" data-i18n="cc.p">İnşaat ve gayrimenkul projeleriniz için resmi mevzuatı, TBDY güncellemelerini ve demir/çelik fiyatlarını günlük takip eden bir karar destek katmanı. Yatırım tavsiyesi veya kesin hukuki görüş vermez — ilgili maddeye ve veriye dikkatinizi çeker, kararı size bırakır.</p>
+      <div class="vp-compliance-panel">
+        <ul class="vp-compliance-list">
+          <li data-i18n="cc.li1">Resmi Gazete ve imar mevzuatını her gün tarar, projenizle eşleşeni işaretler</li>
+          <li data-i18n="cc.li2">TBDY (deprem yönetmeliği) güncellemelerinde ilgili maddeye anında dikkat çeker</li>
+          <li data-i18n="cc.li3">Demir, çelik ve temel inşaat emtialarının fiyatını canlı izler</li>
+          <li data-i18n="cc.li4">Bürokratik evrak sürecinizi tek panelde takip eder</li>
+        </ul>
+        <p class="vp-compliance-included" data-i18n="pricing.compliance.note">Uyum &amp; Maliyet modülü (mevzuat, deprem yönetmeliği ve emtia takibi) platform bedeline dahildir; ayrıca satın alma gerektirmez.</p>
       </div>
     </div>
   </section>
@@ -361,8 +284,8 @@ footer{border-top:1px solid #24242c;padding:36px 0 28px;}
   </div>
 </footer>
 
-<script src="i18n.js?v=5"></script>
+<script src="i18n.js?v=6"></script>
 <script src="script.js?v=9"></script>
-<script src="pricing.js?v=2"></script>
+<script src="pricing.js?v=3"></script>
 </body>
 </html>

@@ -5,12 +5,19 @@
 .veraliq-call-consent label{display:flex;gap:10px;align-items:flex-start;margin:17px 0;cursor:pointer}
 .veraliq-call-consent input{width:19px;height:19px;flex-shrink:0;accent-color:#d5be97;margin-top:2px}
 .veraliq-consent-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;margin-top:22px}
-.veraliq-call-consent button,.veraliq-camera-tray button{border:1px solid #70818e;border-radius:8px;padding:11px 14px;background:#213443;color:#fff;font:inherit;cursor:pointer;min-height:44px}
+.veraliq-call-consent button{border:1px solid #70818e;border-radius:8px;padding:11px 14px;background:#213443;color:#fff;font:inherit;cursor:pointer;min-height:44px}
 .veraliq-call-consent button[data-confirm]{background:#d5be97;color:#111c25}
 .veraliq-call-consent button:disabled{opacity:.45;cursor:not-allowed}
-.veraliq-call-consent :focus-visible,.veraliq-camera-tray :focus-visible{outline:3px solid #e0c498;outline-offset:3px}
-.veraliq-camera-tray{position:absolute;top:66px;right:12px;z-index:15;width:142px;box-sizing:border-box;background:#0a1725ed;color:#fff;border:1px solid #52616a;border-radius:10px;padding:8px;font:12px/1.4 system-ui,sans-serif}
-.veraliq-camera-tray[hidden],.veraliq-camera-tray video[hidden]{display:none!important}
-.veraliq-camera-tray video{display:block;width:100%;height:82px;object-fit:cover;border-radius:5px;transform:scaleX(-1)}
-.veraliq-camera-tray span{display:block;margin:5px 0}
-.veraliq-camera-tray button{font-size:12px;padding:7px;width:100%}
+.veraliq-call-consent :focus-visible,.veraliq-camera-ctrl :focus-visible{outline:3px solid #e0c498;outline-offset:3px}
+/* Camera toggle sits inline in the header's own control row (next to
+   half/full/min/close) instead of floating a card over the chat/video
+   stage. Only the small self-preview drops down from the button itself
+   when active, so it never covers the conversation. */
+.veraliq-camera-ctrl{position:relative;display:inline-flex;flex-shrink:0}
+.veraliq-camera-ctrl[hidden]{display:none!important}
+.veraliq-camera-btn{font-size:14px;line-height:1}
+.veraliq-camera-btn.is-on{background:rgba(36,106,77,0.14);color:#246a4d}
+.veraliq-camera-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:20;width:130px;box-sizing:border-box;background:#0a1725ed;color:#fff;border:1px solid #52616a;border-radius:10px;padding:8px;font:11.5px/1.4 system-ui,sans-serif}
+.veraliq-camera-panel[hidden],.veraliq-camera-panel video[hidden]{display:none!important}
+.veraliq-camera-panel video{display:block;width:100%;height:76px;object-fit:cover;border-radius:5px;transform:scaleX(-1)}
+.veraliq-camera-panel span{display:block;margin-top:5px}

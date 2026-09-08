@@ -34,7 +34,7 @@ export class LocalCameraPreview {
 export function createCallConsent({ win, conversationLogging = false }) {
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
-  stylesheet.href = new URL('./call-consent.css', import.meta.url).href;
+  stylesheet.href = new URL('./call-consent.css?v=2', import.meta.url).href;
   document.head.appendChild(stylesheet);
   const dialog = document.createElement('dialog');
   dialog.className = 'veraliq-call-consent';
@@ -52,26 +52,41 @@ export function createCallConsent({ win, conversationLogging = false }) {
     ? 'Bu panelde görüşme metinleri ve oturum bilgileri mevcut şirket görüşme kaydına yazılabilir. Kapatmak önceki kayıtları silmez. Ayrıntılar için gizlilik politikasını inceleyin.'
     : 'Mesaj ve yanıtlar seçili sağlayıcılara iletilebilir. Bu izin katmanı ek bir görüşme kaydı oluşturmaz; sağlayıcıların saklama koşulları ayrıca geçerlidir.';
   document.body.appendChild(dialog);
-  const tray = document.createElement('aside');
-  tray.className = 'veraliq-camera-tray';
-  tray.hidden = true;
-  tray.innerHTML = '<video muted autoplay playsinline aria-label="Yalnızca cihazınızdaki kamera önizlemesi"></video><span role="status">Kamera kapalı</span><button type="button">Kamerayı aç</button>';
-  win.appendChild(tray);
-  const video = tray.querySelector('video');
+  // Camera toggle lives in the header's own control row (next to half/full/
+  // min/close) instead of a floating card over the chat/video stage — a
+  // floating mid-stage tray used to cover the conversation. The self-preview
+  // video, when active, drops down from the button itself so it stays
+  // anchored to that same top row rather than overlapping the stage.
+  const ctrl = document.createElement('div');
+  ctrl.className = 'veraliq-camera-ctrl';
+  ctrl.innerHTML = '<button type="button" class="agent-btn veraliq-camera-btn" aria-pressed="false" title="Kamerayı aç">🎥</button>' +
+    '<div class="veraliq-camera-panel" hidden><video muted autoplay playsinline aria-label="Yalnızca cihazınızdaki kamera önizlemesi"></video><span role="status"></span></div>';
+  const controls = win.querySelector('.agent-controls');
+  if (controls) controls.insertBefore(ctrl, controls.firstChild);
+  else win.appendChild(ctrl); // defensive fallback if header markup ever changes
+  ctrl.hidden = true;
+  const video = ctrl.querySelector('video');
   video.muted = true;
-  const status = tray.querySelector('span');
-  const toggle = tray.querySelector('button');
+  const status = ctrl.querySelector('span');
+  const toggle = ctrl.querySelector('button');
   let accepted = false;
   let pending = null;
   let opening = false;
   let attempt = 0;
-  const camera = new LocalCameraPreview({ mediaDevices: navigator.mediaDevices, onStream(stream) {
-    video.srcObject = stream;
-    video.hidden = !stream;
+  const panel = ctrl.querySelector('.veraliq-camera-panel');
+  // Only the "camera just turned on" path opens the panel — a failed
+  // attempt keeps it open to show the error, and closing it back is only
+  // ever the explicit act of the click handler below, never a side effect
+  // of this reflecting the stream/button chrome.
+  function reflectState(stream) {
+    video.srcObject = stream || null;
     status.textContent = stream ? 'Kamera: yalnızca siz' : 'Kamera kapalı';
-    toggle.textContent = stream ? 'Kamerayı kapat' : 'Kamerayı aç';
-    if (stream) video.play().catch(() => {});
-  }});
+    toggle.title = stream ? 'Kamerayı kapat' : 'Kamerayı aç';
+    toggle.setAttribute('aria-pressed', stream ? 'true' : 'false');
+    toggle.classList.toggle('is-on', !!stream);
+    if (stream) { panel.hidden = false; video.play().catch(() => {}); }
+  }
+  const camera = new LocalCameraPreview({ mediaDevices: navigator.mediaDevices, onStream: reflectState });
   camera.stop();
   function finish(value) {
     const resolve = pending;
@@ -83,16 +98,22 @@ export function createCallConsent({ win, conversationLogging = false }) {
     if (!accepted || opening) return;
     const ownAttempt = ++attempt;
     opening = true;
-    toggle.textContent = 'İzin isteğini iptal et';
+    panel.hidden = false;
+    toggle.title = 'İzin isteğini iptal et';
     status.textContent = 'Kamera izni bekleniyor';
     try { await camera.open(); }
     catch { if (accepted && ownAttempt === attempt) status.textContent = 'Kamera açılamadı; kamerasız devam edebilirsiniz.'; }
     finally {
-      if (ownAttempt === attempt) { opening = false; toggle.textContent = camera.stream ? 'Kamerayı kapat' : 'Kamerayı aç'; }
+      if (ownAttempt === attempt) {
+        opening = false;
+        toggle.title = camera.stream ? 'Kamerayı kapat' : 'Kamerayı aç';
+        toggle.setAttribute('aria-pressed', camera.stream ? 'true' : 'false');
+        toggle.classList.toggle('is-on', !!camera.stream);
+      }
     }
   }
   toggle.addEventListener('click', () => {
-    if (camera.stream || opening) { attempt++; opening = false; camera.stop(); }
+    if (camera.stream || opening) { attempt++; opening = false; camera.stop(); panel.hidden = true; }
     else openCamera();
   });
   const checkbox = dialog.querySelector('[data-accept]');
@@ -104,7 +125,7 @@ export function createCallConsent({ win, conversationLogging = false }) {
   confirm.addEventListener('click', () => {
     if (!checkbox.checked || !pending) return;
     accepted = true;
-    tray.hidden = false;
+    ctrl.hidden = false;
     const withCamera = dialog.querySelector('[data-camera]').checked;
     finish(true);
     if (withCamera) openCamera();
@@ -123,7 +144,7 @@ export function createCallConsent({ win, conversationLogging = false }) {
       attempt++;
       opening = false;
       camera.stop();
-      tray.hidden = true;
+      ctrl.hidden = true;
       finish(false);
     },
   };
