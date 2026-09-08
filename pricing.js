@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var PRICES = { monthly: 25000, annual: 250000, successRate: 0.01 };
+  var PRICES = { monthly: 25000, annual: 250000, successRate: 0.005 };
   var MONEY = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 });
 
   function tl(n) { return MONEY.format(n) + ' TL'; }

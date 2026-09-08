@@ -1,5 +1,22 @@
 # pricing.html — test results (this integration, not the received package's)
 
+**Update**: the success-fee rate was changed from 1% to 0.5% after initial
+delivery, at the user's request, along with full translation of the
+pricing-page copy into the remaining 6 site languages (ar, ru, de, fa, fr,
+es — previously TR/EN only) and a new "prices/commission subject to change"
+notice on the plan card. All figures below were re-verified against the
+0.5% rate: default scenario personnel 80,000 TL vs. Veraliq (monthly)
+50,000 TL (25,000 platform + 25,000 success, was 50,000 success at 1%) —
+30,000 TL lower; the 10-sales-per-month scenario now computes a 250,000 TL
+success fee (was 500,000 TL) for a 275,000 TL Veraliq total, still
+correctly shown as "daha yüksek" (higher than the 80,000 TL personnel
+figure). `i18n.js`'s cache-busting version was bumped again (v4 → v5) since
+its content changed again, and `pricing.js` (v1 → v2) since the rate
+constant changed — see the "Bump i18n.js cache-busting version" commit
+earlier in this file's history for why that matters on this specific site.
+All 6 newly-translated languages were spot-checked live (RTL for ar/fa,
+translated fee rate/notice/CTA) with no console errors.
+
 The delivered `VERALIQ-Pricing-Package.zip` ships its own `test-results.json`
 (86 checks against the React/Framer-Motion preview). Those results describe
 a different artifact — a JSX component tested standalone — and are **not**
