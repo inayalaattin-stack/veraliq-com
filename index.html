@@ -10,38 +10,29 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* VERALIQ Design System — "Structural" (2026-09-08, replaces Obsidian +
-       Champagne + AI Mint, which two independent design/critique passes both
-       flagged as the generic "dark-mode AI-startup" formula: near-black bg +
-       one warm gold accent + one neon-mint accent + Space Grotesk/Inter is
-       the default output of most AI page builders). New direction reads as
-       architectural/institutional rather than "AI product": a structural
-       charcoal base with a cool green-grey undertone (not literal obsidian
-       black), brass/bronze hardware instead of champagne gold, a weathered
-       patina green instead of neon mint, and a serif (Fraunces) for real
-       typographic gravitas instead of another geometric sans. Variable
-       NAMES are kept unchanged on purpose, same technique as the last
-       repaint, so every existing selector below repaints correctly without
-       being touched one by one. */
-    --ink:#121A16;          /* Structural charcoal — page background */
-    --ink-2:#182420;        /* Secondary surface / hover wash */
-    --panel:#1C2A24;        /* Surface — cards, panels, menus */
-    --line: #33453B;        /* Border — warm structural, not cold grey */
-    --text:#EAE6D9;         /* Warm paper-white — primary text */
-    --text-dim:#8B9690;     /* Muted Text — secondary text */
-    --text-dim-soft: rgba(139,150,144,0.92); /* WCAG AA 4.5:1 on --ink */
-    --accent:#B8823D;       /* Brass/bronze — primary accent (replaces champagne gold) */
-    --accent-text:#D1A05C;  /* Brighter brass — small mono labels/hover */
-    --accent-dim: rgba(184,130,61,0.14);
-    --accent-ink:#121A16;   /* dark text ON brass-background buttons */
-    --navy:#182420;         /* portal-preview surface (kept as its own token) */
-    --navy-2:#1C2A24;
-    --green:#5FA37C;        /* Weathered patina — "live / positive / AI" indicators (replaces neon mint) */
-    --terracotta:#B8543A;   /* Masonry brick — Compliance/Uyum module + alerts, its own identity */
-    --red:#C25B44;
+    /* VERALIQ Design System — Obsidian + Champagne + AI Mint
+       (replaces the previous light "Sapphire & Champagne Luxe" theme;
+       variable NAMES are kept unchanged on purpose so every existing
+       selector below repaints correctly without being touched one by one —
+       see docs/DESIGN_SYSTEM_ANALYSIS.md for the full mapping rationale) */
+    --ink:#080A0A;          /* Obsidian — page background */
+    --ink-2:#101413;        /* Deep Graphite — secondary surface / hover wash */
+    --panel:#171C19;        /* Surface — cards, panels, menus */
+    --line: #252C28;        /* Border */
+    --text:#EDE9DF;         /* Warm White — primary text */
+    --text-dim:#8A918C;     /* Muted Text — secondary text */
+    --text-dim-soft: rgba(138,145,140,0.92); /* WCAG AA: 0.65 idi, koyu zeminde ~3.2:1 kontrast veriyordu — footer bildirimi ve "Şirket Girişi" linki için 4.5:1 eşiğine çekildi */
+    --accent:#BFA16A;       /* Champagne — primary accent */
+    --accent-text:#D4BB87;  /* Champagne Hover — brighter, for small mono labels */
+    --accent-dim: rgba(191,161,106,0.14);
+    --accent-ink:#080A0A;   /* dark text ON champagne-background buttons */
+    --navy:#101413;         /* portal-preview surface (kept as its own token; no longer literal navy) */
+    --navy-2:#171C19;
+    --green:#7EE0B2;        /* AI Mint — repurposed for "live / positive / AI" indicators */
+    --red:#D93A40;
     --radius: 8px;
   }
   *{box-sizing:border-box;}
@@ -50,14 +41,14 @@
     margin:0;
     background:var(--ink);
     color:var(--text);
-    font-family:'IBM Plex Sans',sans-serif;
+    font-family:'Inter',sans-serif;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
   }
   h1,h2,h3,.display{
-    font-family:'Fraunces',serif;
-    letter-spacing:-0.01em;
-    font-weight:500;
+    font-family:'Space Grotesk',sans-serif;
+    letter-spacing:-0.02em;
+    font-weight:600;
     margin:0;
     text-wrap:balance;
   }
@@ -82,7 +73,7 @@
     padding:16px 32px;max-width:1240px;margin:0 auto;
   }
   .logo{
-    font-family:'Fraunces',serif;
+    font-family:'Space Grotesk',sans-serif;
     font-weight:700;font-size:20px;letter-spacing:-0.01em;
     display:flex;align-items:center;gap:10px;
     color:var(--text);text-decoration:none;cursor:pointer;
@@ -93,7 +84,7 @@
     flex-shrink:0;display:block;
   }
   .logo-sub{
-    font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:11.5px;
+    font-family:'Inter',sans-serif;font-weight:500;font-size:11.5px;
     color:var(--text-dim);letter-spacing:0;padding-left:10px;
     border-left:1px solid var(--line);white-space:nowrap;
   }
@@ -113,7 +104,7 @@
     font-family:'IBM Plex Mono',monospace;
     transition-property:border-color,background-color;transition-duration:.2s;transition-timing-function:ease-out;white-space:nowrap;
   }
-  .nav-cta:hover{border-color:var(--accent);background:rgba(184,130,61,0.10);}
+  .nav-cta:hover{border-color:var(--accent);background:rgba(191,161,106,0.10);}
   .nav-toggle{display:none;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;}
   @media(max-width:960px){
     .nav-links{
@@ -143,23 +134,9 @@
     position:relative;padding:0;
     border-bottom:1px solid var(--line);
     overflow:hidden;background:var(--ink);
-    /* Full background-image declaration lives further down (the
-       "Architectural background" rule) — kept as a single source of truth
-       there instead of two competing declarations for the same selector. */
-  }
-  /* Decorative isometric building render — atmosphere only, faded into the
-     dark background on the right; not presented as a real client project
-     (bkz. VERALIQ-Redesign-Package'daki bento-architecture kartı, 2026-09-07). */
-  .hero-visual::after{
-    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-    background-image:url('assets/architecture.jpg');
-    background-position:right -80px bottom -60px;background-repeat:no-repeat;background-size:900px auto;
-    opacity:0.22;mix-blend-mode:screen;
-    mask-image:linear-gradient(100deg,transparent 30%,#000 60%);
-    -webkit-mask-image:linear-gradient(100deg,transparent 30%,#000 60%);
-  }
-  @media(max-width:960px){.hero-visual::after{display:none;}}
-  .hero-visual .wrap{position:relative;z-index:1;
+    background-image:
+      radial-gradient(ellipse 900px 560px at 18% 8%, rgba(16,20,19,0.9) 0%, transparent 60%),
+      radial-gradient(ellipse 640px 480px at 92% 18%, rgba(126,224,178,0.05) 0%, transparent 65%);
   }
   .hero-grid{
     display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;
@@ -194,8 +171,8 @@
     min-height:44px;
   }
   .hv-copy{position:relative;z-index:2;max-width:560px;text-align:left;margin:0;}
-  .hero-visual h1{font-size:clamp(30px,3.6vw,48px);line-height:1.1;margin-bottom:10px;letter-spacing:-0.03em;}
-  .hero-visual h1 span{font-family:'Fraunces',serif;font-weight:500;font-style:italic;color:var(--accent-text);}
+  .hero-visual h1{font-size:clamp(30px,3.6vw,48px);line-height:1.1;margin-bottom:10px;letter-spacing:-0.025em;}
+  .hero-visual h1 span{color:var(--accent);}
   .hero-en{
     font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--text-dim);
     letter-spacing:0.02em;margin:0 0 24px;
@@ -210,9 +187,6 @@
     display:flex;align-items:center;gap:10px;margin-bottom:20px;
   }
   .eyebrow::before{content:'';width:20px;height:1px;background:var(--accent-text);}
-  .eyebrow .live-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(184,130,61,0.55);animation:eyebrow-pulse 2.4s ease-in-out infinite;flex-shrink:0;}
-  @keyframes eyebrow-pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
-  @media(prefers-reduced-motion:reduce){.eyebrow .live-dot{animation:none;}}
   .hero h1{
     font-size:clamp(30px,3.6vw,44px);
     line-height:1.08;margin-bottom:20px;
@@ -227,13 +201,13 @@
     padding:13px 24px;border-radius:var(--radius);
     font-size:14px;font-weight:500;
     display:inline-flex;align-items:center;gap:8px;
-    transition-property:background-color,border-color,transform;transition-duration:.2s;transition-timing-function:ease-out;cursor:pointer;border:none;font-family:'IBM Plex Sans',sans-serif;
+    transition-property:background-color,border-color,transform;transition-duration:.2s;transition-timing-function:ease-out;cursor:pointer;border:none;font-family:'Inter',sans-serif;
   }
   .btn-primary{background:var(--accent);color:var(--accent-ink);font-weight:600;}
   .btn-primary:hover{background:var(--accent-text);transform:translateY(-1px);}
   .btn-primary:active{transform:scale(0.96);}
   .btn-ghost{border:1px solid var(--accent);color:var(--text);background:transparent;}
-  .btn-ghost:hover{border-color:var(--accent-text);background:rgba(184,130,61,0.08);}
+  .btn-ghost:hover{border-color:var(--accent-text);background:rgba(191,161,106,0.08);}
   .btn-ghost:active{transform:scale(0.96);}
   .hero-footnote{
     margin-top:32px;font-size:13px;color:var(--text-dim);
@@ -292,7 +266,7 @@
     border-right:1px solid var(--line);padding:16px 10px;
   }
   .pm-slogo{
-    display:flex;align-items:center;gap:6px;font-family:'Fraunces',serif;
+    display:flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;
     font-weight:700;font-size:11.5px;color:var(--text);margin-bottom:18px;letter-spacing:-0.01em;
   }
   .pm-slogo-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
@@ -308,7 +282,7 @@
     padding:10px 11px;display:flex;flex-direction:column;gap:3px;
   }
   .pm-kpi-label{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:0.06em;color:var(--text-dim);}
-  .pm-kpi-val{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+  .pm-kpi-val{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
   .pm-kpi-val.gold{color:var(--accent-text);}
   .pm-kpi-delta{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--green);}
   .pm-kpi-delta.neutral{color:var(--text-dim);}
@@ -320,7 +294,7 @@
   .pm-fbar span{width:38px;flex-shrink:0;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .pm-fbar i{flex:1;height:5px;border-radius:3px;background:var(--line);position:relative;display:block;overflow:hidden;font-style:normal;}
   .pm-fbar i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--w);background:linear-gradient(90deg,var(--accent-text),var(--accent));border-radius:3px;}
-  .pm-fbar b{width:24px;text-align:right;color:var(--text);font-weight:600;font-family:'IBM Plex Mono',monospace;flex-shrink:0;font-size:10px;font-variant-numeric:tabular-nums;}
+  .pm-fbar b{width:24px;text-align:right;color:var(--text);font-weight:600;font-family:'Space Grotesk',sans-serif;flex-shrink:0;font-size:10px;font-variant-numeric:tabular-nums;}
   .pm-feed-row{font-size:9px;line-height:1.75;color:var(--text-dim);}
   .pm-feed-row b{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);opacity:0.9;margin-right:4px;}
   .pm-feed-row em{font-style:normal;font-weight:600;color:var(--accent-text);margin-right:3px;}
@@ -335,44 +309,22 @@
   /* COMPLIANCE & COST — kurumsal ek modül tanıtımı. Fiyat kasıtlı olarak
      gösterilmiyor: önce şirketin özelliğin değerini görmesi, sonra
      fiyatlandırmanın görüşmede paylaşılması hedefleniyor. */
-  /* Compliance & Cost gets its own accent (terracotta/masonry) instead of
-     the site-wide brass — a regulatory/alert-adjacent module reads as its
-     own identity, not a re-skin of the primary CTA color (2026-09-08
-     design review — Brand Guardian proposal). */
-  #compliance-cost .eyebrow{color:var(--terracotta);}
-  #compliance-cost .eyebrow::before{background:var(--terracotta);}
   .cc-panel{
-    margin-top:8px;padding:32px;border:1px solid rgba(184,84,58,0.28);
-    border-left:3px solid var(--terracotta);border-radius:var(--radius);
+    margin-top:8px;padding:32px;border:1px solid var(--accent-dim);
+    border-left:3px solid var(--accent);border-radius:var(--radius);
     background:var(--panel);
   }
   .cc-list{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:14px;max-width:640px;}
   .cc-list li{display:flex;gap:12px;font-size:15px;line-height:1.5;color:var(--text-dim);}
-  .cc-list li::before{content:'●';color:var(--terracotta);font-size:8px;margin-top:7px;flex-shrink:0;}
+  .cc-list li::before{content:'●';color:var(--accent);font-size:8px;margin-top:7px;flex-shrink:0;}
   .cc-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
   .cc-note{font-size:13px;color:var(--text-dim);opacity:0.85;}
 
-  /* Problem block — editorial bento grid: asymmetric cards instead of a
-     uniform list, first item reads as the "lead" card (bkz. redesign
-     paketinin bento düzeni — VERALIQ-Redesign-Package, 2026-09-07, sadece
-     görsel dil taşındı, veri/i18n metinleri aynen korundu). */
-  .problem-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:14px;margin-bottom:48px;}
-  .problem-item{
-    grid-column:span 2;padding:26px 24px 22px;border:1px solid var(--line);border-radius:14px;
-    background:linear-gradient(150deg,var(--panel),var(--ink-2));
-    font-size:15px;color:var(--text-dim);line-height:1.55;position:relative;
-    transition-property:border-color,transform;transition-duration:.2s;transition-timing-function:ease-out;
-  }
-  .problem-item:hover{border-color:var(--accent-dim);transform:translateY(-2px);}
-  .problem-item::before{
-    content:attr(data-index);display:block;font-family:'IBM Plex Mono',monospace;
-    font-size:11px;letter-spacing:0.08em;color:var(--accent-text);margin-bottom:14px;opacity:0.8;
-  }
-  .problem-item:first-child{grid-column:span 4;font-size:18px;color:var(--text);}
-  @media(max-width:960px){.problem-item{grid-column:span 4;}.problem-item:first-child{grid-column:span 4;}}
-  @media(max-width:760px){.problem-grid{grid-template-columns:1fr;gap:14px;}.problem-item,.problem-item:first-child{grid-column:1;}}
-  [dir="rtl"] .problem-item::before{text-align:right;}
-  .problem-resolve{font-size:20px;font-family:'Fraunces',serif;font-weight:600;text-align:center;padding-top:16px;}
+  /* Problem block */
+  .problem-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px 56px;margin-bottom:48px;}
+  @media(max-width:760px){.problem-grid{grid-template-columns:1fr;gap:22px;}}
+  .problem-item{padding-left:20px;border-left:2px solid var(--accent-dim);font-size:15.5px;color:var(--text-dim);line-height:1.55;}
+  .problem-resolve{font-size:20px;font-family:'Space Grotesk',sans-serif;font-weight:600;text-align:center;padding-top:16px;}
 
   /* Flow */
   .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0;justify-content:center;}
@@ -384,42 +336,31 @@
   .flow-arrow{color:var(--text-dim);padding:0 10px;font-size:14px;}
   @media(max-width:760px){.flow-row{flex-direction:column;} .flow-arrow{transform:rotate(90deg);padding:6px 0;}}
 
-  /* AI Workforce — a staffing roster, not a box grid: each department is a
-     wide row (name | agents | activity), like an org chart, distinct from
-     the compare ledger and the modules spec list (2026-09-08 design review;
-     same HTML, no i18n/markup change — .wf-dept-head is always the first
-     child and .wf-metric always the last, so grid-column/-row placement by
-     position works without touching the template). */
-  .workforce-grid{border-top:1px solid var(--line);}
-  .wf-dept{
-    display:grid;grid-template-columns:170px 1fr 170px;column-gap:28px;align-items:start;
-    padding:24px 4px;border-bottom:1px solid var(--line);
-  }
-  @media(max-width:760px){.wf-dept{grid-template-columns:1fr;row-gap:14px;}}
-  .wf-dept-head{grid-column:1;grid-row:1/-1;font-size:11px;color:var(--accent-text);letter-spacing:0.08em;padding-top:2px;}
-  @media(max-width:760px){.wf-dept-head{grid-row:auto;}}
-  .wf-agent{grid-column:2;font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:3px;}
-  @media(max-width:760px){.wf-agent{grid-column:1;}}
-  .wf-agent:last-child{margin-bottom:0;}
+  /* AI Workforce */
+  .workforce-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  @media(max-width:900px){.workforce-grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:560px){.workforce-grid{grid-template-columns:1fr;}}
+  .wf-dept{background:var(--panel);padding:30px 26px;display:flex;flex-direction:column;}
+  .wf-dept-head{font-size:11px;color:var(--accent-text);letter-spacing:0.08em;margin-bottom:16px;}
+  .wf-agent{font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;flex-direction:column;gap:3px;}
   .wf-agent-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .wf-role{font-size:12px;color:var(--text-dim);font-weight:400;}
-  /* per-agent live status pill — patina green, matches design system §7/§9 */
+  /* per-agent live status pill — mint, matches design system §7/§9 */
   .wf-status{
     font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.05em;
     color:var(--green);text-transform:uppercase;white-space:nowrap;
     display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
   }
-  .wf-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(95,163,124,0.25);}
-  /* department-level activity metric — right column, no divider (row already has one) */
+  .wf-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(126,224,178,0.25);}
+  /* department-level activity metric — champagne number, muted label */
   .wf-metric{
-    grid-column:3;grid-row:1/-1;align-self:start;text-align:right;padding-top:2px;
+    margin-top:auto;padding-top:16px;border-top:1px solid var(--line);
     font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.04em;
     color:var(--text-dim);text-transform:uppercase;
   }
-  @media(max-width:760px){.wf-metric{grid-column:1;grid-row:auto;text-align:left;}}
-  .wf-metric b{color:var(--accent-text);font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:0;margin-right:5px;}
-  .wf-total{display:flex;align-items:center;justify-content:center;gap:16px;padding:26px 4px;border-bottom:none;border-top:2px solid var(--accent-dim);}
-  .wf-total-num{font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:400;letter-spacing:-0.03em;color:var(--accent-text);line-height:1;}
+  .wf-metric b{color:var(--accent-text);font-size:16px;font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:0;margin-right:5px;}
+  .wf-total{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--panel);}
+  .wf-total-num{font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;color:var(--accent-text);margin:6px 0 2px;}
   .wf-note{text-align:center;font-size:11px;color:var(--text-dim);opacity:0.9;margin-top:14px;}
   .wf-handoff{margin-top:40px;}
   .wf-handoff-title{font-size:11px;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:16px;text-align:center;}
@@ -427,46 +368,24 @@
   .wf-handoff .flow-step{font-size:11.5px;}
 
   /* Compare */
-  /* Ledger, not a box grid — three unrelated card sections (workforce,
-     compare, modules) forced into the identical hairline-box template was
-     the single biggest "templated" tell in the 2026-09-08 design review.
-     A before/after argument reads as two columns of a ledger with one
-     center rule, not three identical boxes. */
-  .compare-grid{border-top:1px solid var(--line);}
-  .compare-item{
-    display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:20px;
-    padding:22px 4px;border-bottom:1px solid var(--line);
-  }
-  .compare-item .old{grid-column:1;color:var(--text-dim);font-size:14px;text-decoration:line-through;text-decoration-color:rgba(139,150,144,0.5);text-align:right;}
-  .compare-item .new{grid-column:3;color:var(--text);font-size:17px;font-weight:500;font-family:'Fraunces',serif;}
-  .compare-item::before{
-    content:'→';grid-column:2;color:var(--accent-text);font-size:15px;text-align:center;
-    font-family:'IBM Plex Mono',monospace;
-  }
-  @media(max-width:640px){
-    .compare-item{grid-template-columns:1fr;gap:6px;text-align:left;padding:18px 0;}
-    .compare-item .old{text-align:left;}
-    .compare-item::before{display:none;}
-  }
+  .compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  @media(max-width:900px){.compare-grid{grid-template-columns:1fr;}}
+  .compare-item{background:var(--panel);padding:36px 32px;}
+  .compare-item .old{color:var(--text-dim);font-size:14px;margin-bottom:12px;text-decoration:line-through;text-decoration-color:rgba(138,145,140,0.5);}
+  .compare-item .new{color:var(--text);font-size:17px;font-weight:500;font-family:'Space Grotesk',sans-serif;}
 
-  /* Modules — a numbered spec sheet, not a box grid: a product catalog reads
-     as a technical index (large mono numeral + title + description in a
-     row, hairline-divided), distinct from the workforce roster and the
-     compare ledger (2026-09-08 design review). */
-  .services{border-top:1px solid var(--line);}
-  .service{
-    display:grid;grid-template-columns:56px 1fr;column-gap:24px;
-    padding:26px 4px;border-bottom:1px solid var(--line);
-    transition-property:padding-left;transition-duration:.2s;transition-timing-function:ease-out;
+  /* Modules grid */
+  .services{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
   }
-  .service:hover{padding-left:10px;}
-  .service .idx{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--accent-text);grid-row:1/3;line-height:1;padding-top:2px;}
-  .service h3{font-size:18px;margin:0 0 8px;}
-  .service p{font-size:14px;color:var(--text-dim);line-height:1.6;margin:0;max-width:640px;}
-  @media(max-width:560px){
-    .service{grid-template-columns:36px 1fr;column-gap:14px;padding:20px 0;}
-    .service .idx{font-size:17px;}
-  }
+  @media(max-width:900px){.services{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.services{grid-template-columns:1fr;}}
+  .service{background:var(--panel);padding:32px 26px;transition:transform .2s;}
+  .service:hover{transform:translateY(-2px);}
+  .service .idx{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent-text);}
+  .service h3{font-size:17px;margin:16px 0 8px;}
+  .service p{font-size:13.5px;color:var(--text-dim);line-height:1.6;}
 
   /* ROI */
   .roi-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 40px;}
@@ -498,7 +417,7 @@
   .faq-item{border-bottom:1px solid var(--line);}
   .faq-q{
     width:100%;text-align:left;background:none;border:none;color:var(--text);
-    padding:20px 0;font-size:15.5px;font-family:'Fraunces',serif;font-weight:500;
+    padding:20px 0;font-size:15.5px;font-family:'Space Grotesk',sans-serif;font-weight:500;
     display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:16px;
   }
   .faq-q .plus{color:var(--accent);font-size:18px;transition:transform .2s;flex-shrink:0;}
@@ -510,18 +429,11 @@
   /* Demo form */
   .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;}
   @media(max-width:900px){.demo-grid{grid-template-columns:1fr;gap:40px;}}
-  .demo-form{
-    display:grid;gap:12px;padding:28px;border-radius:16px;
-    border:1px solid var(--line);border-top-color:var(--accent-dim);
-    background:linear-gradient(150deg,var(--panel),var(--ink-2));
-    box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);
-  }
+  .demo-form{display:grid;gap:12px;}
   .demo-form input,.demo-form select{
-    background:var(--ink);border:1px solid var(--line);color:var(--text);
-    padding:12px 14px;border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;width:100%;
-    transition-property:border-color;transition-duration:.15s;transition-timing-function:ease-out;
+    background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:12px 14px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;width:100%;
   }
-  .demo-form input:focus,.demo-form select:focus{outline:none;border-color:var(--accent);}
   .demo-form label{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;display:block;}
   .form-status{font-size:13px;color:var(--green);margin-top:10px;display:none;}
   .form-status.show{display:block;}
@@ -552,7 +464,7 @@
     /* subtle AI Mint ambient glow (VERALIQ design system §7) — kept very
        low-opacity on purpose, this is a premium accent, not a neon frame */
     box-shadow:0 20px 60px rgba(10,15,30,0.35), 0 2px 8px rgba(10,15,30,0.25),
-               0 0 0 1px rgba(95,163,124,0.06), 0 0 40px -8px rgba(95,163,124,0.16);
+               0 0 0 1px rgba(126,224,178,0.06), 0 0 40px -8px rgba(126,224,178,0.16);
     display:flex;flex-direction:column;
     transition:width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
                left .28s cubic-bezier(.2,.8,.2,1),right .28s cubic-bezier(.2,.8,.2,1),
@@ -599,7 +511,7 @@
   .agent-header-id{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;}
   .agent-dot{width:8px;height:8px;border-radius:50%;background:#5B6479;flex-shrink:0;}
   .agent-dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(31,157,99,0.25);}
-  .agent-name{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;flex-shrink:0;}
+  .agent-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#fff;white-space:nowrap;flex-shrink:0;}
   .agent-role{font-size:10.5px;color:#8B93A7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1;}
   .agent-controls{display:flex;gap:4px;flex-shrink:0;}
   .agent-btn{
@@ -673,11 +585,11 @@
     display:flex;align-items:center;gap:9px;
     padding:13px 22px;border-radius:999px;border:none;cursor:pointer;
     background:var(--accent);color:var(--accent-ink);
-    font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14.5px;
-    box-shadow:0 8px 24px rgba(184,130,61,0.35);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14.5px;
+    box-shadow:0 8px 24px rgba(191,161,106,0.35);
     transition:transform .15s ease,box-shadow .15s ease;
   }
-  .agent-join-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(184,130,61,0.45);}
+  .agent-join-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(191,161,106,0.45);}
   .agent-join-btn:active{transform:translateY(0);}
   .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
   @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
@@ -699,19 +611,19 @@
   .agent-captions[hidden]{display:none;}
   .agent-caption-line{
     max-width:82%;padding:7px 12px;border-radius:12px;
-    font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;line-height:1.45;
+    font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;
     animation:agent-caption-in .2s ease;
     word-wrap:break-word;
   }
   @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
   .agent-caption-line.customer{
     align-self:flex-end;text-align:right;
-    background:rgba(184,130,61,0.18);border:1px solid rgba(184,130,61,0.3);
+    background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);
     color:#F5EEDD;border-bottom-right-radius:3px;
   }
   .agent-caption-line.agent{
     align-self:flex-start;text-align:left;
-    background:rgba(95,163,124,0.12);border:1px solid rgba(95,163,124,0.28);
+    background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);
     color:#E7F7EF;border-bottom-left-radius:3px;
   }
   @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
@@ -738,7 +650,7 @@
   .agent-text-input{
     flex:1; min-width:0; padding:10px 12px; border-radius:999px;
     border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);
-    color:#F5EEDD; font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+    color:#F5EEDD; font-family:'Inter',sans-serif; font-size:13px;
   }
   .agent-text-input:focus{ outline:none; border-color:var(--accent); }
   .agent-text-input::placeholder{ color:rgba(245,238,221,0.4); }
@@ -758,14 +670,14 @@
   .agent-live-badge{
     display:none;position:absolute;left:12px;top:12px;z-index:2;
     align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
-    background:rgba(8,10,10,0.55);border:1px solid rgba(95,163,124,0.35);
+    background:rgba(8,10,10,0.55);border:1px solid rgba(126,224,178,0.35);
     backdrop-filter:blur(4px);
     font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:0.05em;
     color:#BFE9D4;text-transform:uppercase;white-space:nowrap;
   }
   .agent-live-badge::before{
     content:'';width:6px;height:6px;border-radius:50%;background:var(--green);
-    box-shadow:0 0 0 3px rgba(95,163,124,0.25);flex-shrink:0;
+    box-shadow:0 0 0 3px rgba(126,224,178,0.25);flex-shrink:0;
   }
   .agent-window:has(.agent-dot.live) .agent-live-badge{display:flex;}
   .agent-window[data-state="fullscreen"] .agent-live-badge{top:16px;left:16px;}
@@ -794,7 +706,7 @@
     position:fixed;right:20px;bottom:20px;z-index:1010;
     padding:12px 18px;border-radius:999px;border:1px solid var(--line);
     background:var(--panel);color:var(--text);font-size:13px;font-weight:500;
-    font-family:'IBM Plex Sans',sans-serif;cursor:pointer;
+    font-family:'Inter',sans-serif;cursor:pointer;
     box-shadow:0 8px 24px rgba(10,15,30,0.14);
     display:flex;align-items:center;gap:8px;
   }
@@ -822,7 +734,7 @@
   .lang-opt{
     display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;
     font-size:13.5px;color:var(--text);background:none;border:none;width:100%;
-    text-align:left;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;
+    text-align:left;cursor:pointer;font-family:'Inter',sans-serif;
   }
   .lang-opt:hover{background:var(--ink-2);}
   .lang-opt.active{color:var(--accent-text);font-weight:600;background:var(--accent-dim);}
@@ -836,7 +748,7 @@
   [dir="rtl"] .hv-copy{text-align:right;}
   [dir="rtl"] .eyebrow::before{order:2;}
   [dir="rtl"] .cap-list li,[dir="rtl"] .portal-list li,[dir="rtl"] .roi-list li{flex-direction:row-reverse;text-align:right;}
-  [dir="rtl"] .problem-item{text-align:right;}
+  [dir="rtl"] .problem-item{border-left:none;border-right:2px solid var(--accent-dim);padding-left:0;padding-right:20px;}
   [dir="rtl"] .trust-item{flex-direction:row-reverse;text-align:right;}
   [dir="rtl"] .wf-agent{align-items:flex-end;text-align:right;}
   [dir="rtl"] .wf-agent-top{flex-direction:row-reverse;}
@@ -857,16 +769,16 @@
     [data-reveal-immediate].in-view{opacity:1;transform:translateY(0);}
   }
 
-  /* Architectural background: a faint blueprint-style grid in brass, no
-     glow blob — a construction/site-plan reads as "drawn," a soft radial
-     gradient behind hero copy reads as "AI SaaS template" (flagged
-     explicitly in the 2026-09-08 design review). Grid only. */
+  /* Architectural background: a faint blueprint-style grid + a single warm
+     champagne glow, replacing the old AI-mint dual radial gradient — reads
+     as "construction/plan" rather than "neural network". */
   .hero-visual{
     background-image:
-      linear-gradient(rgba(184,130,61,0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(184,130,61,0.07) 1px, transparent 1px);
-    background-size:48px 48px,48px 48px;
-    background-position:-1px -1px,-1px -1px;
+      linear-gradient(rgba(191,161,106,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(191,161,106,0.055) 1px, transparent 1px),
+      radial-gradient(ellipse 900px 620px at 14% 4%, rgba(191,161,106,0.10) 0%, transparent 62%);
+    background-size:48px 48px,48px 48px,100% 100%;
+    background-position:-1px -1px,-1px -1px,0 0;
   }
   .hero-visual::before{
     content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
@@ -883,11 +795,7 @@
     transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s ease;
   }
   @media (prefers-reduced-motion: no-preference){
-    /* Tilt-on-hover is now the trust section's own signature interaction
-       only — it was previously bolted onto service/workforce/compare cards
-       too as a blanket "make it feel premium" pass with no content-specific
-       reason (2026-09-08 design review, finding #8). */
-    .trust-item.tilt-card:hover{
+    .service.tilt-card:hover,.wf-dept.tilt-card:hover,.trust-item.tilt-card:hover{
       box-shadow:0 24px 48px -20px rgba(0,0,0,0.55);
     }
   }
@@ -928,7 +836,7 @@
 <section class="hero-visual" id="heroVisual">
   <div class="wrap hero-grid">
     <div class="hv-copy" data-reveal-immediate>
-      <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-i18n="hero.eyebrow">YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU</span></div>
+      <div class="eyebrow" data-i18n="hero.eyebrow">YAPAY ZEKÂ DESTEKLİ DİJİTAL SATIŞ PLATFORMU</div>
       <h1 data-i18n="hero.h1" data-i18n-html="1">Kendi <span>Yapay Zekâ Satış Ekibinizi</span> Kurun.</h1>
       <p class="hero-en" data-i18n="hero.en">İnsan Ekibe İhtiyaç Duymadan Satışı Uçtan Uca Yürütün.</p>
       <p class="lede" data-i18n="hero.lede">Müşterilerinizi karşılayan, projelerinizi ve ürünlerinizi canlı sunan, portföy ve fiyat bilgilerini aktaran, ihtiyaçlarını anlayan, lead oluşturan, randevu alan, takip yapan ve şirketinizin kuralları dahilinde satış sürecini kapanışa kadar yürüten yapay zekâ satış asistanları.</p>
@@ -977,12 +885,12 @@
       <h2 data-i18n="problem.h2">Satış operasyonunuzda her gün tekrar eden sorunlar.</h2>
     </div>
     <div class="problem-grid">
-      <div class="problem-item" data-index="01" data-i18n="problem.item1">Lead geliyor ama satış ekibi geç cevaplıyor.</div>
-      <div class="problem-item" data-index="02" data-i18n="problem.item2">Mesai dışında müşteri kaçıyor.</div>
-      <div class="problem-item" data-index="03" data-i18n="problem.item3">WhatsApp, telefon, CRM ve Excel birbirinden kopuk.</div>
-      <div class="problem-item" data-index="04" data-i18n="problem.item4">Follow-up unutuluyor.</div>
-      <div class="problem-item" data-index="05" data-i18n="problem.item5">Satış temsilcileri aynı soruları tekrar tekrar cevaplıyor.</div>
-      <div class="problem-item" data-index="06" data-i18n="problem.item6">Yoğun saatlerde müşteri beklemede kalıyor.</div>
+      <div class="problem-item" data-i18n="problem.item1">Lead geliyor ama satış ekibi geç cevaplıyor.</div>
+      <div class="problem-item" data-i18n="problem.item2">Mesai dışında müşteri kaçıyor.</div>
+      <div class="problem-item" data-i18n="problem.item3">WhatsApp, telefon, CRM ve Excel birbirinden kopuk.</div>
+      <div class="problem-item" data-i18n="problem.item4">Follow-up unutuluyor.</div>
+      <div class="problem-item" data-i18n="problem.item5">Satış temsilcileri aynı soruları tekrar tekrar cevaplıyor.</div>
+      <div class="problem-item" data-i18n="problem.item6">Yoğun saatlerde müşteri beklemede kalıyor.</div>
     </div>
     <div class="problem-resolve" data-i18n="problem.resolve">VERALIQ bu operasyonun içine dijital çalışanlar yerleştirir.</div>
   </div>
@@ -1018,20 +926,20 @@
       <p data-i18n="wf.p">Şirketiniz tek bir Agent ile sınırlı kalmaz — görev bazlı birden fazla dijital çalışanı bir araya getirip kendi "AI Departmanı"nızı kurabilirsiniz. Agent'lar gerektiğinde birbirine görev devreder.</p>
     </div>
     <div class="workforce-grid">
-      <div class="wf-dept" data-reveal="rise">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept1head">SATIŞ · 3 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top">Elif Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role1">Müşteri Karşılama</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Zeynep Arslan <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role2">Yatırım Danışmanı</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Ahmet Demir <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role3">Satış Agent'ı</span></div>
         <div class="wf-metric" data-i18n="wf.metric1" data-i18n-html><b>24</b> LEAD · BU AY</div>
       </div>
-      <div class="wf-dept" data-reveal="rise">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept2head">OPERASYON · 2 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top">Mehmet Yılmaz <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role4">Follow-up</span></div>
         <div class="wf-agent"><div class="wf-agent-top">Ayşe Kaya <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role5">Randevu Koordinasyonu</span></div>
         <div class="wf-metric" data-i18n="wf.metric2" data-i18n-html><b>8</b> FOLLOW-UP · TAMAMLANDI</div>
       </div>
-      <div class="wf-dept" data-reveal="rise">
+      <div class="wf-dept tilt-card" data-reveal="rise">
         <div class="wf-dept-head mono" data-i18n="wf.dept3head">PAZARLAMA · 1 Agent</div>
         <div class="wf-agent"><div class="wf-agent-top"><span data-i18n="wf.agent6">İçerik Agent'ı</span> <span class="wf-status" data-i18n="wf.active">Aktif</span></div><span class="wf-role" data-i18n="wf.role6">Kampanya &amp; İçerik</span></div>
         <div class="wf-metric" data-i18n="wf.metric3" data-i18n-html><b>3</b> KAMPANYA · AKTİF</div>
@@ -1065,9 +973,9 @@
     </div>
   </div>
   <div class="compare-grid">
-    <div class="compare-item" data-reveal="rise"><div class="old" data-i18n="compare.old1">CRM müşteriyi kaydeder.</div><div class="new" data-i18n="compare.new1">VERALIQ müşterinizle konuşur.</div></div>
-    <div class="compare-item" data-reveal="rise"><div class="old" data-i18n="compare.old2">Chatbot soruyu yanıtlar.</div><div class="new" data-i18n="compare.new2">VERALIQ satış sürecini yürütür.</div></div>
-    <div class="compare-item" data-reveal="rise"><div class="old" data-i18n="compare.old3">CRM satış ekibinin aracıdır.</div><div class="new" data-i18n="compare.new3">VERALIQ'in kendisi satış ekibinizdir.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old1">CRM müşteriyi kaydeder.</div><div class="new" data-i18n="compare.new1">VERALIQ müşterinizle konuşur.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old2">Chatbot soruyu yanıtlar.</div><div class="new" data-i18n="compare.new2">VERALIQ satış sürecini yürütür.</div></div>
+    <div class="compare-item tilt-card" data-reveal="rise"><div class="old" data-i18n="compare.old3">CRM satış ekibinin aracıdır.</div><div class="new" data-i18n="compare.new3">VERALIQ'in kendisi satış ekibinizdir.</div></div>
   </div>
 </section>
 
@@ -1081,14 +989,14 @@
     </div>
   </div>
   <div class="services">
-    <div class="service" data-reveal="rise"><div class="idx mono">01</div><h3 data-i18n="modules.svc1Title">AI Sales Agent</h3><p data-i18n="modules.svc1Desc">İsimlendirilmiş, şirketinize özel eğitilmiş dijital satış temsilcisi.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">02</div><h3 data-i18n="modules.svc2Title">AI Lead Management</h3><p data-i18n="modules.svc2Desc">Gelen her lead otomatik karşılanır, nitelendirilir ve önceliklendirilir.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">03</div><h3 data-i18n="modules.svc3Title">AI Portfolio Matching</h3><p data-i18n="modules.svc3Desc">Müşterinin bütçe ve tercihine göre uygun proje/portföy otomatik eşleşir.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">04</div><h3 data-i18n="modules.svc4Title">Voice &amp; Video Interaction</h3><p data-i18n="modules.svc4Desc">Gerçek zamanlı sesli konuşma; yazıya dökülü klasik chat deneyimi değil.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">05</div><h3 data-i18n="modules.svc5Title">CRM Integration</h3><p data-i18n="modules.svc5Desc">Kendi CRM'inizi bağlayın veya dahili CRM'i kullanın — stok/fiyat otomatik senkronize olur.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">06</div><h3 data-i18n="modules.svc6Title">Automated Follow-up</h3><p data-i18n="modules.svc6Desc">Karar vermeyen müşteriyi nazikçe hatırlatır, özel günleri not alır.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">07</div><h3 data-i18n="modules.svc7Title">Sales Analytics</h3><p data-i18n="modules.svc7Desc">Konuşma, dönüşüm ve fırsat verileri tek panelde raporlanır.</p></div>
-    <div class="service" data-reveal="rise"><div class="idx mono">08</div><h3 data-i18n="modules.svc8Title">Agent Management</h3><p data-i18n="modules.svc8Desc">Admin panelinden Agent'ların ismini, görevini, sesini ve yetkilerini yönetin.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">01</div><h3 data-i18n="modules.svc1Title">AI Sales Agent</h3><p data-i18n="modules.svc1Desc">İsimlendirilmiş, şirketinize özel eğitilmiş dijital satış temsilcisi.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">02</div><h3 data-i18n="modules.svc2Title">AI Lead Management</h3><p data-i18n="modules.svc2Desc">Gelen her lead otomatik karşılanır, nitelendirilir ve önceliklendirilir.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">03</div><h3 data-i18n="modules.svc3Title">AI Portfolio Matching</h3><p data-i18n="modules.svc3Desc">Müşterinin bütçe ve tercihine göre uygun proje/portföy otomatik eşleşir.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">04</div><h3 data-i18n="modules.svc4Title">Voice &amp; Video Interaction</h3><p data-i18n="modules.svc4Desc">Gerçek zamanlı sesli konuşma; yazıya dökülü klasik chat deneyimi değil.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">05</div><h3 data-i18n="modules.svc5Title">CRM Integration</h3><p data-i18n="modules.svc5Desc">Kendi CRM'inizi bağlayın veya dahili CRM'i kullanın — stok/fiyat otomatik senkronize olur.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">06</div><h3 data-i18n="modules.svc6Title">Automated Follow-up</h3><p data-i18n="modules.svc6Desc">Karar vermeyen müşteriyi nazikçe hatırlatır, özel günleri not alır.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">07</div><h3 data-i18n="modules.svc7Title">Sales Analytics</h3><p data-i18n="modules.svc7Desc">Konuşma, dönüşüm ve fırsat verileri tek panelde raporlanır.</p></div>
+    <div class="service tilt-card" data-reveal="rise"><div class="idx mono">08</div><h3 data-i18n="modules.svc8Title">Agent Management</h3><p data-i18n="modules.svc8Desc">Admin panelinden Agent'ların ismini, görevini, sesini ve yetkilerini yönetin.</p></div>
   </div>
 </section>
 
@@ -1145,9 +1053,9 @@
            kutu yalnızca stilize bir özet, gerçek ürünün kendisi değildir. -->
       <div class="portal-visual">
         <div class="pm-chrome">
-          <span class="pmc-dot" style="background:#C25B44;"></span>
-          <span class="pmc-dot" style="background:#B8823D;"></span>
-          <span class="pmc-dot" style="background:#5FA37C;"></span>
+          <span class="pmc-dot" style="background:#D93A40;"></span>
+          <span class="pmc-dot" style="background:#BFA16A;"></span>
+          <span class="pmc-dot" style="background:#7EE0B2;"></span>
           <span class="pmc-url">portal.veraliq.com/panel</span>
         </div>
         <div class="pm-body">
