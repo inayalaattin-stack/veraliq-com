@@ -1,0 +1,249 @@
+/* VERALIQ / Enterprise Light — visual-only override layer.
+   Loaded AFTER each page's existing inline <style> block. Repaints the
+   existing --ink/--panel/--accent/... custom-property contract (same
+   technique as the two design passes this one replaces) rather than
+   touching markup, JS, i18n strings or the agent-core widget runtime.
+   Source: VERALIQ-Claude-Code-Design-Handoff.zip, specs/01-DESIGN-SYSTEM.md
+   + specs/02-PAGES-AND-COMPONENTS.md. Selectors below were checked against
+   the real index.html/admin.html/portal.html markup before being kept —
+   see the delivery report for what was adjusted versus the received
+   reference/enterprise-light.css. No content strings or business claims
+   are introduced here: only color, spacing, type and motion. */
+:root{
+ --ink:#f6f6f2;--ink-2:#eff1ef;--panel:#fff;--panel-2:#f2f5f5;
+ --text:#202c32;--text-dim:#536168;--text-dim-soft:#536168;
+ --line:#ced5d4;--accent:#2d5368;--accent-text:#254a60;--accent-ink:#fff;
+ --accent-dim:#e5edf1;--navy:#edf1f1;--navy-2:#e4eaea;
+ --green:#246a4d;--mint:#246a4d;--mint-text:#246a4d;--mint-dim:#e6f0e9;
+ --red:#a63332;--red-dim:#fae9e7;--radius:6px;
+ --ui-font:Arial,'Segoe UI',system-ui,sans-serif;--rule:#a8b4b7;
+ color-scheme:light;
+}
+html{scroll-padding-top:112px}
+body{font-family:var(--ui-font);font-size:16px;line-height:1.5;background:var(--ink);color:var(--text)}
+h1,h2,h3,h4,.display,.logo,.agent-name,.view-title{font-family:var(--ui-font);letter-spacing:-.025em}
+button,input,select,textarea,.btn,.lang-opt,.agent-join-btn{font-family:var(--ui-font)}
+.mono,.eyebrow,.cap-head,.chip,.flow-step,.channel-chip,.wf-dept-head,.wf-metric,.wf-status,.wf-note,.wf-handoff-title,.service .idx,.portal-note,.lang-btn,.nav-cta{font-family:var(--ui-font);letter-spacing:.025em}
+/* Validation fix: these nested/nav-only selectors have higher specificity
+   than the page's own base rule (.pm-feed-row b vs .pm-feed-row) or had no
+   font-family override upstream at all, so the Google Fonts removal below
+   would otherwise leave them on the browser's generic monospace fallback
+   instead of the intended system-UI stack. */
+.pm-feed-row b,.agent-caption-line,.agent-text-input,.badge-dot,.chat-msg.assistant b.tag{font-family:var(--ui-font)}
+a,button,input,select,textarea{touch-action:manipulation}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #2d5368;outline-offset:3px}
+input,select,textarea{border-color:#a8b4b7!important;font-size:16px!important;min-height:46px;background:#fff;color:var(--text)}
+input::placeholder,textarea::placeholder{color:#64737a;opacity:1}
+input[type=checkbox],input[type=radio]{min-height:20px}
+button,.btn,.nav-cta,.lang-btn,.lang-opt{min-height:44px}
+.btn,.btn-primary,.btn-ghost{border-radius:4px;font-size:15px;min-height:48px;justify-content:center;box-shadow:none}
+.btn-primary:hover,.btn-primary:active{background:#234558;box-shadow:none;transform:none}
+.btn-ghost:hover{background:#e5edf1;transform:none}
+.btn-mint{color:#fff}
+.wrap{max-width:1280px;padding-inline:40px}
+/* Quiet two-line masthead: all eight navigation links fit without tiny type. */
+body:has(#heroVisual)>header{background:#fafbf9;border-color:var(--line);backdrop-filter:none}
+body:has(#heroVisual)>header>nav{max-width:1280px;padding:16px 40px;display:grid;grid-template-columns:1fr auto;gap:14px 24px}
+.logo{font-size:22px;gap:12px;min-width:0}
+.logo-sub{font-family:var(--ui-font);font-size:14px;white-space:normal;max-width:330px;line-height:1.35}
+.nav-links{grid-column:1/-1;grid-row:2;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:10px}
+.nav-links a{font-size:14px;min-height:32px;display:flex;align-items:center;color:#3c4c53}
+.lang-switch{grid-column:2;grid-row:1}
+.lang-btn,.lang-menu{background:#fff;border-color:#aebbbb;border-radius:5px;box-shadow:none;font-size:14px}
+.lang-menu{box-shadow:0 8px 24px #1b303014}
+.lang-opt{font-size:15px;border-radius:3px}
+/* Editorial hero, no glow, no fake blueprint texture. */
+.hero-visual{background:#f6f6f2;background-image:none;isolation:isolate}
+.hero-visual::before{display:none}
+.hero-grid{grid-template-columns:1fr 1fr;gap:48px;padding:186px 0 76px;align-items:center}
+.hv-copy{max-width:640px;text-align:start}
+.hero-visual h1{font-size:clamp(36px,3.8vw,54px);line-height:1.08;font-weight:600;letter-spacing:-.045em;margin-bottom:22px}
+.hero-visual h1 span{color:var(--text)}
+.hv-copy p.lede{font-size:18px;line-height:1.65;margin-bottom:28px}
+.hero-en,.hero-support,.hero-footnote{font-family:var(--ui-font);font-size:14px;line-height:1.65;opacity:1;color:var(--text-dim)}
+.eyebrow{font-size:14px;font-weight:600;letter-spacing:.075em;line-height:1.55;color:#52646c;text-transform:uppercase}
+.eyebrow::before{background:#9caeb4;width:28px}
+.hero-showcase{border:0;border-radius:0;box-shadow:none;background:#e8eeed;will-change:auto;transform:none!important}
+.hero-showcase img{outline:none;object-fit:contain;display:block;width:100%}
+.tilt-card,.service:hover,.service.tilt-card:hover,.wf-dept.tilt-card:hover,.trust-item.tilt-card:hover{transform:none!important;box-shadow:none!important}
+[data-reveal],[data-reveal-immediate]{opacity:1!important;transform:none!important;transition:none!important}
+/* Capabilities read as a compact index, not a pill cloud. */
+.cap-strip{padding:34px 0;background:#fff}
+.cap-head{font-size:14px;line-height:1.5}
+.chip-row{gap:8px;max-width:1120px}
+.chip{border-radius:3px;background:#f6f7f5;font-size:14px;padding:10px 14px;line-height:1.35;min-height:44px}
+.chip.active{background:#e5edf1;color:#254a60;border-color:#7e9ca9}
+.chip-detail{font-size:16px;line-height:1.6;min-height:52px}
+section{padding:88px 0;border-bottom-color:var(--line)}
+.section-head{max-width:740px;margin-bottom:42px}
+.section-head h2{font-size:clamp(29px,3.1vw,40px);font-weight:600;line-height:1.2;letter-spacing:-.035em}
+.section-head p{font-size:17px;line-height:1.65;margin-top:18px}
+#problem{background:#fff}
+.problem-grid{counter-reset:problems;gap:0 48px}
+.problem-item{counter-increment:problems;position:relative;padding:22px 0 22px 44px;border:0;border-top:1px solid var(--line);font-size:17px;line-height:1.6}
+.problem-item::before{content:counter(problems,decimal-leading-zero);position:absolute;inset-inline-start:0;top:25px;font-size:14px;color:#607982;font-variant-numeric:tabular-nums}
+.problem-resolve{text-align:start;font:600 23px/1.45 var(--ui-font);border-top:1px solid var(--rule);padding-top:28px}
+#flow{background:#eef2f2}
+.flow-row{justify-content:flex-start;gap:8px}
+.flow-step{border-radius:3px;padding:12px 15px;font-size:14px;line-height:1.45;white-space:normal;box-shadow:none;max-width:100%}
+.flow-arrow{padding:0 2px}
+/* Workforce = department register; no floating rounded cards. */
+.workforce-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;background:none;border:0;border-radius:0;overflow:visible}
+.wf-dept{background:transparent;padding:24px 0 0;border-top:3px solid #637f8b;gap:10px;min-width:0}
+.wf-dept-head{font-size:14px;font-weight:600;margin-bottom:8px}
+.wf-agent{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:8px;gap:5px}
+.wf-agent-top{align-items:flex-start;flex-wrap:wrap}
+.wf-role,.wf-status,.wf-metric,.wf-note,.wf-handoff-title{font-size:14px;line-height:1.5}
+.wf-status{color:#246a4d;white-space:normal}
+.wf-status::before{box-shadow:none;margin-top:7px}
+.wf-metric{border-top:0;padding-top:8px;letter-spacing:0}
+.wf-metric b{font:600 22px var(--ui-font);color:var(--text)}
+.wf-total{grid-column:1/-1;display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:24px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:22px 0}
+.wf-total-num{font:600 48px/1 var(--ui-font);margin:0;color:#2d5368}
+.wf-handoff .flow-row{flex-wrap:wrap;overflow:visible}
+.wf-handoff .flow-step{font-size:14px}
+#compare{background:#fff}
+.compare-grid{border-radius:0;border:0;background:none;gap:32px}
+.compare-item{background:none;border-top:1px solid var(--rule);padding:28px 0}
+.compare-item .old{font-size:16px;line-height:1.5;text-decoration:none}
+.compare-item .new{font:600 23px/1.4 var(--ui-font);color:#2d5368}
+.services{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px;border:0;border-radius:0;background:none;overflow:visible}
+.service{background:none;padding:28px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:36px 1fr;align-content:start;gap:0 16px}
+.service .idx{grid-row:1/3;font-size:14px;color:#637e89;padding-top:5px}
+.service h3{font-size:22px;margin:0;line-height:1.4}
+.service p{grid-column:2;font-size:16px;line-height:1.65;margin:10px 0 0}
+/* Regulation section resembles a sober document / professional service. */
+#compliance-cost{background:#e7eceb;border-block:1px solid #9facb1}
+#compliance-cost>.wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+#compliance-cost .section-head{margin:0}
+#compliance-cost .eyebrow{color:#80533f}
+#compliance-cost .eyebrow::before{background:#80533f}
+.cc-panel{padding:28px 32px;background:#fff;border:1px solid #aebdbc;border-inline-start:4px solid #566f7a;border-radius:0;margin:0}
+.cc-list li{font-size:17px;line-height:1.65}
+.cc-list li::before{color:#566f7a}
+.cc-note,.portal-note{font-size:14px;opacity:1;line-height:1.6}
+/* Existing marketing preview remains an explicitly static illustration. */
+.portal-preview{background:#fff;color:var(--text);border-color:var(--line)}
+.portal-preview .section-head h2{color:var(--text)}
+.portal-preview .section-head p,.portal-list li{color:var(--text-dim);font-size:16px;line-height:1.6}
+.portal-visual{border:1px solid #a9b8bb;border-radius:5px;box-shadow:none;background:#fff;scrollbar-width:thin}
+.pm-chrome{background:#e8eeee;padding:12px;min-width:580px}
+.pmc-url,.pm-slogo,.pm-nav-item,.pm-kpi-label,.pm-kpi-delta,.pm-panel-title,.pm-fbar,.pm-fbar b,.pm-feed-row{font-family:var(--ui-font);font-size:14px;line-height:1.5;letter-spacing:0}
+.pm-body{min-width:580px}.pm-sidebar{background:#f0f3f2;width:140px;padding:18px 12px}.pm-main{padding:18px;background:#fafbf9}
+.pm-kpi{border-radius:4px}.pm-kpi-val{font-family:var(--ui-font);font-size:24px}
+.pm-row{grid-template-columns:1fr}.pm-fbar span{width:92px}.pm-fbar b{width:38px}.pm-fbar i::after{background:#59798b}
+.pm-panel{border-radius:4px}.portal-note{color:#52666f;letter-spacing:0}
+.roi-list{padding:0;gap:0 48px}.roi-list li{font-size:18px;border-bottom:1px solid var(--line);padding:17px 0;line-height:1.5}
+#channels{background:#fff}.channel-chip{font-size:16px;padding:14px 18px;border-radius:3px}
+.trust-grid{border:0;border-radius:0;background:none;gap:24px 40px}
+.trust-item{background:none;padding:24px 0;border-top:1px solid var(--rule)}
+.trust-icon{width:44px;height:44px;font-size:14px;background:#fff;border-radius:3px}
+.trust-item h4{font-size:18px;margin:0 0 8px}.trust-item p{font-size:16px;line-height:1.65;margin:0}
+#faq{background:#fff}.faq-q{font-family:var(--ui-font);font-size:18px;line-height:1.5;padding:22px 0}
+.faq-a p{font-size:16px;line-height:1.7}.faq-item.open .faq-a{max-height:1500px}
+.demo-grid{gap:64px}.demo-form{background:#fff;border:1px solid var(--line);padding:32px;gap:18px;border-radius:4px}
+.demo-form label{font-family:var(--ui-font);font-size:14px;margin-bottom:8px}.demo-form input,.demo-form select{font-size:16px;padding:13px 14px}
+.form-status{font-size:15px}footer{background:#eef1ee;padding:48px 0}
+.footer-links a,.footer-bottom{font-size:14px;line-height:1.6}
+/* Actual admin / company application chrome; existing layouts and visibility untouched. */
+#loginScreen{background:#eff2ef;padding:40px 20px;position:relative;isolation:isolate}
+#loginScreen::before{content:'';position:absolute;inset:0 auto 0 0;width:28%;border-inline-end:1px solid #c5d0ce;background:#e2e8e6;z-index:-1}
+.login-card{max-width:440px;border:1px solid #afbfbe;border-top:4px solid #496b7a;border-radius:4px;padding:40px;background:#fff;box-shadow:0 8px 32px #20383008}
+.login-logo{font-family:var(--ui-font);font-size:22px;margin-bottom:16px;gap:12px;line-height:1.45}
+.login-logo img{width:28px;height:28px}.login-sub{font-size:16px;line-height:1.6;margin-bottom:28px}
+.field{margin-bottom:20px}.field label,label{font-family:var(--ui-font);font-size:14px;letter-spacing:0;line-height:1.5}
+.hint,.err,.err-msg,.note,.notice,.note-gap,.empty,.muted,.mono{font-size:14px;line-height:1.6}
+.sidebar{background:#f0f3f1;border-color:#c3cfce}
+.sidebar-brand,.sidebar-logo{font-size:17px;min-height:76px}
+.sidebar-brand span.tag,.sidebar-foot,.nav-group-label{font-family:var(--ui-font);font-size:14px;line-height:1.6;color:#536168;letter-spacing:0}
+.nav-group-label{font-weight:600;text-transform:none;margin-top:18px}
+.nav-item{font-size:15px;line-height:1.5;min-height:46px;border-radius:3px}
+.nav-item.active{color:#254a60;background:#dce7eb;border-color:#2d5368}
+.topbar{background:#fff;backdrop-filter:none;border-color:var(--line);min-height:72px;height:auto;flex-wrap:wrap;padding:16px 24px}
+.topbar-title,.topbar-company{font-size:16px}.topbar-sub,.topbar-view-label{font-family:var(--ui-font);font-size:14px}
+.topbar-left,.topbar-right{flex-wrap:wrap}.topbar-spacer{min-width:0}
+.content{padding:32px;max-width:1320px}.view-title{font-size:29px;line-height:1.25}.view-sub{font-size:16px;line-height:1.6}
+.card,.stat-card{border-radius:4px;box-shadow:none}.card{padding:24px}
+.stat-grid{gap:16px}.stat-card{border-top:3px solid #9cafb6;padding:22px}
+.stat-label,.stat-card .lbl{font-family:var(--ui-font);font-size:14px;line-height:1.5;letter-spacing:0;text-transform:none;color:var(--text-dim)}
+.stat-value,.stat-card .val{font:600 32px/1.2 var(--ui-font);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+table{font-size:15px;font-variant-numeric:tabular-nums}th{font-family:var(--ui-font);font-size:14px;text-transform:none;letter-spacing:0;background:#f0f3f2;padding:14px 12px;color:#43565e}td{padding:16px 12px;line-height:1.5}
+.table-wrap{max-width:100%;overflow:auto}.card:has(>table){overflow-x:auto}
+tbody tr:hover{background:#f5f8f7}.pill{font-family:var(--ui-font);font-size:14px;line-height:1.5;border-radius:3px;padding:4px 9px}
+.pill-green,.pill-mint{color:#246a4d;background:#e6f0e9}.pill-red{color:#a63332;background:#fae9e7}
+.btn-sm,.filter-tab,.suggest-chip{font-family:var(--ui-font);font-size:14px;min-height:44px;border-radius:4px}
+.filter-tab.active{border-color:#7e9ca9}.notice,.note{background:#e5edf1;color:#254a60;border-color:#b7cad2}
+.chat-msg,.chat-msg.bot{font-size:16px;line-height:1.6;color:var(--text)}
+.toast{font-size:15px;box-shadow:0 4px 16px #24363812;max-width:calc(100vw - 32px)}
+/* Widget: retain position/state/connection behavior; restyle frame and controls only. */
+.agent-window{background:#fff;border:1px solid #9caeb4;border-radius:8px;box-shadow:0 10px 32px #182d3926}
+.agent-header{padding:8px 10px;background:#fff;border-color:#c9d3d6;gap:8px}
+.agent-header-id{flex:1;flex-wrap:wrap;gap:2px 7px;overflow:hidden;min-width:0}
+.agent-name{font-size:14px;color:#202c32;white-space:normal;flex-shrink:1;line-height:1.3}
+.agent-role{font-family:var(--ui-font);font-size:14px;color:#536168;white-space:normal;line-height:1.3}
+.agent-controls{gap:0}.agent-btn{width:44px;height:44px;min-width:44px;min-height:44px;padding:0;color:#3b515c;background:transparent;font-size:18px;border-radius:4px}
+.agent-btn:hover{background:#e5edf1;color:#1c3a4b}.agent-btn-close:hover{background:#fae9e7;color:#a63332}
+.agent-dot.live,.agent-bubble-dot.live{box-shadow:none;background:#246a4d}
+.agent-join-btn{border-radius:4px;background:#2d5368;color:#fff;box-shadow:none;min-height:48px;font-size:16px;max-width:100%;line-height:1.4;white-space:normal}
+.agent-join-btn:hover{box-shadow:none;transform:none;background:#234558}
+.agent-join-btn .dot{background:#fff;animation:none}
+.agent-join-hint{font-family:var(--ui-font);font-size:14px;line-height:1.5;color:#fff}
+.agent-loading{background:#edf2f2}.agent-loading-text{color:#435d68;font-family:var(--ui-font);font-size:14px}
+.agent-spinner{border-color:#c8d4d8;border-top-color:#2d5368}
+.agent-text-form,.agent-stage.text-mode{background:#f5f7f6;border-color:#c9d3d6}
+.agent-caption-line{font-size:15px;line-height:1.6;border-radius:5px}
+.agent-caption-line.customer{background:#e5edf1;color:#254a60;border-color:#b4c8d0}.agent-caption-line.agent{background:#fff;color:#202c32;border-color:#c9d3d6}
+.agent-text-input{background:#fff;color:#202c32;border-radius:4px;font-size:16px}.agent-text-input::placeholder{color:#536168}
+.agent-text-send{width:44px;height:46px;min-height:46px;border-radius:4px;font-size:18px}
+.agent-bubble{border-color:#fff;background:#fff;box-shadow:0 4px 16px #243b4526}.agent-bubble-dot{border-color:#fff}
+.agent-reopen{font-family:var(--ui-font);font-size:15px;border-radius:4px;background:#fff;border-color:#9caeb4;box-shadow:0 4px 16px #243b451a}
+.agent-live-badge{font-family:var(--ui-font);font-size:14px;letter-spacing:0;border-radius:3px;background:#fff;color:#246a4d}
+.agent-mic-blocked{background:#fff3f1;border-color:#c98278}.agent-mic-blocked p{color:#8e2825;font-size:14px}
+/* Logical properties for Arabic/Persian. Never alter the source language logic. */
+[dir=rtl] .hv-copy,[dir=rtl] .faq-q{text-align:start}
+[dir=rtl] .problem-item{border:0;border-top:1px solid var(--line);padding:22px 44px 22px 0}
+[dir=rtl] .flow-arrow{transform:rotate(180deg)}
+[dir=rtl] .service .idx{text-align:start}
+@media(max-width:1100px){
+ .logo-sub{max-width:300px}.hero-grid{gap:28px}.hero-visual h1{font-size:42px}
+ .wrap{padding-inline:32px}body:has(#heroVisual)>header>nav{padding-inline:32px}
+}
+@media(max-width:960px){
+ html{scroll-padding-top:84px}
+ body:has(#heroVisual)>header>nav{display:flex;gap:16px;padding:12px 24px;min-height:72px}
+ .logo{margin-inline-end:auto}.logo-sub{display:none}
+ .nav-toggle{display:block;min-width:44px;padding:0;font-size:26px}
+ .nav-links{top:72px;height:calc(100dvh - 72px);background:#fafbf9;border-top:1px solid var(--line);padding:24px;gap:0;align-items:stretch;overflow-y:auto;justify-content:flex-start}
+ .nav-links a{font-size:18px;min-height:58px;border-bottom:1px solid var(--line);white-space:normal}
+ .hero-grid{grid-template-columns:1fr;padding:120px 0 48px;gap:40px}.hero-showcase{order:0;max-width:760px}.hv-copy{max-width:740px}
+ .hero-visual h1{font-size:clamp(36px,6.2vw,50px)}
+ #compliance-cost>.wrap{grid-template-columns:1fr;gap:32px}.workforce-grid{gap:24px}
+ .content{padding:24px 20px 100px}.topbar{padding:12px 16px;gap:12px}
+ .agent-window[data-state=corner]{max-height:calc(100dvh - 100px)}
+}
+@media(max-width:760px){
+ .wrap{padding-inline:24px}section{padding:60px 0}.section-head{margin-bottom:32px}
+ .hero-grid{padding-top:116px}.hero-visual h1{font-size:38px;line-height:1.12}.hv-copy p.lede{font-size:17px}
+ .cap-strip{padding:28px 0}.chip-row{justify-content:flex-start}.chip{font-size:14px;flex-grow:0}
+ .flow-row{align-items:stretch}.flow-step{width:100%;padding:15px 18px}.flow-arrow{align-self:center;transform:rotate(90deg)}
+ [dir=rtl] .flow-arrow{transform:rotate(90deg)}
+ .workforce-grid,.services{grid-template-columns:1fr}.wf-dept{padding-top:20px}.wf-total{flex-wrap:wrap;justify-content:flex-start;gap:16px}
+ .wf-handoff .flow-row{flex-direction:column}.compare-grid{gap:0}
+ .cc-panel{padding:24px}.cc-actions .btn{width:100%}
+ .portal-grid{gap:28px}.roi-list{gap:0}.demo-form{padding:24px}.demo-grid{gap:32px}
+ .login-card{padding:30px 24px}.login-logo{font-size:20px}#loginScreen::before{width:12%;opacity:.6}
+ .stat-card{padding:16px}.stat-value,.stat-card .val{font-size:28px}.card{padding:18px}
+ .topbar-left{gap:8px}.topbar-right{gap:8px}.topbar-sub{white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+/* Draw the existing control glyphs with CSS: no icon/font dependency. */
+.nav-toggle,#menuToggle,.mobile-menu-btn{font-size:0;align-items:center;justify-content:center}
+.nav-toggle::before,#menuToggle::before,.mobile-menu-btn::before{content:'';display:block;width:22px;height:16px;margin:auto;background:linear-gradient(to bottom,currentColor 0 2px,transparent 2px 7px,currentColor 7px 9px,transparent 9px 14px,currentColor 14px 16px)}
+.lang-btn .car{font-size:0;width:0;height:0;border-inline:4px solid transparent;border-top:5px solid currentColor;margin-inline-start:3px}
+#agentHalfBtn,#agentFullBtn,#agentMinBtn,#agentCloseBtn{font-size:0}
+#agentHalfBtn::before{content:'';width:18px;height:16px;border:2px solid currentColor;background:linear-gradient(to right,transparent 50%,currentColor 50%)}
+#agentFullBtn::before{content:'';width:18px;height:18px;border:2px solid currentColor}
+#agentMinBtn::before{content:'';width:16px;border-top:2px solid currentColor}
+#agentCloseBtn::before{content:'×';font:24px/1 Arial,sans-serif}
