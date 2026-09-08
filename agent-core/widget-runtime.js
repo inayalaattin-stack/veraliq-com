@@ -22,7 +22,7 @@
 // and the SAME CSS classes (.agent-window, .agent-bubble, ...). Any page that
 // wants this widget must include that markup + those styles + this module.
 
-import { createProviders } from './config.js?v=3';
+import { createProviders } from './config.js?v=4';
 import { createCallConsent } from './call-consent.js?v=2';
 import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
 import { AgentOrchestrator } from './orchestrator.js?v=5';
@@ -44,7 +44,7 @@ const BARGE_IN_HISTORY_LIMIT = 12; // unused here, kept for parity — real limi
 /**
  * @param {{
  *   agentIdentity: {first_name?:string, last_name?:string, display_name:string, company_name:string, role:string},
- *   providerOverrides?: Partial<import('./config.js?v=3').AGENT_PROVIDER_CONFIG>,
+ *   providerOverrides?: Partial<import('./config.js?v=4').AGENT_PROVIDER_CONFIG>,
  *   startMinimized?: boolean,
  *   conversationLogging?: {tokenKey?:string, agentKey?:string, channel?:string},
  * }} opts

@@ -7,7 +7,7 @@
 // gibi sag alt köşede asistan otomatik olarak çıkmalı elif kaya gibi aynı
 // sistemi tam" isteği üzerine.
 
-import { initAgentWidget } from './widget-runtime.js?v=6';
+import { initAgentWidget } from './widget-runtime.js?v=7';
 
 const AGENT_IDENTITY = {
   first_name: 'VERALIQ',
