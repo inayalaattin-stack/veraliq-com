@@ -45,7 +45,7 @@ window.VERALIQ_PORTAL_I18N = {
       "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem",
       "nav.item.dashboard":"Panel","nav.item.assistant":"AI Asistan","nav.item.projects":"Projeler","nav.item.inventory":"Envanter",
       "nav.item.presentations":"Sunumlar","nav.item.reservations":"Rezervasyonlar","nav.item.leads":"Lead'ler",
-      "nav.item.customers":"Müşteriler","nav.item.sales":"Satışlar","nav.item.crm":"CRM","nav.item.payments":"Ödemeler",
+      "nav.item.customers":"Müşteriler","nav.item.sales":"Satışlar","nav.item.crm":"CRM","nav.item.payments":"Onay Talepleri",
       "nav.item.contracts":"Sözleşmeler","nav.item.documents":"Belgeler","nav.item.calendar":"Takvim","nav.item.reports":"Raporlar",
       "nav.item.agents":"Agent'lar","nav.item.team":"Ekip","nav.item.integrations":"Entegrasyonlar","nav.item.settings":"Ayarlar",
 
@@ -110,14 +110,20 @@ window.VERALIQ_PORTAL_I18N = {
       "leads.nameRequired":"Ad soyad gerekli.","leads.added":"Lead eklendi.","leads.noLeads":"Henüz lead yok.",
       "leads.statusUpdated":"Lead durumu güncellendi.",
 
-      "customers.sub":"Satışı kazanılmış (won) lead'lerden oluşan müşteri listesi.","customers.noCustomers":"Henüz \"kazanıldı\" durumunda müşteri yok.",
+      "customers.sub":"Müşteri kayıtları — tercihler, ilgi alanları, bağlı lead ve görüşme geçmişiyle.",
+      "customers.noCustomers":"Henüz müşteri kaydı yok.","customers.noWonLeads":"Henüz \"kazanıldı\" durumunda lead yok.",
+      "customers.tab.customers":"Müşteriler","customers.tab.wonLeads":"Kazanılmış Lead'ler",
+      "customers.detailBtn":"Detay","customers.col.salesStatus":"Satış Durumu","customers.col.consent":"Rıza Durumu",
+      "customers.detail.interests":"İlgi Alanları","customers.detail.leads":"Bağlı Lead'ler","customers.detail.conversations":"Görüşme Sayısı",
+      "customers.detail.noInterests":"Kayıtlı ilgi alanı yok.","customers.detail.noLeads":"Bağlı lead yok.","customers.detail.noConversations":"0",
 
       "crm.sub":"Satış hunisi — lead durumlarına göre gerçek zamanlı dağılım.",
       "crm.note":"Harici CRM senkronu (HubSpot/Salesforce/Zoho/Dynamics/Webhook) henüz bağlı değil — bu, ilgili sağlayıcının API anahtarını gerektiriyor. Bu ekran şu an VERALIQ'ın kendi dahili CRM verisini (leads tablosu) gösteriyor.",
 
-      "payments.sub":"İndirim / ödeme planı onay talepleri (approval engine).",
+      "payments.sub":"İndirim / ödeme planı ONAY TALEPLERİ (approval engine) — bu bir tahsilat veya fatura kaydı DEĞİLDİR.",
       "payments.ownerOnlyNote":"Onaylama yetkisi yalnızca şirket sahibi (company_owner) hesabındadır.","payments.decided":"Karar kaydedildi.",
       "payments.approve":"Onayla","payments.reject":"Reddet",
+      "payments.notPaymentRecord":"Bu ekran yalnızca indirim/ödeme planı ONAY TALEPLERİNİ listeler. Gerçek bir tahsilat, fatura veya ödeme kaydı ETMEZ — ayrı bir muhasebe/faturalama modülü yoktur.",
 
       "documents.sub":"Proje ve sözleşme belgeleri.",
       "documents.note":"<b>Bu ekran henüz dosya yükleme yapamıyor.</b> Veritabanı şemasında belge METADATA'sı için bir tablo hazır, ancak gerçek dosya depolama (Cloudflare R2 bucket) bu şirket hesabında henüz kurulmadı. Bu, sahte bir \"yükle\" butonu koymak yerine dürüst bir şekilde burada belirtiliyor — R2 bucket'ı kurulduğunda bu ekran gerçek yükleme/indirme ile çalışacak şekilde bağlanacak.",
@@ -171,7 +177,7 @@ window.VERALIQ_PORTAL_I18N = {
       "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System",
       "nav.item.dashboard":"Dashboard","nav.item.assistant":"AI Assistant","nav.item.projects":"Projects","nav.item.inventory":"Inventory",
       "nav.item.presentations":"Presentations","nav.item.reservations":"Reservations","nav.item.leads":"Leads",
-      "nav.item.customers":"Customers","nav.item.sales":"Sales","nav.item.crm":"CRM","nav.item.payments":"Payments",
+      "nav.item.customers":"Customers","nav.item.sales":"Sales","nav.item.crm":"CRM","nav.item.payments":"Approval Requests",
       "nav.item.contracts":"Contracts","nav.item.documents":"Documents","nav.item.calendar":"Calendar","nav.item.reports":"Reports",
       "nav.item.agents":"Agents","nav.item.team":"Team","nav.item.integrations":"Integrations","nav.item.settings":"Settings",
 
@@ -236,14 +242,20 @@ window.VERALIQ_PORTAL_I18N = {
       "leads.nameRequired":"Full name is required.","leads.added":"Lead added.","leads.noLeads":"No leads yet.",
       "leads.statusUpdated":"Lead status updated.",
 
-      "customers.sub":"Customer list made up of leads marked as won.","customers.noCustomers":"No customers with \"won\" status yet.",
+      "customers.sub":"Customer records — preferences, interests, linked leads and conversation history.",
+      "customers.noCustomers":"No customer records yet.","customers.noWonLeads":"No leads with \"won\" status yet.",
+      "customers.tab.customers":"Customers","customers.tab.wonLeads":"Won Leads",
+      "customers.detailBtn":"Details","customers.col.salesStatus":"Sales Status","customers.col.consent":"Consent Status",
+      "customers.detail.interests":"Interests","customers.detail.leads":"Linked Leads","customers.detail.conversations":"Conversation Count",
+      "customers.detail.noInterests":"No interests recorded.","customers.detail.noLeads":"No linked leads.","customers.detail.noConversations":"0",
 
       "crm.sub":"Sales funnel — real-time distribution by lead status.",
       "crm.note":"External CRM sync (HubSpot/Salesforce/Zoho/Dynamics/Webhook) isn't connected yet — that requires an API key from the relevant provider. This screen currently shows VERALIQ's own internal CRM data (the leads table).",
 
-      "payments.sub":"Discount / payment plan approval requests (approval engine).",
+      "payments.sub":"Discount / payment plan APPROVAL REQUESTS (approval engine) — this is NOT a payment or invoice record.",
       "payments.ownerOnlyNote":"Approval rights belong only to the company owner (company_owner) account.","payments.decided":"Decision recorded.",
       "payments.approve":"Approve","payments.reject":"Reject",
+      "payments.notPaymentRecord":"This screen only lists discount/payment-plan APPROVAL REQUESTS. It does not record an actual payment, invoice, or collection — there is no separate accounting/billing module.",
 
       "documents.sub":"Project and contract documents.",
       "documents.note":"<b>This screen can't upload files yet.</b> The database schema has a table ready for document METADATA, but real file storage (a Cloudflare R2 bucket) hasn't been set up for this company account yet. Rather than adding a fake \"upload\" button, this is stated honestly here — once the R2 bucket is set up, this screen will be wired up for real upload/download.",
@@ -297,7 +309,7 @@ window.VERALIQ_PORTAL_I18N = {
       "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система",
       "nav.item.dashboard":"Панель","nav.item.assistant":"AI-ассистент","nav.item.projects":"Проекты","nav.item.inventory":"Инвентарь",
       "nav.item.presentations":"Показы","nav.item.reservations":"Резервации","nav.item.leads":"Лиды",
-      "nav.item.customers":"Клиенты","nav.item.sales":"Продажи","nav.item.crm":"CRM","nav.item.payments":"Платежи",
+      "nav.item.customers":"Клиенты","nav.item.sales":"Продажи","nav.item.crm":"CRM","nav.item.payments":"Запросы на одобрение",
       "nav.item.contracts":"Договоры","nav.item.documents":"Документы","nav.item.calendar":"Календарь","nav.item.reports":"Отчёты",
       "nav.item.agents":"Агенты","nav.item.team":"Команда","nav.item.integrations":"Интеграции","nav.item.settings":"Настройки",
 
@@ -362,14 +374,20 @@ window.VERALIQ_PORTAL_I18N = {
       "leads.nameRequired":"Требуется ФИО.","leads.added":"Лид добавлен.","leads.noLeads":"Пока нет лидов.",
       "leads.statusUpdated":"Статус лида обновлён.",
 
-      "customers.sub":"Список клиентов из лидов со статусом «выигран».","customers.noCustomers":"Пока нет клиентов со статусом «выигран».",
+      "customers.sub":"Записи клиентов — предпочтения, интересы, связанные лиды и история разговоров.",
+      "customers.noCustomers":"Пока нет записей клиентов.","customers.noWonLeads":"Пока нет лидов со статусом «выигран».",
+      "customers.tab.customers":"Клиенты","customers.tab.wonLeads":"Выигранные лиды",
+      "customers.detailBtn":"Детали","customers.col.salesStatus":"Статус продажи","customers.col.consent":"Статус согласия",
+      "customers.detail.interests":"Интересы","customers.detail.leads":"Связанные лиды","customers.detail.conversations":"Кол-во разговоров",
+      "customers.detail.noInterests":"Интересы не зафиксированы.","customers.detail.noLeads":"Нет связанных лидов.","customers.detail.noConversations":"0",
 
       "crm.sub":"Воронка продаж — распределение лидов по статусам в реальном времени.",
       "crm.note":"Внешняя синхронизация CRM (HubSpot/Salesforce/Zoho/Dynamics/Webhook) пока не подключена — нужен API-ключ провайдера. Этот экран сейчас показывает собственные внутренние CRM-данные VERALIQ (таблицу лидов).",
 
-      "payments.sub":"Запросы на одобрение скидок / планов платежей.",
+      "payments.sub":"ЗАПРОСЫ НА ОДОБРЕНИЕ скидок / планов платежей — это НЕ запись о платеже или счёте.",
       "payments.ownerOnlyNote":"Право одобрения есть только у владельца компании (company_owner).","payments.decided":"Решение зафиксировано.",
       "payments.approve":"Одобрить","payments.reject":"Отклонить",
+      "payments.notPaymentRecord":"Этот экран показывает только ЗАПРОСЫ НА ОДОБРЕНИЕ скидок/планов платежей. Он не фиксирует фактический платёж, счёт или поступление средств — отдельного модуля учёта/биллинга нет.",
 
       "documents.sub":"Документы по проектам и договорам.",
       "documents.note":"<b>Этот экран пока не может загружать файлы.</b> В схеме базы данных готова таблица для метаданных документов, но реальное хранилище файлов (бакет Cloudflare R2) для этой компании ещё не настроено. Вместо фиктивной кнопки «загрузить» это честно указано здесь — после настройки бакета R2 экран будет подключён к реальной загрузке/скачиванию.",

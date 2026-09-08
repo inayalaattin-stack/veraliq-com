@@ -455,7 +455,7 @@
         statCard('Toplam Proje', stats.total_projects) +
         statCard('Toplam Birim', stats.total_units) +
         statCard('Satılan Birim', stats.total_sold, 'mint') +
-        statCard('Toplam Ciro', money(stats.total_revenue), 'mint') +
+        statCard('Toplam Gayrimenkul Cirosu', money(stats.total_revenue), 'mint') +
         statCard('Bekleyen Onay', stats.pending_approvals) +
       '</div>' +
       '<div class="card"><h3 style="margin-top:0;">AI Ajan vs İnsan Temsilci — Sunum Dağılımı</h3>' +
@@ -637,6 +637,7 @@
         '<td><button class="btn-primary btn-sm" data-save="'+c.id+'">Kaydet</button></td></tr>';
     });
     html += '</tbody></table>';
+    html += '<div class="note-gap" style="margin-top:12px;">Bu ekran yalnızca plan/durum ETİKETİNİ değiştirir — ayrı bir faturalama, tahsilat veya başarı primi muhasebe motoru YOKTUR. Buradaki değişiklik hiçbir ödeme/fatura kaydı oluşturmaz.</div>';
     wrap.innerHTML = html;
     wrap.querySelectorAll('[data-save]').forEach(function(btn){
       btn.addEventListener('click', async function(){
@@ -714,7 +715,7 @@
         '<tr><td class="muted">company_owner</td><td>Kendi şirketinin tüm verisi + ekip yönetimi + onay verme.</td></tr>' +
         '<tr><td class="muted">company_staff</td><td>Kendi şirketinin operasyonel verisi (onay/ekip yönetimi hariç).</td></tr>' +
         '</tbody></table></div>' +
-      '<div class="card"><h3 style="margin-top:0;">Multi-Tenant İzolasyon</h3><p class="muted" style="font-size:13px;">Her sorgu, JWT içindeki company_id ile sunucu tarafında zorunlu kılınır (worker-portal/portal-api-worker.js → requireAuth()) — istemcinin gönderdiği hiçbir company_id parametresine güvenilmez. Bu, 41 otomatik testle (worker-portal/test/) doğrulanmış durumda.</p></div>' +
+      '<div class="card"><h3 style="margin-top:0;">Multi-Tenant İzolasyon</h3><p class="muted" style="font-size:13px;">Her sorgu, JWT içindeki company_id ile sunucu tarafında zorunlu kılınır (worker-portal/portal-api-worker.js → requireAuth()) — istemcinin gönderdiği hiçbir company_id parametresine güvenilmez. Bu, worker-portal/test/portal-worker.test.mjs içindeki otomatik test paketiyle (tenant izolasyonu, RBAC ve SQL/prompt-injection direnci dahil) doğrulanmış durumda — güncel sayı ve kapsam için test dosyasına bakın; sabit bir rakam burada kasıtlı olarak verilmiyor (test sayısı zamanla değişir).</p></div>' +
       '<div class="note-gap">MFA, IP bazlı erişim kısıtlaması ve WAF kuralları uygulama kodu değil, Cloudflare hesap ayarlarıdır (Cloudflare Dashboard → Zero Trust / WAF) — bu panelden değiştirilemez, Cloudflare hesabınızdan yönetilmelidir.</div>';
   }
 

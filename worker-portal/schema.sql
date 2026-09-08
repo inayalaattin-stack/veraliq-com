@@ -95,6 +95,10 @@ CREATE TABLE IF NOT EXISTS units (
   gross_area              REAL,
   net_area                REAL,
   price                   REAL,
+  sold_price              REAL,             -- SOLD anındaki bedel, DONDURULMUŞ (bkz. migrations/0003) —
+                                             -- price alanı SOLD/CONTRACT sonrası PATCH ile artık değiştirilemez,
+                                             -- ama geçmiş kayıtlar için de "gerçekleşen ciro" ile "güncel liste
+                                             -- fiyatı" ayrımını garanti eder. NULL ise SUM sorguları price'a düşer.
   currency                TEXT NOT NULL DEFAULT 'TRY',
   status                  TEXT NOT NULL DEFAULT 'AVAILABLE',
   assigned_agent_type     TEXT,             -- 'AI' | 'HUMAN' (madde 39)

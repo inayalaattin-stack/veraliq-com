@@ -445,7 +445,7 @@
     ]},
   ];
 
-  var state = { view: 'dashboard', projectsCache: null };
+  var state = { view: 'dashboard', projectsCache: null, customersTab: 'customers' };
 
   // ============================================================
   // LOGIN / SESSION
@@ -943,12 +943,66 @@
     }
   }
 
+  // "Müşteriler" ekranı DAHA ÖNCE yalnızca leads?status=won gösteriyordu —
+  // gerçek /api/customers CRUD API'si (customer_interests + bağlı lead +
+  // görüşme geçmişiyle) hiçbir menüden erişilemiyordu (2026-09-08 düzeltme
+  // turu, VERALIQ-Admin-Portal-Mobil-Inceleme-Raporu.md §10 bulgusu). Bu
+  // ekran artık GERÇEK /api/customers'a bağlı; eski "kazanılmış lead"
+  // görünümü VERİ KAYBI OLMADAN ayrı bir sekme olarak korunuyor.
   async function renderCustomers(container){
-    var body = viewHead(container, T('nav.item.customers'), T('customers.sub'));
+    var body = viewHead(container, T('nav.item.customers'), T('customers.sub'),
+      '<div style="display:flex;gap:8px;">' +
+        '<button class="btn btn-sm' + (state.customersTab !== 'won' ? ' btn-primary' : '') + '" data-cust-tab="customers">' + esc(T('customers.tab.customers')) + '</button>' +
+        '<button class="btn btn-sm' + (state.customersTab === 'won' ? ' btn-primary' : '') + '" data-cust-tab="won">' + esc(T('customers.tab.wonLeads')) + '</button>' +
+      '</div>');
+    container.querySelectorAll('[data-cust-tab]').forEach(function(btn){
+      btn.addEventListener('click', function(){ state.customersTab = btn.getAttribute('data-cust-tab'); navigate('customers'); });
+    });
+    if (state.customersTab === 'won') { await renderWonLeadsTab(body); } else { await renderRealCustomersTab(body); }
+  }
+
+  async function renderRealCustomersTab(body){
+    try {
+      var res = await api('/api/customers');
+      if (!res.customers.length) { body.innerHTML = '<div class="empty">' + esc(T('customers.noCustomers')) + '</div>'; return; }
+      var rows = res.customers.map(function(c){
+        return '<tr><td>' + esc(c.name) + '</td><td class="mono">' + esc(c.phone || c.email || '—') + '</td>' +
+          '<td>' + (c.budget ? money(c.budget) : '—') + '</td><td>' + esc(c.sales_status || '—') + '</td><td>' + esc(c.consent_status || '—') + '</td>' +
+          '<td class="mono muted">' + fmtDate(c.updated_at) + '</td>' +
+          '<td><button class="btn btn-sm cust-detail-btn" data-id="' + c.id + '">' + esc(T('customers.detailBtn')) + '</button></td></tr>' +
+          '<tr data-detail-for="' + c.id + '" style="display:none;"><td colspan="7"></td></tr>';
+      }).join('');
+      body.innerHTML = '<div class="card table-wrap"><table><thead><tr><th>' + esc(T('table.colName')) + '</th><th>' + esc(T('table.colContact')) + '</th>' +
+        '<th>' + esc(T('table.colBudget')) + '</th><th>' + esc(T('customers.col.salesStatus')) + '</th><th>' + esc(T('customers.col.consent')) + '</th>' +
+        '<th>' + esc(T('table.colCustomerSince')) + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      body.querySelectorAll('.cust-detail-btn').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var id = btn.getAttribute('data-id');
+          var row = body.querySelector('tr[data-detail-for="' + id + '"]');
+          var cell = row.querySelector('td');
+          if (row.style.display !== 'none') { row.style.display = 'none'; return; }
+          row.style.display = '';
+          cell.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
+          try {
+            var d = await api('/api/customers/' + id);
+            var interestsHtml = d.interests.length ? d.interests.map(function(i){ return '<li>' + esc(i.project_name || '—') + (i.unit_no ? ' · ' + esc(i.unit_no) : '') + '</li>'; }).join('') : '<li class="muted">' + esc(T('customers.detail.noInterests')) + '</li>';
+            var leadsHtml = d.leads.length ? d.leads.map(function(l){ return '<li>' + esc(l.name) + ' — ' + esc(LEAD_STATUS_LABEL[l.status] || l.status) + '</li>'; }).join('') : '<li class="muted">' + esc(T('customers.detail.noLeads')) + '</li>';
+            var convHtml = '<li>' + (d.conversations.length ? d.conversations.length : esc(T('customers.detail.noConversations'))) + '</li>';
+            cell.innerHTML = '<div style="display:flex;gap:24px;flex-wrap:wrap;padding:10px 0;">' +
+              '<div style="min-width:180px;"><b>' + esc(T('customers.detail.interests')) + '</b><ul style="margin:6px 0 0;padding-left:18px;">' + interestsHtml + '</ul></div>' +
+              '<div style="min-width:180px;"><b>' + esc(T('customers.detail.leads')) + '</b><ul style="margin:6px 0 0;padding-left:18px;">' + leadsHtml + '</ul></div>' +
+              '<div style="min-width:180px;"><b>' + esc(T('customers.detail.conversations')) + '</b><ul style="margin:6px 0 0;padding-left:18px;">' + convHtml + '</ul></div></div>';
+          } catch (e) { cell.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+        });
+      });
+    } catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+  }
+
+  async function renderWonLeadsTab(body){
     try {
       var res = await api('/api/leads');
       var won = res.leads.filter(function(l){ return l.status === 'won'; });
-      if (!won.length) { body.innerHTML = '<div class="empty">' + esc(T('customers.noCustomers')) + '</div>'; return; }
+      if (!won.length) { body.innerHTML = '<div class="empty">' + esc(T('customers.noWonLeads')) + '</div>'; return; }
       var rows = won.map(function(l){
         return '<tr><td>' + esc(l.name) + '</td><td class="mono">' + esc(l.phone || l.email || '—') + '</td><td>' + (l.budget ? money(l.budget) : '—') + '</td><td class="mono muted">' + fmtDate(l.updated_at) + '</td></tr>';
       }).join('');
@@ -974,7 +1028,10 @@
   // ============================================================
   async function renderPayments(container){
     var body = viewHead(container, T('nav.item.payments'), T('payments.sub'));
-    await loadApprovals(body, ['discount', 'payment_plan']);
+    body.innerHTML = '<div class="note-gap" style="margin-bottom:12px;">' + esc(T('payments.notPaymentRecord')) + '</div>';
+    var listWrap = document.createElement('div');
+    body.appendChild(listWrap);
+    await loadApprovals(listWrap, ['discount', 'payment_plan']);
   }
   async function renderTeamPlaceholder(){} // (unused, kept for symmetry)
 

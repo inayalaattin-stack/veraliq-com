@@ -78,7 +78,8 @@ async function writeAudit(env, { company_id, user_id, action, entity_type, entit
 // company_viewer İSTİSNA: bu tek rol için GERÇEKTEN ENFORCE EDİLEN bir
 // kısıtlama var — GET dışındaki hiçbir metod kabul edilmez, allowedRoles ne
 // olursa olsun (route kendi içinde auth.role'ü ayrıca kontrol etse bile,
-// buradan zaten null dönüp 401 alır).
+// buradan zaten null dönüp 401 alır) — TEK İSTİSNA aşağıdaki
+// VIEWER_SAFE_MUTATIONS listesidir.
 const COMPANY_ROLE_BASE_TIER = {
   company_manager: 'company_staff',
   company_sales_manager: 'company_staff',
@@ -86,6 +87,19 @@ const COMPANY_ROLE_BASE_TIER = {
   company_viewer: 'company_staff',
 };
 const COMPANY_EXTENDED_ROLES = ['company_manager', 'company_sales_manager', 'company_sales_agent', 'company_viewer'];
+
+// 2026-09-08 düzeltme turu: company_viewer'ın "yalnızca GET" kuralı, GET
+// olmayan ama gerçekte veri MUTASYONU yapmayan (kendi şifresini değiştirme)
+// veya salt-okunur bir sorguya cevap üreten (AI asistan — hiçbir intent
+// backend'de state değiştirmez, bkz. answerAssistantQuery) iki uca da
+// yanlışlıkla 401 döndürüyordu. Bunu genel olarak gevşetmek yerine (ki bu
+// "her uç için açık yetki kontrolünü koru" ilkesini bozardı), yalnızca bu
+// iki spesifik yöntem+yol çiftini AÇIKÇA allowlist'e alıyoruz — başka HİÇBİR
+// POST/PATCH/DELETE ucu viewer'a açılmaz.
+const VIEWER_SAFE_MUTATIONS = new Set([
+  'POST /api/auth/change-password',
+  'POST /api/assistant/query',
+]);
 
 // Verilen isteğin JWT'sini doğrular. allowedRoles boşsa herhangi bir
 // oturum açmış kullanıcı geçer. Döner: {sub, company_id, role} ya da null.
@@ -95,7 +109,10 @@ async function requireAuth(request, env, allowedRoles) {
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload) return null;
-  if (payload.role === 'company_viewer' && request.method !== 'GET') return null;
+  if (payload.role === 'company_viewer' && request.method !== 'GET') {
+    const pathname = new URL(request.url).pathname;
+    if (!VIEWER_SAFE_MUTATIONS.has(`${request.method} ${pathname}`)) return null;
+  }
   if (allowedRoles && allowedRoles.length) {
     const tier = COMPANY_ROLE_BASE_TIER[payload.role];
     if (!allowedRoles.includes(payload.role) && !(tier && allowedRoles.includes(tier))) return null;
@@ -235,7 +252,7 @@ async function answerAssistantQuery(env, companyId, questionRaw, langRaw) {
     /(сколько|сегодня|в этом месяце).*(продаж|продан)/.test(qStd) || /продаж.*(сколько|итог)/.test(qStd);
   if (isSalesQuery) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
-    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
+    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(sold_price, price)), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(companyId).first();
     return A('salesSummary', lang)(n, total);
   }
 
@@ -295,7 +312,7 @@ async function answerAdminAssistantQuery(env, questionRaw) {
   }
   if (/(kaç|toplam).*(satış|satıldı|ciro)/.test(q)) {
     const { n } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE status = 'SOLD'`).first();
-    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE status = 'SOLD'`).first();
+    const { total } = await env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(sold_price, price)), 0) AS total FROM units WHERE status = 'SOLD'`).first();
     return `Platform genelinde toplam ${n} birim satıldı, toplam ciro ${Number(total).toLocaleString('tr-TR')} TL.`;
   }
   if (/(proje sayısı|kaç proje)/.test(q)) {
@@ -671,7 +688,7 @@ async function route(request, url, env) {
       env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ?`).bind(cid).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM leads WHERE company_id = ? AND date(created_at) = date('now')`).bind(cid).first(),
       env.DB.prepare(`SELECT status, COUNT(*) AS n FROM units WHERE company_id = ? GROUP BY status`).bind(cid).all(),
-      env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(cid).first(),
+      env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(sold_price, price)), 0) AS total FROM units WHERE company_id = ? AND status = 'SOLD'`).bind(cid).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE company_id = ? AND status = 'pending'`).bind(cid).first(),
       // madde 19 "AI Agent Performance / Human Sales Performance": presentation_lock
       // audit kayıtlarındaki gerçek agent_type dağılımından hesaplanır (uydurma
@@ -775,18 +792,71 @@ async function route(request, url, env) {
 
     const body = await request.json();
     const sets = [], vals = [];
+    // price, birim CONTRACT/SOLD'a ulaştıktan sonra artık KİLİTLİ — "Ciro"nun
+    // satış anındaki gerçekleşen bedeli geçmişe dönük değişemesin diye (bkz.
+    // migrations/0003_units_sold_price.sql). Bu iki durumdan ÖNCE serbestçe
+    // düzenlenebilir (fiyat listesi güncellemesi vb.).
+    if ('price' in body && (unit.status === 'CONTRACT' || unit.status === 'SOLD')) {
+      return json({ error: 'price_locked_after_contract', status: unit.status }, 400);
+    }
     const safeFields = ['block', 'floor', 'unit_no', 'unit_type', 'gross_area', 'net_area', 'price', 'currency'];
     for (const f of safeFields) if (f in body) { sets.push(`${f} = ?`); vals.push(body[f]); }
+    let willBeSold = false;
+    let leavingPresentation = false;
+    let statusUnchangedRetry = false;
     if ('status' in body) {
-      if (!canTransition(unit.status, body.status)) {
+      if (body.status === unit.status) {
+        // Aynı isteğin tekrar gönderilmesi (ör. ağ zaman aşımı sonrası istemci
+        // retry'ı) — birim zaten istenen durumda. Sessizce no-op say: ne
+        // mükerrer bir "unit.update" audit kaydı yaz, ne de gereksiz bir
+        // UPDATE çalıştır (madde: "aynı isteğin tekrar gönderilmesinde
+        // mükerrer işlem veya yanıltıcı audit kaydı oluşmasını engelle").
+        statusUnchangedRetry = true;
+      } else if (!canTransition(unit.status, body.status)) {
         return json({ error: 'invalid_status_transition', from: unit.status, to: body.status }, 400);
+      } else {
+        sets.push('status = ?'); vals.push(body.status);
+        if (body.status === 'SOLD') willBeSold = true;
+        // Bir birim PRESENTATION'dayken portal kullanıcısı (owner/staff) durumu
+        // manuel olarak BAŞKA bir şeye çekerse (ör. HOLD), presentation_session_id
+        // sütunu SET listesine dahil edilmediği için eskiden dangling (askıda)
+        // kalıyordu VE agent'ın Durable Object kilidi hiç bırakılmıyordu — agent
+        // hâlâ "kilit bende" sanmaya devam ederdi. Bu artık düzeltildi: manuel
+        // geçiş PRESENTATION'dan ÇIKIYORSA hem DB alanı temizlenir hem DO kilidi
+        // ZORLA (session_id göndermeden) serbest bırakılır.
+        if (unit.status === 'PRESENTATION' && body.status !== 'PRESENTATION') {
+          leavingPresentation = true;
+          sets.push('presentation_session_id = NULL');
+        }
       }
-      sets.push('status = ?'); vals.push(body.status);
     }
-    if (!sets.length) return json({ error: 'no_fields' }, 400);
+    if (!sets.length) return json({ ok: true, no_change: true });
+    if (willBeSold) {
+      // SOLD anındaki bedel DONDURULUR — bu andan sonra hiçbir PATCH price'ı
+      // (zaten yukarıda kilitli) veya sold_price'ı değiştiremez.
+      sets.push('sold_price = ?'); vals.push(unit.price);
+    }
     sets.push(`updated_at = datetime('now')`);
     vals.push(unitId);
-    await env.DB.prepare(`UPDATE units SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+    // Optimistik eşzamanlılık kontrolü: UPDATE, bu isteğin OKUDUĞU status
+    // değeriyle koşullandırılır. Bu satırın okunmasıyla yazılması arasında
+    // başka bir istek birimin durumunu değiştirmişse (ör. eşzamanlı bir
+    // PATCH ya da sunum kilidi geçişi), 0 satır etkilenir ve istemciye
+    // "yeniden yükle" diyen açık bir 409 döner — sessizce üzerine yazılmaz.
+    const result = await env.DB.prepare(`UPDATE units SET ${sets.join(', ')} WHERE id = ? AND status = ?`)
+      .bind(...vals, unit.status).run();
+    if (!result.meta || result.meta.changes === 0) {
+      const fresh = await env.DB.prepare(`SELECT status FROM units WHERE id = ?`).bind(unitId).first();
+      return json({ error: 'conflict_stale_status', expected_status: unit.status, current_status: fresh ? fresh.status : null }, 409);
+    }
+    if (leavingPresentation) {
+      // session_id GÖNDERMEDEN unlock çağırmak DO'nun kendi kilit sahibi
+      // kontrolünü atlar (bkz. presentation-lock-do.js) — bu KASITLI: portal
+      // kullanıcısının yetkili manuel müdahalesi, agent'ın oturumundan
+      // bağımsız olarak kilidi geçersiz kılabilmeli.
+      const stub = await getUnitLockStub(env, unitId);
+      await stub.fetch('https://do/unlock', { method: 'POST', body: '{}', headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+    }
     await writeAudit(env, { company_id: unit.company_id, user_id: auth.sub, action: 'unit.update', entity_type: 'unit', entity_id: unitId, old_value: unit, new_value: body, request });
     return json({ ok: true });
   }
@@ -821,14 +891,26 @@ async function route(request, url, env) {
 
     if (action === 'lock' && doResp.ok && doResult.ok) {
       if (canTransition(unit.status, 'PRESENTATION')) {
-        await env.DB.prepare(`UPDATE units SET status = 'PRESENTATION', presentation_session_id = ?, updated_at = datetime('now') WHERE id = ?`)
-          .bind(doResult.lock.session_id, unitId).run();
-        await writeAudit(env, { company_id: unit.company_id, user_id: doResult.lock.agent_id, action: 'unit.presentation_lock', entity_type: 'unit', entity_id: unitId, new_value: doResult.lock, request });
+        // Bu satırın okunduğu (`unit`) an ile buradaki UPDATE arasında bir DO
+        // round-trip'i var — o sırada manuel bir PATCH (portal JWT'si ile)
+        // birimin durumunu değiştirmiş olabilir (ör. eşzamanlı olarak SOLD
+        // yapılmış). UPDATE'i o an okunan status'e KOŞULLANDIRIYORUZ: eğer
+        // 0 satır etkilenirse, sunum kilidini D1'e YAZMADAN Durable Object
+        // kilidini de geri bırakıyoruz — agent, artık müsait olmayan bir
+        // birimi "kilitlenmiş" sanmasın.
+        const upd = await env.DB.prepare(`UPDATE units SET status = 'PRESENTATION', presentation_session_id = ?, updated_at = datetime('now') WHERE id = ? AND status = ?`)
+          .bind(doResult.lock.session_id, unitId, unit.status).run();
+        if (upd.meta && upd.meta.changes > 0) {
+          await writeAudit(env, { company_id: unit.company_id, user_id: doResult.lock.agent_id, action: 'unit.presentation_lock', entity_type: 'unit', entity_id: unitId, new_value: doResult.lock, request });
+        } else {
+          await stub.fetch(`https://do/unlock`, { method: 'POST', body: JSON.stringify({ session_id: doResult.lock.session_id }), headers: { 'Content-Type': 'application/json' } });
+          return json({ error: 'unit_status_changed', message: 'Birim, kilit alınırken başka bir işlemle durumu değişti.' }, 409);
+        }
       }
     }
     if (action === 'unlock' && doResp.ok && doResult.ok) {
       if (unit.status === 'PRESENTATION') {
-        await env.DB.prepare(`UPDATE units SET status = 'AVAILABLE', presentation_session_id = NULL, updated_at = datetime('now') WHERE id = ?`)
+        await env.DB.prepare(`UPDATE units SET status = 'AVAILABLE', presentation_session_id = NULL, updated_at = datetime('now') WHERE id = ? AND status = 'PRESENTATION'`)
           .bind(unitId).run();
         await writeAudit(env, { company_id: unit.company_id, action: 'unit.presentation_unlock', entity_type: 'unit', entity_id: unitId, request });
       }
@@ -1106,8 +1188,15 @@ async function route(request, url, env) {
     if (approval.status !== 'pending') return json({ error: 'already_decided' }, 409);
     const body = await request.json();
     const decision = body.decision === 'approved' ? 'approved' : 'rejected';
-    await env.DB.prepare(`UPDATE approval_requests SET status = ?, approved_by = ?, approved_at = datetime('now') WHERE id = ?`)
+    // Yukarıdaki SELECT+status kontrolü tek başına eşzamanlı iki isteğe karşı
+    // yeterli DEĞİL (ikisi de UPDATE'ten önce 'pending' okuyabilir). Gerçek
+    // atomiklik, UPDATE'in KENDİSİNİN 'pending' şartına bağlanmasından gelir
+    // — iki eşzamanlı karardan yalnızca biri satırı gerçekten etkiler.
+    const result = await env.DB.prepare(`UPDATE approval_requests SET status = ?, approved_by = ?, approved_at = datetime('now') WHERE id = ? AND status = 'pending'`)
       .bind(decision, auth.sub, approvalId).run();
+    if (!result.meta || result.meta.changes === 0) {
+      return json({ error: 'already_decided' }, 409);
+    }
     await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'approval.' + decision, entity_type: 'approval_request', entity_id: approvalId, request });
     return json({ ok: true, status: decision });
   }
@@ -1157,7 +1246,7 @@ async function route(request, url, env) {
       env.DB.prepare(`SELECT COUNT(*) AS n FROM projects`).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM units`).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM units WHERE status = 'SOLD'`).first(),
-      env.DB.prepare(`SELECT COALESCE(SUM(price), 0) AS total FROM units WHERE status = 'SOLD'`).first(),
+      env.DB.prepare(`SELECT COALESCE(SUM(COALESCE(sold_price, price)), 0) AS total FROM units WHERE status = 'SOLD'`).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM leads`).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM approval_requests WHERE status = 'pending'`).first(),
       env.DB.prepare(`SELECT COUNT(*) AS n FROM audit_log WHERE action = 'unit.presentation_lock' AND json_extract(new_value, '$.agent_type') = 'ai'`).first(),

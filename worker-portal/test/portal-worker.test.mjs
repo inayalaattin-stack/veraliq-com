@@ -643,6 +643,139 @@ const run = async () => {
   r = await worker.fetch(req('POST', `/api/approvals/${rbacApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + manager.token }), env);
   check('RBAC: company_manager onay verebilir (madde 43 genişlemesi)', r.status === 200);
 
+  // ---------------------------------------------------------------------
+  // 2026-09-08 düzeltme turu — kritik işlem tutarlılığı + viewer allowlist
+  // testleri (bkz. VERALIQ-Admin-Portal-Mobil-Inceleme-Raporu.md, Doğrulama
+  // ve Düzeltmeler eki).
+  // ---------------------------------------------------------------------
+
+  // A) company_viewer artık İKİ spesifik "salt-okunur etkili" uçta (kendi
+  // şifresini değiştirme, AI asistan sorgusu) POST atabiliyor — başka HİÇBİR
+  // yazma ucu açılmadı.
+  r = await worker.fetch(req('POST', '/api/auth/change-password', { current_password: 'Passw0rd!', new_password: 'NewPassw0rd!' }, { Authorization: 'Bearer ' + viewer.token }), env);
+  check('FIX: company_viewer kendi şifresini değiştirebilir (allowlist)', r.status === 200);
+
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'rbac-viewer@veraliq.com', password: 'NewPassw0rd!' }), env);
+  data = await r.json();
+  check('FIX: viewer yeni şifreyle giriş yapabiliyor', r.status === 200 && !!data.token, data);
+  const viewerNewToken = data.token;
+
+  r = await worker.fetch(req('POST', '/api/assistant/query', { question: 'Bugün kaç lead geldi?' }, { Authorization: 'Bearer ' + viewerNewToken }), env);
+  check('FIX: company_viewer AI asistana soru sorabilir (salt-okunur, allowlist)', r.status === 200);
+
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Viewer hâlâ bunu yapamamalı' }, { Authorization: 'Bearer ' + viewerNewToken }), env);
+  check('DÜZELTME SONRASI DA GEÇERLİ: company_viewer allowlist DIŞINDAKİ bir POST\'a hâlâ giremiyor (401)', r.status === 401);
+
+  // B) PATCH /api/units/:id artık eşzamanlılık için koşullu/atomik — iki
+  // eşzamanlı istekten yalnızca biri uygulanır, diğeri sessizce üzerine
+  // yazmak yerine açık bir 409 alır.
+  r = await worker.fetch(req('GET', `/api/units/${availableUnit.id}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('eşzamanlılık testi öncesi birim AVAILABLE durumunda', data.unit.status === 'AVAILABLE', data.unit);
+
+  const [raceA, raceB] = await Promise.all([
+    worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'HOLD' }, { Authorization: 'Bearer ' + ownerToken }), env),
+    worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'HOLD' }, { Authorization: 'Bearer ' + manager.token }), env),
+  ]);
+  // İki olası GEÇERLİ sonuç var: (200,200) — ikinci istek birinciden SONRA
+  // okuduysa zaten-HOLD'u no-op olarak kabul eder; (200,409) — ikinci istek
+  // birinciden ÖNCE (stale) okuduysa optimistik kilide takılır. İkisi de
+  // veri bütünlüğünü bozmaz; yalnızca 500/crash ya da sessiz çift-uygulama
+  // KABUL EDİLEMEZ.
+  const raceStatuses = [raceA.status, raceB.status].sort();
+  check('eşzamanlı aynı-hedefli iki PATCH güvenli sonuçlanır (200+200 ya da 200+409, asla crash/500 değil)',
+    (raceStatuses[0] === 200 && raceStatuses[1] === 200) || (raceStatuses[0] === 200 && raceStatuses[1] === 409),
+    { statusA: raceA.status, statusB: raceB.status });
+  r = await worker.fetch(req('GET', `/api/units/${availableUnit.id}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('eşzamanlı aynı-hedefli PATCH sonrası birim tutarlı biçimde HOLD durumunda', data.unit.status === 'HOLD', data.unit);
+
+  // İSTEK TEKRARI (retry) idempotency: birim ZATEN istenen durumdayken aynı
+  // PATCH tekrar gönderilirse (ör. istemci ağ zaman aşımından sonra retry
+  // eder), bu SESSİZCE no-op sayılmalı — ne DB'ye gereksiz bir UPDATE
+  // yazılmalı ne de audit_log'a yanıltıcı, mükerrer bir "unit.update" kaydı
+  // düşmeli (madde: "aynı isteğin tekrar gönderilmesinde mükerrer işlem
+  // veya yanıltıcı audit kaydı oluşmasını engelle").
+  r = await worker.fetch(req('GET', '/api/audit-log', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const auditCountBeforeRetry = data.entries.filter(e => e.action === 'unit.update' && e.entity_id === availableUnit.id).length;
+
+  r = await worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'HOLD' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('FIX: birim zaten istenen durumdayken aynı PATCH\'in tekrarı 200/no_change döner (hata değil)', r.status === 200, data);
+
+  r = await worker.fetch(req('GET', '/api/audit-log', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const auditCountAfterRetry = data.entries.filter(e => e.action === 'unit.update' && e.entity_id === availableUnit.id).length;
+  check('FIX: durum-değişmeyen retry, audit_log\'a MÜKERRER/yanıltıcı bir "unit.update" kaydı EKLEMEDİ',
+    auditCountAfterRetry === auditCountBeforeRetry, { before: auditCountBeforeRetry, after: auditCountAfterRetry });
+
+  await worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'AVAILABLE' }, { Authorization: 'Bearer ' + ownerToken }), env);
+
+  // C) Sunum kilidi (Durable Object) ile manuel PATCH arasındaki yarış da
+  // artık kontrolsüz değil: hangisi D1'e önce yazarsa o geçerli olur, kaybeden
+  // taraf ya 409 alır (manuel PATCH) ya da D1 yazımı reddedilip DO kilidi geri
+  // bırakılır (agent lock) — birim asla iki tarafın da "kazandığını sandığı"
+  // tutarsız bir durumda kalmaz.
+  const [lockRaceRes, patchRaceRes] = await Promise.all([
+    worker.fetch(req('POST', `/api/units/${availableUnit.id}/lock`, { session_id: 'race-sess', agent_id: 'race-agent', agent_type: 'AI', customer_id: 'race-cust' }, { 'X-Agent-Key': 'test-agent-secret' }), env),
+    worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'HOLD' }, { Authorization: 'Bearer ' + ownerToken }), env),
+  ]);
+  r = await worker.fetch(req('GET', `/api/units/${availableUnit.id}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const finalStatus = data.unit.status;
+  const consistentPresentation = finalStatus === 'PRESENTATION' && !!data.unit.presentation_session_id;
+  const consistentHold = finalStatus === 'HOLD' && !data.unit.presentation_session_id;
+  check('FIX: sunum kilidi ile manuel PATCH yarışından sonra birim TUTARLI bir durumda (PRESENTATION+kilit YA DA HOLD+kilitsiz, asla ikisi karışık değil)',
+    consistentPresentation || consistentHold, { finalStatus, presentation_session_id: data.unit.presentation_session_id, lockRaceStatus: lockRaceRes.status, patchRaceStatus: patchRaceRes.status });
+  // temizlik: birimi tekrar AVAILABLE'a döndür (varsa kilidi de bırakarak)
+  if (finalStatus === 'PRESENTATION') {
+    await worker.fetch(req('POST', `/api/units/${availableUnit.id}/unlock`, { session_id: 'race-sess' }, { 'X-Agent-Key': 'test-agent-secret' }), env);
+  } else {
+    await worker.fetch(req('PATCH', `/api/units/${availableUnit.id}`, { status: 'AVAILABLE' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  }
+
+  // D) "Ciro" artık units.price'a değil, SOLD anında donmuş sold_price'a
+  // dayanıyor — price, CONTRACT/SOLD sonrası PATCH ile değiştirilemiyor.
+  r = await worker.fetch(req('POST', `/api/projects/${projectId}/units`, { unit_no: 'FIYAT-KILIDI-TEST', unit_type: '1+1', price: 1000000 }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('fiyat kilidi testi için yeni birim oluşturulabildi', r.status === 201);
+  r = await worker.fetch(req('GET', `/api/projects/${projectId}/units`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const lockTestUnit = data.units.find(u => u.unit_no === 'FIYAT-KILIDI-TEST');
+
+  for (const st of ['PRESENTATION', 'HOLD', 'RESERVED', 'DEPOSIT_PAID', 'CONTRACT']) {
+    await worker.fetch(req('PATCH', `/api/units/${lockTestUnit.id}`, { status: st }, { Authorization: 'Bearer ' + ownerToken }), env);
+  }
+  r = await worker.fetch(req('PATCH', `/api/units/${lockTestUnit.id}`, { price: 2000000 }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('FIX: CONTRACT durumundaki birimde price artık PATCH ile değiştirilemiyor (400 price_locked_after_contract)',
+    r.status === 400 && data.error === 'price_locked_after_contract', data);
+
+  r = await worker.fetch(req('PATCH', `/api/units/${lockTestUnit.id}`, { status: 'SOLD' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('birim CONTRACT -> SOLD geçişi başarılı', r.status === 200);
+
+  r = await worker.fetch(req('GET', `/api/units/${lockTestUnit.id}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('FIX: SOLD anındaki bedel sold_price olarak donduruldu (1.000.000)', data.unit.sold_price === 1000000, data.unit);
+
+  r = await worker.fetch(req('PATCH', `/api/units/${lockTestUnit.id}`, { price: 3000000 }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('FIX: SOLD birimde price hâlâ kilitli (400)', r.status === 400 && data.error === 'price_locked_after_contract', data);
+
+  // E) /api/approvals/:id/decide artık gerçekten atomik — eşzamanlı iki karar
+  // isteğinden yalnızca biri uygulanır.
+  r = await worker.fetch(req('POST', '/api/approvals', { type: 'discount', amount: 1000, notes: 'Atomiklik testi' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const raceApprovalId = data.id;
+  const [decA, decB] = await Promise.all([
+    worker.fetch(req('POST', `/api/approvals/${raceApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + ownerToken }), env),
+    worker.fetch(req('POST', `/api/approvals/${raceApprovalId}/decide`, { decision: 'rejected' }, { Authorization: 'Bearer ' + manager.token }), env),
+  ]);
+  const decWinners = [decA.status === 200, decB.status === 200].filter(Boolean).length;
+  const decConflicts = [decA.status === 409, decB.status === 409].filter(Boolean).length;
+  check('FIX: eşzamanlı iki onay kararından yalnızca biri uygulanır, diğeri 409 döner',
+    decWinners === 1 && decConflicts === 1, { statusA: decA.status, statusB: decB.status });
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };
