@@ -81,10 +81,7 @@ export async function initAgentWidget(opts) {
     reopenBtn: document.getElementById('agentReopenBtn'),
     joinGate: document.getElementById('agentJoinGate'),
     joinBtn: document.getElementById('agentJoinBtn'),
-    captions: document.getElementById('agentCaptions'),
     stage: document.getElementById('agentStage'),
-    textForm: document.getElementById('agentTextForm'),
-    textInput: document.getElementById('agentTextInput'),
     startGate: document.getElementById('agentStartGate'),
     startBtn: document.getElementById('agentStartBtn'),
   };
@@ -102,11 +99,6 @@ export async function initAgentWidget(opts) {
   let intentionalClose = false;
   let reconnectAttempts = 0;
   let reconnectTimer = null;
-  // Video avatarı (Spatius/Anam/vb.) bağlanamadığında (kota bitti, hesap
-  // askıda, ...) enableTextModeFallback() bir kez devreye girer ve true
-  // olur — initAgent() bir daha video yoluna dönmeyi denemez, sayfa
-  // yenilenene kadar metin sohbette kalır. Bkz. o fonksiyonun başındaki not.
-  let textModeActive = false;
   // Konuşma artık sayfa yüklenir yüklenmez OTOMATİK BAŞLAMIYOR (İmparator
   // isteği, 2026-09-07): ekranda sadece sabit Elif Kaya/Clara fotoğrafı ve
   // #agentStartGate'teki "Görüşmeyi Başlat" butonu görünür, ziyaretçi o
@@ -161,9 +153,6 @@ export async function initAgentWidget(opts) {
     // orchestrator zaten durduruldu, ziyaretçi "Görüşmeyi Başlat"a tekrar
     // tıklamalı (bkz. yukarıdaki `started` notu).
     started = false;
-    textModeActive = false;
-    els.stage.classList.remove('text-mode');
-    if (els.textForm) els.textForm.hidden = true;
     els.loading.classList.add('hide');
     if (els.startGate) els.startGate.hidden = false;
   }
@@ -203,20 +192,6 @@ export async function initAgentWidget(opts) {
       setLoadingText(I18N.t('agent.loadingText'));
       initAgent();
     });
-  }
-
-  var CAPTION_MAX_LINES = 20;
-  function addCaption(entry) {
-    if (!els.captions || !entry || !entry.text) return;
-    els.captions.hidden = false;
-    var line = document.createElement('div');
-    line.className = 'agent-caption-line ' + (entry.role === 'customer' ? 'customer' : 'agent');
-    line.textContent = entry.text;
-    els.captions.appendChild(line);
-    while (els.captions.children.length > CAPTION_MAX_LINES) {
-      els.captions.removeChild(els.captions.firstChild);
-    }
-    els.captions.scrollTop = els.captions.scrollHeight;
   }
 
   function scheduleReconnect() {
@@ -319,7 +294,6 @@ export async function initAgentWidget(opts) {
 
   async function initAgent() {
     if (!started || intentionalClose || !callConsent.accepted || initializing) return;
-    if (textModeActive) return; // bkz. enableTextModeFallback() — sayfa yenilenene kadar video yoluna dönmüyoruz
     initializing = true;
     const generation = lifecycle;
     const active = () => generation === lifecycle && started && callConsent.accepted && !intentionalClose;
@@ -340,8 +314,9 @@ export async function initAgentWidget(opts) {
       // yeniden deniyordu — her reconnect aynı hatayla başarısız oluyor,
       // greet() her seferinde yeni bir karşılama mesajı ekliyor ve sonuç
       // sonsuz bir "Bağlantı yeniden kuruluyor" + üst üste yığılan tekrarlı
-      // mesaj döngüsü oluyordu. Bloklu bir provider'ı denemeden ATLA, metin
-      // sohbet yedeğine düş (aşağıdaki catch bloğu zaten bunu yapıyor).
+      // mesaj döngüsü oluyordu. Bloklu bir provider'ı denemeden ATLA, doğrudan
+      // hata durumuna geç (aşağıdaki catch bloğu zaten bunu yapıyor — artık
+      // metin sohbet yedeği yok, İmparator isteği 2026-09-06: sadece sesli).
       if (isProviderBlocked(providers.config.avatarProvider)) {
         throw new Error('avatar_provider_blocked:' + providers.config.avatarProvider);
       }
@@ -378,7 +353,6 @@ export async function initAgentWidget(opts) {
         agentIdentity: AGENT_IDENTITY,
         lang: I18N.getLang(),
         onError: onOrchestratorError,
-        onTranscript: addCaption,
         autoListen: false,
         conversationLogger: conversationLogger,
       });
@@ -389,87 +363,17 @@ export async function initAgentWidget(opts) {
     } catch (err) {
       if (providers) { try { await providers.avatar.disconnect(); } catch (e) {} }
       if (!active()) return;
+      // İmparator isteği (2026-09-06): yazılı sohbet yedeği tamamen
+      // kaldırıldı — sadece sesli görüşme var. Video avatarı hiçbir
+      // sebeple bağlanamazsa (kota, hesap askıda, ağ hatası...) artık metin
+      // moduna düşülmüyor; doğrudan hata/yeniden bağlanma durumuna geçiliyor.
       if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[VeraliqAgent] video avatar failed, falling back to text mode:', err);
+        console.warn('[VeraliqAgent] video avatar failed:', err);
       }
-      var fellBack = await enableTextModeFallback();
-      if (!fellBack && active()) onOrchestratorError(err);
+      onOrchestratorError(err);
     } finally {
       initializing = false;
     }
-  }
-
-  // Video avatarı (Spatius/Anam/vb.) bağlanamadığında devreye giren yedek:
-  // aynı orchestrator/STT/LLM/TTS hattı, sadece görsel avatar yerine
-  // MockAvatarProvider'ın <video>'ya HİÇ bağlanmayan sessiz sürümü + bir
-  // yazı kutusu (bkz. index.html #agentTextForm, _handleCustomerUtterance
-  // orchestrator.js'de zaten mevcut — burada doğrudan çağrılıyor, tıpkı
-  // STT'nin onFinal callback'inin yaptığı gibi). Video avatarın kendisi
-  // hiç DENENMİYOR (MockAvatarProvider.connect() çağrılmıyor) — bu yüzden
-  // ekranda hiçbir zaman "MOCK MODE" filigranı görünmez, sadece metin.
-  async function enableTextModeFallback() {
-    try {
-      // Video avatar denemeleri sırasında (bloklanmadan önceki son deneme
-      // dahil) eklenmiş olabilecek karşılama mesajlarını temizle — yazı
-      // moduna TEMİZ bir karşılamayla giriyoruz, üst üste yığılmış tekrarlı
-      // mesajlarla değil (bkz. yukarıdaki initAgent() notu).
-      if (els.captions) { els.captions.innerHTML = ''; els.captions.hidden = true; }
-      var providers = await createProviders(Object.assign({}, PROVIDER_OVERRIDES, { avatarProvider: 'mock' }));
-      if (!started || !callConsent.accepted || intentionalClose) return false;
-      // Kasıtlı olarak avatar.init()/.connect() ÇAĞRILMIYOR — video hiç
-      // başlamasın diye. Orchestrator'ın avatar.setEmotion()/.speak()/.on()
-      // çağırdığı yerler MockAvatarProvider'da güvenli no-op'lardır.
-      fsm = new ConversationStateMachine();
-      orchestrator = new AgentOrchestrator({
-        providers: providers,
-        stateMachine: fsm,
-        agentIdentity: AGENT_IDENTITY,
-        lang: I18N.getLang(),
-        onError: function (e) { if (typeof console !== 'undefined' && console.warn) console.warn('[VeraliqAgent] text-mode error:', e); },
-        onTranscript: addCaption,
-        autoListen: false,
-      });
-      // orchestrator.start() normalde avatar.connect()'i çağırır — Mock için
-      // bu zararsız (canvas oluşturur ama hiçbir <video>'ya bağlanmaz, bkz.
-      // yukarıdaki not: videoEl/bubbleVideoEl hiç set edilmediği için
-      // connect() içindeki `if (this._videoEl)` bloğu çalışmaz).
-      await orchestrator.start();
-      if (!started || !callConsent.accepted || intentionalClose) { await orchestrator.stop(); return false; }
-
-      textModeActive = true;
-      els.stage.classList.add('text-mode');
-      els.loading.classList.add('hide');
-      els.micBlocked.hidden = true;
-      els.textForm.hidden = false;
-      markLive(true);
-      hideJoinGate(); // markLive(true) çağırdığı showJoinGate()'i geçersiz kılar — CSS .text-mode zaten gizliyor ama JS tarafını da tutarlı tutuyoruz
-      return true;
-    } catch (err2) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[VeraliqAgent] text-mode fallback also failed:', err2);
-      }
-      return false;
-    }
-  }
-
-  if (els.textForm) {
-    els.textForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var text = (els.textInput.value || '').trim();
-      if (!text || !orchestrator || !started || !callConsent.accepted || intentionalClose) return;
-      els.textInput.value = '';
-      // Ses akışında SPEAKING'den THINKING'e geçiş STT'nin barge-in'i
-      // üzerinden oluyor (_handleBargeIn: SPEAKING -> INTERRUPTED ->
-      // LISTENING). Yazı kutusu STT'yi hiç kullanmadığı için (özellikle
-      // açılış karşılamasından hemen sonra) aynı geçişi burada elle
-      // tetiklemezsek fsm.transition(THINKING) sessizce reddedilip mesaj
-      // hiç yanıtlanmaz. _handleBargeIn zaten var olan, test edilmiş
-      // geçişi kullanıyor — burada yeniden icat etmiyoruz.
-      if (fsm && fsm.state === AgentState.SPEAKING && typeof orchestrator._handleBargeIn === 'function') {
-        orchestrator._handleBargeIn();
-      }
-      orchestrator._handleCustomerUtterance(text);
-    });
   }
 
   document.addEventListener('visibilitychange', function () {

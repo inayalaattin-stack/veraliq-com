@@ -189,7 +189,6 @@
   .agent-video{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block;background:transparent;}
   /* GEÇİCİ avatar görseli — bkz. index.html'deki aynı not (2026-09-06). */
   .agent-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
-  .agent-stage.text-mode .agent-avatar-static{opacity:0.16;filter:saturate(0.7);}
   .agent-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0B1220;transition:opacity .3s ease;}
   .agent-loading.hide{opacity:0;pointer-events:none;}
   .agent-spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--accent);animation:agent-spin 0.85s linear infinite;}
@@ -211,30 +210,6 @@
   .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
   @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
   .agent-join-hint{margin-top:10px;font-size:11.5px;color:rgba(237,233,223,0.75);font-family:'IBM Plex Mono',monospace;text-align:center;}
-  .agent-captions{position:absolute;left:0;right:0;bottom:0;z-index:2;max-height:46%;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:14px 12px 12px;background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.75) 40%,rgba(5,8,16,0.92) 100%);scrollbar-width:thin;}
-  .agent-captions[hidden]{display:none;}
-  .agent-caption-line{max-width:82%;padding:7px 12px;border-radius:12px;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;animation:agent-caption-in .2s ease;word-wrap:break-word;}
-  @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-  .agent-caption-line.customer{align-self:flex-end;text-align:right;background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);color:#F5EEDD;border-bottom-right-radius:3px;}
-  .agent-caption-line.agent{align-self:flex-start;text-align:left;background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);color:#E7F7EF;border-bottom-left-radius:3px;}
-  @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
-  /* Metin sohbet yedeği — bkz. admin.html/index.html'deki aynı not
-     (2026-09-06). Bu blok portal.html'de de eksikti; aynı sonsuz
-     "yeniden bağlanılıyor" döngüsü şirket portalı asistanını da etkiliyordu. */
-  .agent-stage.text-mode .agent-video,
-  .agent-stage.text-mode .agent-join-gate,
-  .agent-stage.text-mode .agent-mic-blocked,
-  .agent-stage.text-mode .agent-indicator{display:none;}
-  .agent-stage.text-mode{background:#0B1220;}
-  .agent-stage.text-mode .agent-captions{position:absolute;inset:0 0 60px 0;max-height:none;background:none;padding:16px 12px 8px;}
-  .agent-text-form{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px;background:#0B1220;border-top:1px solid rgba(255,255,255,0.08);}
-  .agent-text-form[hidden]{display:none;}
-  .agent-text-input{flex:1;min-width:0;padding:10px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#F5EEDD;font-family:'Inter',sans-serif;font-size:13px;}
-  .agent-text-input:focus{outline:none;border-color:var(--accent);}
-  .agent-text-input::placeholder{color:rgba(245,238,221,0.4);}
-  .agent-text-send{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:none;background:var(--accent);color:var(--accent-ink);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition-property:background-color,transform;transition-duration:.15s;transition-timing-function:ease-out;}
-  .agent-text-send:hover{background:var(--accent-text);}
-  .agent-text-send:active{transform:scale(0.92);}
   .agent-bubble{position:fixed;z-index:1010;width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);padding:0;overflow:hidden;cursor:pointer;box-shadow:0 8px 24px rgba(10,15,30,0.3);background:#0B1220;}
   .agent-bubble[hidden]{display:none;}
   .agent-bubble[data-corner="br"]{right:20px;bottom:20px;}
@@ -1289,10 +1264,9 @@
       <div class="agent-loading-text" id="agentLoadingText">Asistan hazırlanıyor…</div>
     </div>
     <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
-      <p id="agentMicBlockedText">Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz (AI Asistan menüsü).</p>
+      <p id="agentMicBlockedText">Mikrofon izni verilmedi. Asistan sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin.</p>
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
-    <div class="agent-captions" id="agentCaptions" hidden></div>
     <div class="agent-join-gate" id="agentStartGate">
       <button type="button" class="agent-join-btn" id="agentStartBtn"><span class="dot"></span>Görüşmeyi Başlat</button>
       <div class="agent-join-hint" id="agentStartHint">Asistanla sohbete başlamak için tıklayın</div>
@@ -1301,10 +1275,6 @@
       <button type="button" class="agent-join-btn" id="agentJoinBtn"><span class="dot"></span>Görüşmeye Katıl</button>
       <div class="agent-join-hint" id="agentJoinHint">Mikrofonunuzu kullanmak için tıklayın</div>
     </div>
-    <form class="agent-text-form" id="agentTextForm" hidden>
-      <input type="text" id="agentTextInput" class="agent-text-input" autocomplete="off" placeholder="Mesajınızı yazın…">
-      <button type="submit" class="agent-text-send" aria-label="Gönder">➤</button>
-    </form>
   </div>
 </div>
 <button type="button" class="agent-bubble" id="agentBubble" data-corner="br" hidden aria-label="Şirket Asistanı'nı genişlet">
@@ -1314,6 +1284,6 @@
 </button>
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden>Asistanı Aç</button>
 
-<script type="module" src="agent-core/portal-widget.js?v=7"></script>
+<script type="module" src="agent-core/portal-widget.js?v=8"></script>
 </body>
 </html>

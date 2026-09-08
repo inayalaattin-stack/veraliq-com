@@ -518,7 +518,6 @@
      ekstra JS state gerekmez. Gerçek avatar (anam.ai vb.) devreye girdiğinde
      bu <img> etiketini kaldırmak yeterli olacak. */
   .agent-avatar-static{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;}
-  .agent-stage.text-mode .agent-avatar-static{opacity:0.16;filter:saturate(0.7);}
   .agent-loading{
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:14px;background:#0B1220;transition:opacity .3s ease;
@@ -579,74 +578,6 @@
   .agent-join-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-ink);animation:agent-join-pulse 1.4s ease-in-out infinite;}
   @keyframes agent-join-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
   .agent-join-hint{margin-top:10px;font-size:11.5px;color:rgba(237,233,223,0.75);font-family:'IBM Plex Mono',monospace;text-align:center;}
-
-  /* Canlı altyazı / konuşma özeti (2026-08-26) — müşteri sağda, asistan
-     solda; her yeni mesaj eklendiğinde en altta görünür, ESKİ mesajlar
-     tamamen KAYBOLMAZ (kalıcı bir mini-transkript) — sadece kaydırılabilir
-     alanda yukarı doğru kayar. Video'nun altında, join-gate'in üstünde
-     ayrı bir katman. */
-  .agent-captions{
-    position:absolute;left:0;right:0;bottom:0;z-index:2;
-    max-height:46%;overflow-y:auto;
-    display:flex;flex-direction:column;gap:6px;
-    padding:14px 12px 12px;
-    background:linear-gradient(180deg,rgba(5,8,16,0) 0%,rgba(5,8,16,0.75) 40%,rgba(5,8,16,0.92) 100%);
-    scrollbar-width:thin;
-  }
-  .agent-captions[hidden]{display:none;}
-  .agent-caption-line{
-    max-width:82%;padding:7px 12px;border-radius:12px;
-    font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.45;
-    animation:agent-caption-in .2s ease;
-    word-wrap:break-word;
-  }
-  @keyframes agent-caption-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-  .agent-caption-line.customer{
-    align-self:flex-end;text-align:right;
-    background:rgba(191,161,106,0.18);border:1px solid rgba(191,161,106,0.3);
-    color:#F5EEDD;border-bottom-right-radius:3px;
-  }
-  .agent-caption-line.agent{
-    align-self:flex-start;text-align:left;
-    background:rgba(126,224,178,0.12);border:1px solid rgba(126,224,178,0.28);
-    color:#E7F7EF;border-bottom-left-radius:3px;
-  }
-  @media(max-width:480px){.agent-caption-line{max-width:90%;font-size:12px;}}
-
-  /* Metin sohbet yedeği (video avatar bağlanamadığında) — bkz.
-     widget-runtime.js enableTextModeFallback(). Video/join-gate/mic-blocked
-     gizlenir, altyazı alanı (.agent-captions) tüm sahneyi kaplayan gerçek
-     bir mesaj listesine dönüşür, altına bir yazı kutusu eklenir. */
-  .agent-stage.text-mode .agent-video,
-  .agent-stage.text-mode .agent-join-gate,
-  .agent-stage.text-mode .agent-mic-blocked,
-  .agent-stage.text-mode .agent-indicator{ display:none; }
-  .agent-stage.text-mode{ background:#0B1220; }
-  .agent-stage.text-mode .agent-captions{
-    position:absolute; inset:0 0 60px 0; max-height:none;
-    background:none; padding:16px 12px 8px;
-  }
-  .agent-text-form{
-    position:absolute; left:0; right:0; bottom:0; z-index:3;
-    display:flex; gap:8px; padding:10px 12px;
-    background:#0B1220; border-top:1px solid rgba(255,255,255,0.08);
-  }
-  .agent-text-form[hidden]{ display:none; }
-  .agent-text-input{
-    flex:1; min-width:0; padding:10px 12px; border-radius:999px;
-    border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);
-    color:#F5EEDD; font-family:'Inter',sans-serif; font-size:13px;
-  }
-  .agent-text-input:focus{ outline:none; border-color:var(--accent); }
-  .agent-text-input::placeholder{ color:rgba(245,238,221,0.4); }
-  .agent-text-send{
-    width:40px; height:40px; flex-shrink:0; border-radius:50%; border:none;
-    background:var(--accent); color:var(--accent-ink); font-size:15px;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition-property:background-color,transform;transition-duration:.15s;transition-timing-function:ease-out;
-  }
-  .agent-text-send:hover{ background:var(--accent-text); }
-  .agent-text-send:active{ transform:scale(0.92); }
 
   /* "● CANLI AI SATIŞ ASİSTANI" badge (design system §7) — purely CSS-driven
      off :has(), no widget.js change needed: shows only once agentStatusDot
@@ -1277,10 +1208,9 @@
       <div class="agent-loading-text" id="agentLoadingText" data-i18n="agent.loadingText">Agent hazırlanıyor…</div>
     </div>
     <div class="agent-mic-blocked" id="agentMicBlocked" hidden>
-      <p data-i18n="agent.micBlocked">Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin. Yazarak da devam edebilirsiniz.</p>
+      <p data-i18n="agent.micBlocked">Mikrofon izni verilmedi. Elif Kaya sizi duyamıyor — tarayıcı ayarlarından mikrofon iznini açıp sayfayı yenileyin.</p>
     </div>
     <div class="agent-indicator" id="agentIndicator" hidden><span></span><span></span><span></span></div>
-    <div class="agent-captions" id="agentCaptions" hidden></div>
     <!-- Konuşma otomatik başlamıyor (İmparator isteği, 2026-09-07) — sadece
          sabit Elif Kaya/Clara fotoğrafı görünür, ziyaretçi bu butona
          tıklayana kadar hiçbir bağlantı denemesi yapılmaz. Bkz.
@@ -1299,13 +1229,6 @@
       </button>
       <div class="agent-join-hint" data-i18n="agent.joinHint">Mikrofonunuzu kullanmak için tıklayın</div>
     </div>
-    <!-- Video avatarı bağlanamadığında (bkz. widget-runtime.js
-         enableTextModeFallback) devreye giren metin sohbet yedeği —
-         .agent-stage.text-mode altında video/join-gate yerine gösterilir. -->
-    <form class="agent-text-form" id="agentTextForm" hidden>
-      <input type="text" id="agentTextInput" class="agent-text-input" autocomplete="off" data-i18n-placeholder="agent.textPlaceholder" placeholder="Mesajınızı yazın…">
-      <button type="submit" class="agent-text-send" data-i18n-aria="agent.textSend" aria-label="Gönder">➤</button>
-    </form>
   </div>
 </div>
 
@@ -1319,9 +1242,9 @@
 <!-- Kapatıldığında: yeniden açma butonu -->
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden data-i18n="agent.reopenBtn">Agent'ı Aç</button>
 
-<script src="i18n.js?v=6"></script>
+<script src="i18n.js?v=7"></script>
 <script src="script.js?v=9"></script>
 <script src="motion.js?v=1" defer></script>
-<script type="module" src="agent-core/widget.js?v=7"></script>
+<script type="module" src="agent-core/widget.js?v=8"></script>
 </body>
 </html>
