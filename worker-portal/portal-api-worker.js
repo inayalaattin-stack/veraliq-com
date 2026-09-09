@@ -1312,15 +1312,28 @@ async function route(request, url, env) {
     // expert_group_members'ta AÇIKÇA bir approval_limit ile kayıtlıysa
     // (yalnızca o durumda — hiç kayıtlı değilse mevcut owner/manager
     // davranışı DEĞİŞMEZ, bu kontrol GERİYE DÖNÜK UYUMLU bir ek kısıttır),
-    // onayladığı tutar bu limitlerin EN YÜKSEĞİNİ bile aşıyorsa reddedilir.
+    // onayladığı tutar bu limitlerin EN DÜŞÜĞÜNÜ bile aşıyorsa reddedilir.
+    // GÜVENLİK REVIEW BULGUSU (düzeltildi): approval_requests bugün HANGİ
+    // expert_query/expert_group'un bu onayı doğurduğunu bilmiyor (henüz bir
+    // bağlantı sütunu yok), bu yüzden limit HANGİ gruba ait olursa olsun tek
+    // bir kullanıcı için TEK bir sayıya indirgenmek ZORUNDA. Önceki hâli
+    // (Math.max) bunu YANLIŞ yönde yapıyordu: bir kullanıcının BAŞKA, ilgisiz
+    // bir grupta sahip olduğu YÜKSEK bir limit, asıl kısıtlamak istenen DAR
+    // limitli grubu ETKİSİZ HALE getirebiliyordu (ör. "Fiyat Yetkilileri"nde
+    // 5.000 limitli biri, "İade Yetkilileri"nde 500.000 limitliyse, fiyat
+    // onaylarında da 500.000'e kadar onay verebiliyordu). Math.min ile en
+    // KISITLAYICI limit her zaman geçerli olur — bunun bilinen, kabul edilen
+    // maliyeti: ilgisiz bir grupta düşük limitli olmak, o kullanıcının TÜM
+    // onaylarını kısıtlar. Grup-bazlı tam kapsamlı çözüm (approval_requests'e
+    // expert_query_id bağlamak) sonraki bir turun konusu.
     if (decision === 'approved' && approval.amount != null) {
       const { results: limitRows } = await env.DB.prepare(
         `SELECT approval_limit FROM expert_group_members WHERE user_id = ? AND active = 1 AND approval_limit IS NOT NULL`
       ).bind(auth.sub).all();
       if (limitRows.length > 0) {
-        const maxLimit = Math.max(...limitRows.map((r) => r.approval_limit));
-        if (approval.amount > maxLimit) {
-          return json({ error: 'approval_limit_exceeded', limit: maxLimit, amount: approval.amount }, 403);
+        const minLimit = Math.min(...limitRows.map((r) => r.approval_limit));
+        if (approval.amount > minLimit) {
+          return json({ error: 'approval_limit_exceeded', limit: minLimit, amount: approval.amount }, 403);
         }
       }
     }

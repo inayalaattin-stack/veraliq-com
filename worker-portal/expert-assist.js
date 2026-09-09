@@ -28,11 +28,16 @@ const MEMORY_KEY_TYPES = new Set([
   'document_sent', 'open_question', 'follow_up_preference', 'consent_snapshot',
 ]);
 
-function nowIso() { return new Date().toISOString(); }
-
 // ---------------------------------------------------------------------
 // EXPERT GROUPS + MEMBERS
 // ---------------------------------------------------------------------
+
+async function activeMemberCount(env, expertGroupId) {
+  const { n } = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM expert_group_members WHERE expert_group_id = ? AND active = 1`
+  ).bind(expertGroupId).first();
+  return n;
+}
 
 export async function handleExpertGroupCreate(request, env, { json, writeAudit, auth }) {
   const body = await request.json();
@@ -77,9 +82,7 @@ export async function handleExpertGroupMemberAdd(request, env, { json, writeAudi
   // AYNI ilke).
   const user = await env.DB.prepare(`SELECT id FROM users WHERE id = ? AND company_id = ?`).bind(body.user_id, auth.company_id).first();
   if (!user) return json({ error: 'invalid_user_id' }, 400);
-  const { n } = await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM expert_group_members WHERE expert_group_id = ? AND active = 1`
-  ).bind(id).first();
+  const n = await activeMemberCount(env, id);
   if (n >= MAX_ACTIVE_EXPERTS_PER_GROUP) {
     return json({ error: 'max_active_experts_reached', limit: MAX_ACTIVE_EXPERTS_PER_GROUP }, 400);
   }
@@ -105,9 +108,7 @@ export async function handleExpertGroupMemberUpdate(request, env, { json, writeA
   if (!member) return json({ error: 'not_found' }, 404);
   const body = await request.json();
   if (body.active === true && !member.active) {
-    const { n } = await env.DB.prepare(
-      `SELECT COUNT(*) AS n FROM expert_group_members WHERE expert_group_id = ? AND active = 1`
-    ).bind(id).first();
+    const n = await activeMemberCount(env, id);
     if (n >= MAX_ACTIVE_EXPERTS_PER_GROUP) {
       return json({ error: 'max_active_experts_reached', limit: MAX_ACTIVE_EXPERTS_PER_GROUP }, 400);
     }
@@ -143,9 +144,28 @@ export async function handleExpertQueryCreate(request, env, { json, writeAudit, 
   if (!group) return json({ error: 'invalid_expert_group_id' }, 400);
   const conversation = await env.DB.prepare(`SELECT id FROM conversations WHERE id = ? AND company_id = ?`).bind(body.conversation_id, companyId).first();
   if (!conversation) return json({ error: 'invalid_conversation_id' }, 400);
+  // Review bulgusu: customer_id/project_id/unit_id de, expert_group_id/
+  // conversation_id ile AYNI ilkeyle (leads.customer_id deseni) bu şirkete
+  // ait olduğu doğrulanmadan yazılıyordu — sessizce null'a düşürülüyor,
+  // isteği REDDETMİYOR (lead oluşturmayı engellememesi gibi).
+  let customerId = null;
+  if (body.customer_id) {
+    const c = await env.DB.prepare(`SELECT id FROM customers WHERE id = ? AND company_id = ?`).bind(body.customer_id, companyId).first();
+    if (c) customerId = c.id;
+  }
+  let projectId = null;
+  if (body.project_id) {
+    const p = await env.DB.prepare(`SELECT id FROM projects WHERE id = ? AND company_id = ?`).bind(body.project_id, companyId).first();
+    if (p) projectId = p.id;
+  }
+  let unitId = null;
+  if (body.unit_id) {
+    const u = await env.DB.prepare(`SELECT id FROM units WHERE id = ? AND company_id = ?`).bind(body.unit_id, companyId).first();
+    if (u) unitId = u.id;
+  }
 
   const category = body.category === 'commercial_approval' ? 'commercial_approval' : 'info';
-  const queryContext = { project_id: body.project_id || null, topic: body.topic || null };
+  const queryContext = { project_id: projectId, topic: body.topic || null };
   const { results: members } = await env.DB.prepare(
     `SELECT * FROM expert_group_members WHERE expert_group_id = ?`
   ).bind(body.expert_group_id).all();
@@ -155,11 +175,15 @@ export async function handleExpertQueryCreate(request, env, { json, writeAudit, 
   const timeoutMinutes = Number(body.timeout_minutes) > 0 ? Number(body.timeout_minutes) : DEFAULT_QUERY_TIMEOUT_MINUTES;
   const timeoutAt = new Date(Date.now() + timeoutMinutes * 60000).toISOString();
   const id = generateId('expq');
+  // required_valid_answers şu an kabul edilip saklanıyor ama 1. turda
+  // DAVRANIŞSAL bir etkisi YOK — atomik kabul her zaman İLK cevapta durur
+  // (tasarımın §13 kademeli planına göre "N geçerli cevap" mantığı ileride
+  // eklenecek şema alanı, bilerek şimdiden hazırlandı).
   await env.DB.prepare(
     `INSERT INTO expert_queries (id, company_id, conversation_id, customer_id, project_id, unit_id, expert_group_id, question_text, category, topic, required_valid_answers, sent_to, status, timeout_at, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'))`
   ).bind(
-    id, companyId, body.conversation_id, body.customer_id || null, body.project_id || null, body.unit_id || null,
+    id, companyId, body.conversation_id, customerId, projectId, unitId,
     body.expert_group_id, body.question_text, category, body.topic || null,
     Number(body.required_valid_answers) > 0 ? Number(body.required_valid_answers) : 1,
     JSON.stringify(eligible.map((m) => m.user_id)), timeoutAt
@@ -183,16 +207,37 @@ async function resolveTimeouts(env, rows) {
 
 export async function handleExpertQueriesList(request, env, { json, auth }, url) {
   const assignedToMe = url.searchParams.get('assigned_to_me') === '1';
-  let query = `SELECT * FROM expert_queries WHERE company_id = ?`;
-  const params = [auth.company_id];
-  if (assignedToMe) {
-    query = `SELECT eq.* FROM expert_queries eq
-      JOIN expert_group_members egm ON egm.expert_group_id = eq.expert_group_id AND egm.active = 1
-      WHERE eq.company_id = ? AND egm.user_id = ? AND eq.status = 'pending'`;
-    params.push(auth.company_id, auth.sub);
+  if (!assignedToMe) {
+    const { results } = await env.DB.prepare(
+      `SELECT * FROM expert_queries WHERE company_id = ? ORDER BY created_at DESC LIMIT 200`
+    ).bind(auth.company_id).all();
+    await resolveTimeouts(env, results);
+    return json({ expert_queries: results });
   }
-  query += ` ORDER BY created_at DESC LIMIT 200`;
-  const { results } = await env.DB.prepare(query).bind(...params).all();
+  // Review bulgusu: SADECE expert_group üyeliğine (JOIN) bakmak yetmiyordu
+  // — scope_type='project'/'topic' olan bir üye, KENDİ scope'u DIŞINDAKİ
+  // sorguları da (soru metni + müşteri bağlantısı dahil) görebiliyordu.
+  // handleExpertAnswerSubmit'teki AYNI eligibleMember() ile filtreleniyor —
+  // okuma ve yazma yolu artık AYNI tek kaynağa dayanıyor, birbirinden
+  // sapamaz.
+  const { results: candidates } = await env.DB.prepare(
+    `SELECT eq.* FROM expert_queries eq
+     JOIN expert_group_members egm ON egm.expert_group_id = eq.expert_group_id
+     WHERE eq.company_id = ? AND egm.user_id = ? AND egm.active = 1 AND eq.status = 'pending'
+     ORDER BY eq.created_at DESC LIMIT 200`
+  ).bind(auth.company_id, auth.sub).all();
+  const member = await env.DB.prepare(
+    // Bir kullanıcı AYNI grupta yalnızca tek satır olabilir (UNIQUE constraint) —
+    // ama farklı gruplarda birden fazla scope'a sahip olabilir, bu yüzden
+    // her adayı KENDİ grubundaki üyelik satırına göre ayrı ayrı kontrol ediyoruz.
+    `SELECT * FROM expert_group_members WHERE user_id = ? AND active = 1`
+  ).bind(auth.sub).all();
+  const membersByGroup = {};
+  for (const m of member.results) membersByGroup[m.expert_group_id] = m;
+  const results = candidates.filter((q) => {
+    const m = membersByGroup[q.expert_group_id];
+    return !!m && eligibleMember(m, q);
+  });
   await resolveTimeouts(env, results);
   return json({ expert_queries: results });
 }

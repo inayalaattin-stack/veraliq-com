@@ -1301,6 +1301,92 @@ const run = async () => {
   r = await worker.fetch(req('POST', `/api/knowledge-candidates/${knowledgeCandidateId}/publish`, {}, { Authorization: 'Bearer ' + manager.token }), env);
   check('expert-assist: zaten yayınlanmış bir adayı tekrar yayınlamak 409 döner', r.status === 409);
 
+  // Review fix testleri (code-reviewer + security-reviewer bulguları) -----
+
+  // 1) GET /api/expert-groups (liste) — daha önce hiç test edilmemişti.
+  r = await worker.fetch(req('GET', '/api/expert-groups', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const listedGroup = data.groups.find((g) => g.id === expertGroupId);
+  check('review fix: GET /api/expert-groups listede grup + doğru aktif üye sayısı (3) döner', r.status === 200 && !!listedGroup && listedGroup.active_member_count === 3, data);
+
+  // 2) PATCH üye güncelleme — daha önce hiç test edilmemişti. expertThree'yi
+  // deaktive edip aktif sayının 2'ye düştüğünü, sonra nonExpertStaff'ın
+  // ARTIK eklenebildiğini (3. slot boşaldı) doğruluyoruz.
+  r = await worker.fetch(req('GET', `/api/expert-groups/${expertGroupId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const expertThreeMemberId = data.members.find((m) => m.user_id === expertThree.userId).id;
+  r = await worker.fetch(req('PATCH', `/api/expert-groups/${expertGroupId}/members/${expertThreeMemberId}`, { active: false }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: PATCH ile üye deaktive edilebilir', r.status === 200);
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: nonExpertStaff.userId, scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: bir üye deaktive edilince BOŞALAN slota yeni üye eklenebilir', r.status === 201);
+  r = await worker.fetch(req('PATCH', `/api/expert-groups/${expertGroupId}/members/${expertThreeMemberId}`, { active: true }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: slot zaten doluyken (3/3) eski üyeyi TEKRAR aktive etmek de MAX sınırına takılır (400)', r.status === 400);
+
+  // 3) assigned_to_me artık SADECE grup üyeliğine değil, GERÇEK scope
+  // eşleşmesine bakıyor (security-reviewer MEDIUM-2 bulgusu). Konu bazlı
+  // (topic) ayrı bir grup: manager yalnızca 'legal' konusuna yetkili.
+  r = await worker.fetch(req('POST', '/api/expert-groups', { name: 'Hukuk Yetkilileri' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const legalGroupId = data.id;
+  r = await worker.fetch(req('POST', `/api/expert-groups/${legalGroupId}/members`, { user_id: manager.userId, scope_type: 'topic', scope_topic: 'legal' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: manager, "legal" konusuna özel yetkili olarak eklendi', r.status === 201);
+  r = await worker.fetch(req('POST', `/api/expert-groups/${legalGroupId}/members`, { user_id: nonExpertStaff.userId, scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: nonExpertStaff bu gruba company-scope yetkili olarak eklendi', r.status === 201);
+
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: abcCompanyId, conversation_id: eaConversationId, expert_group_id: legalGroupId,
+    question_text: 'Sözleşmedeki cayma bedeli maddesi geçerli mi?', category: 'info', topic: 'legal',
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  data = await r.json();
+  const legalQueryId = data.id;
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: abcCompanyId, conversation_id: eaConversationId, expert_group_id: legalGroupId,
+    question_text: 'Bu ay için özel bir fiyat kampanyası var mı?', category: 'info', topic: 'pricing',
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  data = await r.json();
+  const pricingQueryId = data.id;
+
+  r = await worker.fetch(req('GET', '/api/expert-queries?assigned_to_me=1', null, { Authorization: 'Bearer ' + manager.token }), env);
+  data = await r.json();
+  const managerSeesLegal = data.expert_queries.some((q) => q.id === legalQueryId);
+  const managerSeesPricing = data.expert_queries.some((q) => q.id === pricingQueryId);
+  check('review fix: assigned_to_me artık ÇALIŞIYOR (500 crash YOK) ve scope\'a göre filtreleniyor', r.status === 200 && managerSeesLegal && !managerSeesPricing, data);
+
+  r = await worker.fetch(req('GET', '/api/expert-queries?assigned_to_me=1', null, { Authorization: 'Bearer ' + nonExpertStaff.token }), env);
+  data = await r.json();
+  check('review fix: company-scope yetkili (nonExpertStaff) HER İKİ konuyu da görür', data.expert_queries.some((q) => q.id === legalQueryId) && data.expert_queries.some((q) => q.id === pricingQueryId), data);
+
+  // 4) approval_limit artık MIN alıyor (security-reviewer MEDIUM-1 bulgusu):
+  // manager'ı İKİNCİ, çok daha YÜKSEK limitli bir gruba da ekleyip, hâlâ
+  // 50.000 limitine (en düşük) tabi olduğunu doğruluyoruz.
+  r = await worker.fetch(req('POST', '/api/expert-groups', { name: 'İade Yetkilileri' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const refundGroupId = data.id;
+  r = await worker.fetch(req('POST', `/api/expert-groups/${refundGroupId}/members`, { user_id: manager.userId, scope_type: 'company', approval_limit: 500000 }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('review fix: manager ikinci, çok daha yüksek limitli (500.000) bir gruba da eklendi', r.status === 201);
+  r = await worker.fetch(req('POST', '/api/approvals', { type: 'discount', amount: 60000, notes: 'İkinci grup denemesi' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const secondApprovalId = data.id;
+  r = await worker.fetch(req('POST', `/api/approvals/${secondApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + manager.token }), env);
+  data = await r.json();
+  check('review fix: manager\'ın BAŞKA bir gruptaki YÜKSEK limiti, DAR limitli grubu ETKİSİZLEŞTİREMEZ (hâlâ 403, en düşük limit geçerli)', r.status === 403 && data.limit === 50000, data);
+
+  // 5) customer_id/project_id başka bir şirkete aitse sessizce null'a düşer
+  // (leads.customer_id deseniyle AYNI ilke, security-reviewer MEDIUM-3).
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'XYZ Müşterisi (expert-assist)', phone: '5559998888' }, { Authorization: 'Bearer ' + xyzToken }), env);
+  data = await r.json();
+  const xyzCustomerIdForExpertAssist = data.id;
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: abcCompanyId, conversation_id: eaConversationId, expert_group_id: expertGroupId,
+    question_text: 'Yabancı müşteri id denemesi', category: 'info', customer_id: xyzCustomerIdForExpertAssist,
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  data = await r.json();
+  const foreignCustomerQueryId = data.id;
+  check('review fix: başka şirketin customer_id\'siyle sorgu YİNE DE açılabilir (201, engellenmez)', r.status === 201, data);
+  r = await worker.fetch(req('GET', `/api/expert-queries/${foreignCustomerQueryId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('review fix: yabancı customer_id GERÇEKTEN null kaldı, XYZ\'nin id\'si sızmadı', data.expert_query.customer_id === null, data);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };
