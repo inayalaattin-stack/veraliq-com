@@ -42,14 +42,30 @@ new_sqlite_classes = ["PresentationLock"]
 # (bkz. documents.js). `documents` tablosu (schema.sql) daha önce YALNIZCA
 # metadata için vardı, gerçek dosya baytları hiçbir yere yazılmıyordu.
 #
-# ÖNEMLİ — SİZİN ÇALIŞTIRMANIZ GEREKEN ADIM:
-#   `npx wrangler r2 bucket create veraliq-documents`
-#   (bu komut gerçek bir R2 bucket'ı oluşturur — Claude bunu sizin adınıza
-#   yapamaz, gerçek bir Cloudflare hesap/kaynak oluşturma işlemidir)
-# ---------------------------------------------------------------------------
-[[r2_buckets]]
-binding = "DOCUMENTS_BUCKET"
-bucket_name = "veraliq-documents"
+# 2026-09-10 — BİLİNÇLİ OLARAK ERTELENDİ (İmparator'ın ticari kararı: site
+# henüz pazarlanmadı/gelir üretmiyor, R2 aboneliği aktivasyonu — ödeme
+# yöntemi kaydı gerektiriyor, ücretsiz kotanın altında kalınsa bile — şimdilik
+# istenmiyor). Binding BİLEREK YORUM SATIRI YAPILDI ki `wrangler deploy`
+# geri kalan TÜM diğer özelliklerle (Faz 1-10, Silent Expert Assist, birim
+# ekleme formu, ekran temizliği) BUGÜN başarıyla tamamlanabilsin — R2
+# binding'i olmadan `wrangler deploy` "bucket not found" hatasıyla
+# TAMAMEN başarısız oluyordu (deploy atomik, kısmi deploy yok).
+#
+# documents.js zaten bu durumu GÜVENLE karşılıyor: `env.DOCUMENTS_BUCKET`
+# tanımsızsa `handleDocumentUpload`/`handleDocumentDownload` sessizce
+# "başarılı" DÖNMEZ, açıkça `{error:'server_not_configured'}` (500) döner
+# (fail-closed) — belge yükleme ekranı UI'da hâlâ görünür ama her istek
+# düzgün bir hata mesajıyla reddedilir, hiçbir veri kaybı/sessiz bozulma
+# olmaz.
+#
+# YENİDEN AKTİVE ETMEK İÇİN (R2 aboneliği açıldığında):
+#   1. Aşağıdaki [[r2_buckets]] bloğunun yorumunu kaldırın.
+#   2. `npx wrangler r2 bucket create veraliq-documents`
+#   3. `npx wrangler deploy`
+#
+# [[r2_buckets]]
+# binding = "DOCUMENTS_BUCKET"
+# bucket_name = "veraliq-documents"
 
 # ---------------------------------------------------------------------------
 # Faz 4 — /api/public/demo-requests için gerçek IP-bazlı rate limiting.
