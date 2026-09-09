@@ -185,17 +185,6 @@
   .agent-reopen[hidden]{display:none;}
   .agent-reopen::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);}
 
-  /* ---------------- Assistant text-chat view (fallback / log, mirrors portal.html) ---------------- */
-  .chat-box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);display:flex;flex-direction:column;height:480px;}
-  .chat-log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;}
-  .chat-msg{max-width:78%;padding:9px 13px;border-radius:12px;font-size:13.5px;line-height:1.5;}
-  .chat-msg.user{align-self:flex-end;background:var(--accent-dim);color:var(--accent-text);border-bottom-right-radius:3px;}
-  .chat-msg.bot{align-self:flex-start;background:var(--mint-dim);color:#8FEAC0;border-bottom-left-radius:3px;}
-  .chat-input-row{display:flex;gap:10px;padding:14px;border-top:1px solid var(--line);}
-  .chat-input-row input{flex:1;}
-  .suggest-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px;}
-  .suggest-chip{background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;}
-  .suggest-chip:hover{color:var(--text);border-color:var(--accent);}
 </style>
 <link rel="stylesheet" href="/assets/enterprise-light.css?v=3">
 </head>
@@ -352,7 +341,7 @@
   // backend'i olmayan CRM/ERP/Entegrasyonlar (bkz. gapView notları) artık
   // dağınık değil, tek bir "Yol Haritası" grubunda, en altta.
   var NAV = [
-    { group: 'Genel Bakış', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'}, {id:'assistant', label:'AI Asistan'} ] },
+    { group: 'Genel Bakış', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'} ] },
     { group: 'Şirketler ve Onboarding', items: [ {id:'companies', label:'Şirketler'}, {id:'projects', label:'Projeler'} ] },
     { group: 'Kullanıcılar ve Erişim', items: [ {id:'users', label:'Kullanıcılar'} ] },
     { group: 'Hizmet ve Provider Sağlığı', items: [ {id:'agents', label:'Agent Performansı'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'}, {id:'health', label:'Sistem Sağlığı'} ] },
@@ -392,7 +381,7 @@
   }
 
   var RENDERERS = {
-    dashboard: renderDashboard, 'demo-requests': renderDemoRequests, assistant: renderAssistant,
+    dashboard: renderDashboard, 'demo-requests': renderDemoRequests,
     companies: renderCompanies, users: renderUsers, projects: renderProjects, subscriptions: renderSubscriptions,
     agents: renderAgents, 'ai-providers': renderAiProviders, 'avatar-providers': renderAvatarProviders, 'voice-providers': renderVoiceProviders,
     // crm/erp/integrations are built via gapView() further down the file —
@@ -435,43 +424,6 @@
         '<p class="muted" style="font-size:13px;">Şu ana kadar <b style="color:var(--mint);">'+stats.ai_agent_presentations+'</b> sunum yapay zekâ ajanı, <b style="color:var(--accent-text);">'+stats.human_agent_presentations+'</b> sunum insan temsilci tarafından yapıldı (unit.presentation_lock audit kayıtlarından).</p>' +
       '</div>' +
       '<div class="card"><h3 style="margin-top:0;">Plan Dağılımı</h3><div>'+plansHtml+'</div></div>';
-  }
-
-  // ---------------- VERALIQ ADMIN AI — text chat (live avatarın yazılı yedeği) ----------------
-  var SUGGESTIONS = ['Platformda kaç şirket var?', 'Toplam satış ve ciro nedir?', 'Bekleyen onaylar var mı?', 'Toplam kullanıcı sayısı nedir?', 'AI mi insan mı daha çok sunum yaptı?'];
-  function renderAssistant(el){
-    el.innerHTML =
-      viewHead('AI Asistan', 'VERALIQ Admin AI — sağ altta canlı görüntülü/sesli olarak da konuşabilirsiniz. Bu ekran, aynı asistanın yazılı/metin sürümüdür (Zero Trust AI: yalnızca gerçek platform verisiyle cevap verir).') +
-      '<div class="chat-box">' +
-        '<div class="chat-log" id="chatLog"><div class="chat-msg bot">Merhaba, ben VERALIQ Admin Asistanı. Size nasıl yardımcı olabilirim?</div></div>' +
-        '<div class="suggest-row">' + SUGGESTIONS.map(function(s){ return '<button type="button" class="suggest-chip">'+esc(s)+'</button>'; }).join('') + '</div>' +
-        '<div class="chat-input-row"><input type="text" id="chatInput" placeholder="Bir soru yazın…"><button class="btn-primary btn-sm" id="chatSendBtn">Gönder</button></div>' +
-      '</div>';
-    var log = document.getElementById('chatLog');
-    function addMsg(role, text){
-      var d = document.createElement('div');
-      d.className = 'chat-msg ' + (role==='user'?'user':'bot');
-      d.textContent = text;
-      log.appendChild(d);
-      log.scrollTop = log.scrollHeight;
-    }
-    async function ask(q){
-      if (!q || !q.trim()) return;
-      addMsg('user', q);
-      try {
-        var res = await api('/api/admin/assistant/query', { method:'POST', body:{ question: q } });
-        addMsg('bot', res.answer);
-      } catch(e) { addMsg('bot', errMsg(e)); }
-    }
-    document.getElementById('chatSendBtn').addEventListener('click', function(){
-      var input = document.getElementById('chatInput');
-      var v = input.value; input.value = '';
-      ask(v);
-    });
-    document.getElementById('chatInput').addEventListener('keydown', function(e){ if (e.key==='Enter') document.getElementById('chatSendBtn').click(); });
-    el.querySelectorAll('.suggest-chip').forEach(function(chip){
-      chip.addEventListener('click', function(){ ask(chip.textContent); });
-    });
   }
 
   // ---------------- ŞİRKETLER (companies) ----------------

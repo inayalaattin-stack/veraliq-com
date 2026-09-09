@@ -43,7 +43,7 @@ window.VERALIQ_PORTAL_I18N = {
 
       "nav.group.general":"Genel","nav.group.operations":"Operasyon","nav.group.salesCustomer":"Satış & Müşteri",
       "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem","nav.group.approvals":"Onay Talepleri","nav.group.roadmap":"Yol Haritası",
-      "nav.item.dashboard":"Panel","nav.item.assistant":"AI Asistan","nav.item.projects":"Projeler","nav.item.inventory":"Envanter",
+      "nav.item.dashboard":"Panel","nav.item.projects":"Projeler","nav.item.inventory":"Envanter",
       "nav.item.presentations":"Sunumlar","nav.item.reservations":"Rezervasyonlar","nav.item.leads":"Lead'ler",
       "nav.item.customers":"Müşteriler","nav.item.sales":"Satışlar","nav.item.crm":"CRM","nav.item.payments":"Onay Talepleri",
       "nav.item.contracts":"Sözleşmeler","nav.item.documents":"Belgeler","nav.item.calendar":"Takvim","nav.item.reports":"Raporlar",
@@ -77,12 +77,6 @@ window.VERALIQ_PORTAL_I18N = {
       "dashboard.performanceNote":"— gerçek sunum kilidi (presentation lock) kayıtlarından",
       "dashboard.presentationsStarted":"başlatılan sunum","dashboard.loadFailed":"Panel yüklenemedi: ",
 
-      "assistant.sub":"Şirket yöneticisi asistanı — gerçek veritabanı verisiyle cevap verir, müşteriye satış yapan agent DEĞİLDİR.",
-      "assistant.note":"v1: Bu asistan, Zero Trust AI ilkesine uygun olarak serbest metin SQL üretmez — sabit, önceden tanımlı ve parametreli sorgu kalıplarıyla çalışır. Cevaplar her zaman gerçek veritabanı değerleridir, asla uydurma değildir.",
-      "assistant.welcome":"Merhaba, ben şirket yönetim asistanınızım. Lead, satış, stok, onay ve sunum durumlarınız hakkında bana soru sorabilirsiniz — cevaplar gerçek veritabanı verinize dayanır.",
-      "assistant.placeholder":"Örn. ABC Vadi Konutları kaç daire kaldı?",
-      "assistant.suggestLeadsToday":"Bugün kaç lead geldi?","assistant.suggestPendingApprovals":"Bekleyen onaylar?",
-      "assistant.suggestSalesToday":"Bugünkü satışlar?","assistant.suggestPresentations":"Sunumda kaç birim var?",
 
       "projects.sub":"Projeleriniz ve temel bilgileri.","projects.addBtn":"+ Proje Ekle","projects.nameLabel":"Proje Adı *",
       "projects.namePlaceholder":"Örn. Vadi Konutları 2","projects.locationPlaceholder":"Örn. İstanbul / Ataşehir",
@@ -175,7 +169,7 @@ window.VERALIQ_PORTAL_I18N = {
 
       "nav.group.general":"General","nav.group.operations":"Operations","nav.group.salesCustomer":"Sales & Customers",
       "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System","nav.group.approvals":"Approval Requests","nav.group.roadmap":"Roadmap",
-      "nav.item.dashboard":"Dashboard","nav.item.assistant":"AI Assistant","nav.item.projects":"Projects","nav.item.inventory":"Inventory",
+      "nav.item.dashboard":"Dashboard","nav.item.projects":"Projects","nav.item.inventory":"Inventory",
       "nav.item.presentations":"Presentations","nav.item.reservations":"Reservations","nav.item.leads":"Leads",
       "nav.item.customers":"Customers","nav.item.sales":"Sales","nav.item.crm":"CRM","nav.item.payments":"Approval Requests",
       "nav.item.contracts":"Contracts","nav.item.documents":"Documents","nav.item.calendar":"Calendar","nav.item.reports":"Reports",
@@ -209,12 +203,6 @@ window.VERALIQ_PORTAL_I18N = {
       "dashboard.performanceNote":"— from real presentation lock records",
       "dashboard.presentationsStarted":"presentations started","dashboard.loadFailed":"Dashboard failed to load: ",
 
-      "assistant.sub":"Company management assistant — answers using real database data; this is NOT the customer-facing sales agent.",
-      "assistant.note":"v1: In line with the Zero Trust AI principle, this assistant never generates free-text SQL — it works with fixed, predefined, parameterized query patterns. Answers are always real database values, never fabricated.",
-      "assistant.welcome":"Hello, I'm your company management assistant. You can ask me about leads, sales, stock, approvals, and presentation status — answers are based on your real database data.",
-      "assistant.placeholder":"e.g. How many units are left in ABC Vadi Residences?",
-      "assistant.suggestLeadsToday":"How many leads came in today?","assistant.suggestPendingApprovals":"Pending approvals?",
-      "assistant.suggestSalesToday":"Today's sales?","assistant.suggestPresentations":"How many units are in presentation?",
 
       "projects.sub":"Your projects and key details.","projects.addBtn":"+ Add Project","projects.nameLabel":"Project Name *",
       "projects.namePlaceholder":"e.g. Vadi Residences 2","projects.locationPlaceholder":"e.g. Istanbul / Ataşehir",
@@ -307,7 +295,7 @@ window.VERALIQ_PORTAL_I18N = {
 
       "nav.group.general":"Общее","nav.group.operations":"Операции","nav.group.salesCustomer":"Продажи и клиенты",
       "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система","nav.group.approvals":"Запросы на одобрение","nav.group.roadmap":"План развития",
-      "nav.item.dashboard":"Панель","nav.item.assistant":"AI-ассистент","nav.item.projects":"Проекты","nav.item.inventory":"Инвентарь",
+      "nav.item.dashboard":"Панель","nav.item.projects":"Проекты","nav.item.inventory":"Инвентарь",
       "nav.item.presentations":"Показы","nav.item.reservations":"Резервации","nav.item.leads":"Лиды",
       "nav.item.customers":"Клиенты","nav.item.sales":"Продажи","nav.item.crm":"CRM","nav.item.payments":"Запросы на одобрение",
       "nav.item.contracts":"Договоры","nav.item.documents":"Документы","nav.item.calendar":"Календарь","nav.item.reports":"Отчёты",
@@ -341,12 +329,6 @@ window.VERALIQ_PORTAL_I18N = {
       "dashboard.performanceNote":"— на основе реальных записей блокировки показов",
       "dashboard.presentationsStarted":"начатых показов","dashboard.loadFailed":"Не удалось загрузить панель: ",
 
-      "assistant.sub":"Ассистент управления компанией — отвечает на основе реальных данных из базы данных, это НЕ агент по продажам для клиентов.",
-      "assistant.note":"v1: В соответствии с принципом Zero Trust AI, этот ассистент никогда не генерирует произвольный SQL — он работает с фиксированными, заранее определёнными параметризованными шаблонами запросов. Ответы всегда основаны на реальных данных, никогда не выдуманы.",
-      "assistant.welcome":"Здравствуйте, я ваш ассистент управления компанией. Вы можете спрашивать меня о лидах, продажах, складе, одобрениях и статусах показов — ответы основаны на реальных данных вашей базы данных.",
-      "assistant.placeholder":"напр. Сколько юнитов осталось в ЖК ABC Vadi?",
-      "assistant.suggestLeadsToday":"Сколько лидов сегодня?","assistant.suggestPendingApprovals":"Ожидающие одобрения?",
-      "assistant.suggestSalesToday":"Сегодняшние продажи?","assistant.suggestPresentations":"Сколько юнитов на показе?",
 
       "projects.sub":"Ваши проекты и основная информация.","projects.addBtn":"+ Добавить проект","projects.nameLabel":"Название проекта *",
       "projects.namePlaceholder":"напр. ЖК Вади 2","projects.locationPlaceholder":"напр. Стамбул / Аташехир",
