@@ -43,11 +43,34 @@ belirtilmedikçe):
 6. `portal.html:941` — Müşteriler ekranı `/api/customers`'ı gerçek bir `fetch` ile çağırıyor
    (sahte/mock veri değil).
 7. `portal-i18n.js:48` — `"nav.item.payments":"Onay Talepleri"` anahtarı mevcut.
-8. `agent-core/config.js` — mevcut durum `avatarProvider: 'mock'`, `ttsProvider: 'webspeech'`,
-   `sttProvider: 'webspeech'`, `llmProvider: 'faq'` (bkz. yukarıdaki taban-kayması notu).
+8. `agent-core/config.js` — bkz. aşağıdaki "2026-09-09 taban kayması #2" notu: bu madde
+   bu turun ORTASINDA tekrar değişti.
 
 Sekizi de mevcut kodda doğrulandı — hiçbiri geri alınmadı, hiçbiri "körlemesine" eski
 haline döndürülmedi.
+
+## 1.1 2026-09-09 taban kayması #2 — Faz 1 ile Faz 2 arasında, oturum İÇİNDE
+
+Bu belgenin ilk yazıldığı anda `agent-core/config.js` `avatarProvider: 'mock'` /
+`ttsProvider: 'webspeech'` durumundaydı (commit `55344ac`'ten beri). Faz 2'ye
+geçildiğinde, commit `2a3467545ff4c2fd98c79187b48d04ff79a54347` (`feat: Spatius/Clara
+(Elif Kaya) avatarini yeniden canliya al`, 2026-09-09T13:00:10+03:00 — bu oturumun
+kendi ilk Faz 1 commit'i `56bebba`'dan sadece 32 saniye ÖNCE, aynı git kullanıcı
+kimliğiyle) tespit edildi: `avatarProvider` tekrar `'spatius'`, `ttsProvider` tekrar
+`'googleTranslate'` yapılmış — cache-bust zinciri (`config.js` v4→v5, `widget-runtime.js`
+v8→v9 ve tüm importer'ları) doğru ve eksiksiz güncellenmiş, projenin kendi
+konvansiyonlarıyla tam tutarlı bir commit. Bu commit BEN (Claude) tarafından
+yapılmadı — zamanlaması ve niteliği, kullanıcının kendi checkout'unda doğrudan
+yaptığı bir commit olduğunu gösteriyor.
+
+**Sonuç:** Spatius artık yeniden repodaki AKTİF/varsayılan sağlayıcı — bu, Faz 2'nin
+(Spatius `/session`/`/tts` koruması) hazırlık/önlem işi değil, AKTİF olarak
+yapılandırılmış bir entegrasyonu koruma işi olduğu anlamına geliyor. Faz 2 kodu
+zaten provider-agnostic tasarlandığı için teknik yaklaşım değişmedi, ama gerçek
+canlı risk seviyesi bu belgenin ilk yazıldığı andakinden daha yüksek. Kredilerin
+gerçekten yenilenip yenilenmediği veya bu reaktivasyonun CANLI Cloudflare Worker'a
+deploy edilip edilmediği bu sandbox'tan doğrulanamıyor — bu, kullanıcının kendi
+bilgisi dahilinde.
 
 ## 3. Test kanıtı (taban)
 

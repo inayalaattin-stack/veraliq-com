@@ -95,12 +95,12 @@ const LOADERS = {
     // "Clara" adlı kütüphane avatarını kullanıyor). Bkz. dosyanın
     // başındaki durum notu: production'a bağlanması için önce Spatius
     // hesabı + avatar-id + session-token worker'ı gerekiyor.
-    spatius: () => import('./avatar-providers/spatius-avatar-provider.js?v=3').then((m) => m.SpatiusAvatarProvider),
+    spatius: () => import('./avatar-providers/spatius-avatar-provider.js?v=4').then((m) => m.SpatiusAvatarProvider),
   },
   tts: {
     webspeech: () => import('./tts-providers/webspeech-tts-provider.js?v=3').then((m) => m.WebSpeechTTSProvider),
     chatterbox: () => import('./tts-providers/chatterbox-tts-provider.js?v=3').then((m) => m.ChatterboxTTSProvider),
-    googleTranslate: () => import('./tts-providers/google-translate-tts-provider.js?v=3').then((m) => m.GoogleTranslateTTSProvider),
+    googleTranslate: () => import('./tts-providers/google-translate-tts-provider.js?v=4').then((m) => m.GoogleTranslateTTSProvider),
   },
   stt: {
     webspeech: () => import('./stt-providers/webspeech-stt-provider.js?v=3').then((m) => m.WebSpeechSTTProvider),

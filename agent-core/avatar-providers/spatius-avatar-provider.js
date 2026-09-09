@@ -77,6 +77,7 @@
 
 import { AvatarProvider } from '../providers.js?v=3';
 import { refusePaymentPrompt } from '../avatar-pool/free-tier-guard.js?v=3';
+import { getVisitorToken } from '../visitor-session.js?v=1';
 
 const AVATARKIT_CDN_URL = 'https://esm.sh/@spatius/avatarkit@latest';
 
@@ -247,7 +248,16 @@ export class SpatiusAvatarProvider extends AvatarProvider {
   }
 
   async _fetchSessionToken() {
-    const resp = await fetch(SPATIUS_SESSION_ENDPOINT, { method: 'POST' });
+    // Faz 2 (abuse koruması): /session artik bir visitor token zorunlu
+    // kosuyor — token widget-runtime.js tarafindan, riza onaylandiktan
+    // HEMEN sonra (agent-core/visitor-session.js.acquireVisitorToken())
+    // alinip burada okunuyor. Alinmamissa (programlama hatasi — akis
+    // widget-runtime.js'de riza sonrasi acquireVisitorToken()'i atlarsa
+    // olur) getVisitorToken() acikca hata firlatir, sessizce gecmez.
+    const resp = await fetch(SPATIUS_SESSION_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getVisitorToken() },
+    });
     if (!resp.ok) throw new Error('spatius_session_token_http_' + resp.status);
     const data = await resp.json();
     if (!data || !data.sessionToken || !data.appId) throw new Error('spatius_session_token_missing');

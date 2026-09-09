@@ -84,6 +84,52 @@ bu oturumun güvenlik kurallarınca yasak)
    varsayılan seçilmeyecek — site `anam` ile çalışmaya devam edecek
    (brief madde 17 ve 19).
 
+## Faz 2 (VERALIQ-CLAUDE-CODE-NIHAI-UYGULAMA-PROMPTU.md) — abuse koruması
+
+İlk halinde `/session` tamamen açıktı: herhangi bir istemci sınırsızca POST
+atıp gerçek bir Spatius session token'ı (dolayısıyla gerçek kota/kredi)
+tüketebiliyordu; `/tts` de metni GET query string'inde taşıyordu. Eklenenler
+(bkz. `session-worker.js`'nin kendi "BEŞİNCİ EKLENTİ" yorumu ve
+`visitor-token.js`):
+
+- **Gerçek IP-bazlı rate limiting** — Cloudflare'in native Workers Rate
+  Limiting binding'i (`wrangler.toml`'daki `[[ratelimits]]`, resmi
+  dokümantasyondan doğrulandı). `/visitor-token`, `/session`, `/tts` için
+  ayrı ayrı limitler.
+- **Kısa ömürlü imzalı "visitor token"** — `/session` ve `/tts` artık
+  `Authorization: Bearer <token>` zorunlu kılıyor. Token SADECE
+  `POST /visitor-token`'dan alınabiliyor.
+- **`/tts` artık POST + `application/json` body** (GET query string
+  kaldırıldı) — metin uzunluğu/dil kodu formatı/body boyutu doğrulanıyor.
+- Upstream çağrılara timeout (`AbortSignal.timeout`), `/session`'ın upstream
+  hata gövdesini istemciye hiç döndürmemesi, tüm yanıtlara
+  `Cache-Control: no-store`, ve tek-isolate ömürlü basit bir kota
+  circuit-breaker'ı eklendi.
+
+**Bilerek eksik bırakılan (dürüstçe kayıtlı):** Turnstile insan doğrulaması
+bu turda entegre EDİLMEDİ — bu sandbox'ta gerçek bir Turnstile site key/secret
+yok, ve test edilemeyen bir istemci-tarafı widget'ı "çalışıyor" diye sunmak
+yanıltıcı olurdu. `TURNSTILE_SECRET_KEY` secret'ı ayarlandığında
+`/visitor-token` otomatik olarak gerçek bir Turnstile doğrulaması zorunlu
+kılacak şekilde kodlandı (bkz. `session-worker.js`'deki `handleVisitorToken`)
+— yalnızca gerçek bir site key/secret çifti sağlanması ve
+`index.html`/`admin.html`/`portal.html`'a Turnstile widget'ının eklenmesi
+gerekiyor. Bu, ayrı bir karar/kurulum maddesi olarak
+`IMPLEMENTATION-BASELINE.md`'de kayıtlı.
+
+**Deploy öncesi ek not:** `[[ratelimits]]` binding'i Wrangler 4.36+
+gerektiriyor (resmi dokümantasyon) — `npx wrangler --version` ile kontrol
+edin, gerekirse `npx wrangler@latest deploy` kullanın. Yeni secret:
+`VISITOR_TOKEN_SECRET` (zorunlu — `npx wrangler secret put VISITOR_TOKEN_SECRET`),
+`TURNSTILE_SECRET_KEY` (opsiyonel, yukarıya bakın).
+
+**Test:** `test/session-worker.test.mjs` — gerçek Spatius/Google
+Translate/Turnstile'a HİÇBİR istek atmadan (hepsi mock'lanmış `fetch`)
+tüm route'ları ve hata yollarını doğrular:
+```
+cd worker-spatius/test && node session-worker.test.mjs
+```
+
 ## Bu worker upstream endpoint'i doğru mu?
 
 `session-worker.js` içindeki `UPSTREAM_URL` şu an docs.spatius.ai'nin genel

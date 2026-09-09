@@ -55,6 +55,7 @@
 // baglayip caldirma mantigi eklenmeli - bugun bu KAPSAM DISI.
 
 import { TTSProvider } from '../providers.js?v=3';
+import { getVisitorToken } from '../visitor-session.js?v=1';
 
 const TTS_ENDPOINT = 'https://veraliq-spatius-session.veraliq-com.workers.dev/tts';
 const MAX_CHARS_PER_CHUNK = 180; // upstream ~200 siniri altinda, guvenli pay
@@ -161,8 +162,20 @@ export class GoogleTranslateTTSProvider extends TTSProvider {
       try {
         for (const chunk of chunks) {
           if (stopped) break;
-          const url = TTS_ENDPOINT + '?text=' + encodeURIComponent(chunk) + '&lang=' + encodeURIComponent(lang);
-          const resp = await fetch(url, { signal: abortController.signal });
+          // Faz 2: GET query string yerine POST JSON body — metin artik
+          // URL'de tasinmiyor (proxy/erisim loglarina sizma riski ortadan
+          // kalkti) ve /tts artik bir visitor token zorunlu kosuyor (bkz.
+          // agent-core/visitor-session.js, spatius-avatar-provider.js'deki
+          // ayni desen).
+          const resp = await fetch(TTS_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + getVisitorToken(),
+            },
+            body: JSON.stringify({ text: chunk, lang }),
+            signal: abortController.signal,
+          });
           if (!resp.ok) {
             const body = await resp.text().catch(() => '');
             throw new Error('google_translate_tts_failed_' + resp.status + '_' + body.slice(0, 150));

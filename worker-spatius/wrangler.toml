@@ -7,9 +7,56 @@ compatibility_date = "2026-08-01"
 # Workers & Pages -> veraliq-spatius-session -> Settings -> Variables and
 # Secrets):
 #
-#   SPATIUS_APP_ID   -- Spatius Studio'dan (app.spatius.ai) alınan App ID
-#   SPATIUS_API_KEY  -- aynı App ID'ye bağlı API Key
+#   SPATIUS_APP_ID       -- Spatius Studio'dan (app.spatius.ai) alınan App ID
+#   SPATIUS_API_KEY      -- aynı App ID'ye bağlı API Key
+#   VISITOR_TOKEN_SECRET -- Faz 2 (abuse koruması): /session ve /tts'i açan
+#                           kısa ömürlü imzalı visitor token'ı üretmek/
+#                           doğrulamak için rastgele, uzun bir sır (örn.
+#                           `openssl rand -base64 32`). Eksikse /visitor-token
+#                           500 server_not_configured döner — /session ve
+#                           /tts hiçbir istemciye açılmaz (fail-closed).
+#   TURNSTILE_SECRET_KEY -- OPSİYONEL. Cloudflare Turnstile'dan alınan secret
+#                           key. Ayarlanırsa /visitor-token gerçek bir
+#                           Turnstile doğrulaması zorunlu kılar (bot/betik
+#                           koruması). Ayarlanmazsa /visitor-token yine
+#                           çalışır ama YALNIZCA rate limiting + imzalı token
+#                           ile korunur — insan doğrulaması YOKTUR. Bu, bu
+#                           ortamda test edilemeyen bilinen bir eksik olarak
+#                           IMPLEMENTATION-BASELINE.md'de kayıtlıdır; gerçek
+#                           bir Turnstile site key/secret sağlandığında
+#                           eklenmesi önerilir.
 #
 # Bu worker, worker/ klasöründeki CANLI Anam worker'ından TAMAMEN AYRI ve
 # BAĞIMSIZ deploy edilir — ikisi birbirini etkilemez, biri bozulursa/
 # yeniden deploy edilirse diğeri çalışmaya devam eder.
+
+# Faz 2 — gerçek IP-bazlı rate limiting. Cloudflare'in resmi Workers Rate
+# Limiting binding'i (developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+# üzerinden doğrulandı — tahmin edilmedi). `period` yalnızca 10 veya 60
+# saniye olabilir (Cloudflare'in kendi kısıtı). `namespace_id`, hesap
+# içinde bu rate-limit alanını tekil tanımlayan pozitif bir tamsayıdır —
+# aşağıdaki üç değer (2001/2002/2003) bilerek birbirinden farklı seçildi;
+# gerçek deploy öncesi bir çakışma varsa değiştirilebilir.
+[[ratelimits]]
+name = "VISITOR_TOKEN_RATE_LIMITER"
+namespace_id = "2001"
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "SESSION_RATE_LIMITER"
+namespace_id = "2002"
+  [ratelimits.simple]
+  limit = 8
+  period = 60
+
+[[ratelimits]]
+name = "TTS_RATE_LIMITER"
+namespace_id = "2003"
+  [ratelimits.simple]
+  # /tts, uzun metinleri ~180 karakterlik parçalara bölüp birden fazla kez
+  # çağırıyor (bkz. agent-core/tts-providers/google-translate-tts-provider.js)
+  # — bu yüzden /session'dan daha yüksek bir limit gerekiyor.
+  limit = 40
+  period = 60

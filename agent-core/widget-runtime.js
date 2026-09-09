@@ -22,12 +22,13 @@
 // and the SAME CSS classes (.agent-window, .agent-bubble, ...). Any page that
 // wants this widget must include that markup + those styles + this module.
 
-import { createProviders } from './config.js?v=5';
+import { createProviders } from './config.js?v=6';
 import { createCallConsent } from './call-consent.js?v=2';
 import { ConversationStateMachine, AgentState } from './state-machine.js?v=3';
 import { AgentOrchestrator } from './orchestrator.js?v=5';
 import { ConversationLogger } from './conversation-logger.js?v=3';
 import { isProviderBlocked } from './avatar-pool/free-tier-guard.js?v=3';
+import { acquireVisitorToken, clearVisitorToken } from './visitor-session.js?v=1';
 
 // index.html loads i18n.js (window.VeraliqI18N) for its 8-language site chrome.
 // Internal panels (admin.html, portal.html) are Turkish-only today and do NOT
@@ -44,7 +45,7 @@ const BARGE_IN_HISTORY_LIMIT = 12; // unused here, kept for parity — real limi
 /**
  * @param {{
  *   agentIdentity: {first_name?:string, last_name?:string, display_name:string, company_name:string, role:string},
- *   providerOverrides?: Partial<import('./config.js?v=5').AGENT_PROVIDER_CONFIG>,
+ *   providerOverrides?: Partial<import('./config.js?v=6').AGENT_PROVIDER_CONFIG>,
  *   startMinimized?: boolean,
  *   conversationLogging?: {tokenKey?:string, agentKey?:string, channel?:string},
  * }} opts
@@ -140,6 +141,7 @@ export async function initAgentWidget(opts) {
     els.bubble.hidden = true;
     els.reopenBtn.hidden = false;
     if (orchestrator) { try { await orchestrator.stop(); } catch (e) {} }
+    clearVisitorToken();
     els.statusDot.classList.remove('live');
     els.bubbleDot.classList.remove('live');
   }
@@ -320,6 +322,19 @@ export async function initAgentWidget(opts) {
       if (isProviderBlocked(providers.config.avatarProvider)) {
         throw new Error('avatar_provider_blocked:' + providers.config.avatarProvider);
       }
+      // Faz 2 (abuse koruması): worker-spatius/session-worker.js'in /session
+      // ve /tts route'ları artık bir visitor token zorunlu koşuyor — bu
+      // noktaya gelindiğinde riza zaten verilmiş oluyor (initAgent() en
+      // üstte callConsent.accepted kontrolü yapıyor), yani token TAM OLARAK
+      // "ziyaretçi AI açıklamasını gördükten ve konuşmayı başlattıktan
+      // sonra" alınıyor. Bu adımdaki bir hata (rate limit, worker henüz
+      // yapılandırılmamış, ağ hatası) aşağıdaki catch bloğuna düşer — yeni
+      // bir hata durumu icat edilmiyor, mevcut hata/yeniden bağlanma
+      // durumuyla aynı şekilde ele alınıyor.
+      if (providers.config.avatarProvider === 'spatius' || providers.config.ttsProvider === 'googleTranslate') {
+        await acquireVisitorToken();
+      }
+      if (!active()) { await providers.avatar.disconnect(); return; }
       await providers.avatar.init({ videoEl: els.video, bubbleVideoEl: els.bubbleVideo, agentIdentity: AGENT_IDENTITY });
       if (!active()) { await providers.avatar.disconnect(); return; }
 
