@@ -42,7 +42,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Durum güncellendi: ","common.unknown":"bilinmeyen",
 
       "nav.group.general":"Genel","nav.group.operations":"Operasyon","nav.group.salesCustomer":"Satış & Müşteri",
-      "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem",
+      "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem","nav.group.approvals":"Onay Talepleri","nav.group.roadmap":"Yol Haritası",
       "nav.item.dashboard":"Panel","nav.item.assistant":"AI Asistan","nav.item.projects":"Projeler","nav.item.inventory":"Envanter",
       "nav.item.presentations":"Sunumlar","nav.item.reservations":"Rezervasyonlar","nav.item.leads":"Lead'ler",
       "nav.item.customers":"Müşteriler","nav.item.sales":"Satışlar","nav.item.crm":"CRM","nav.item.payments":"Onay Talepleri",
@@ -68,7 +68,7 @@ window.VERALIQ_PORTAL_I18N = {
       "login.loginBtn":"Giriş Yap","login.hint":"Bu portal Cloudflare D1 üzerinde çalışan gerçek bir backend'e bağlıdır — verileriniz sunucuda saklanır.",
       "login.errRequired":"E-posta ve şifre gerekli.",
 
-      "dashboard.sub":"Gerçek zamanlı satış, envanter ve operasyon özeti.",
+      "dashboard.sub":"Gerçek zamanlı satış, envanter ve operasyon özeti.","dashboard.actionBand.title":"Bekleyen İşler","dashboard.actionBand.approvals":"onay bekliyor","dashboard.actionBand.holds":"birim hold'da","dashboard.actionBand.allClear":"Bekleyen bir işiniz yok — her şey güncel.",
       "dashboard.stat.totalLeads":"Toplam Lead","dashboard.stat.todayLeads":"Bugünkü Lead","dashboard.stat.presentations":"Sunumda",
       "dashboard.stat.holds":"Tutulan","dashboard.stat.reservations":"Rezerve","dashboard.stat.deposits":"Kapora Alındı",
       "dashboard.stat.contracts":"Sözleşmede","dashboard.stat.sales":"Satış","dashboard.stat.revenue":"Ciro",
@@ -174,7 +174,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Status updated: ","common.unknown":"unknown",
 
       "nav.group.general":"General","nav.group.operations":"Operations","nav.group.salesCustomer":"Sales & Customers",
-      "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System",
+      "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System","nav.group.approvals":"Approval Requests","nav.group.roadmap":"Roadmap",
       "nav.item.dashboard":"Dashboard","nav.item.assistant":"AI Assistant","nav.item.projects":"Projects","nav.item.inventory":"Inventory",
       "nav.item.presentations":"Presentations","nav.item.reservations":"Reservations","nav.item.leads":"Leads",
       "nav.item.customers":"Customers","nav.item.sales":"Sales","nav.item.crm":"CRM","nav.item.payments":"Approval Requests",
@@ -200,7 +200,7 @@ window.VERALIQ_PORTAL_I18N = {
       "login.loginBtn":"Log In","login.hint":"This portal connects to a real backend running on Cloudflare D1 — your data is stored on the server.",
       "login.errRequired":"Email and password are required.",
 
-      "dashboard.sub":"Real-time overview of sales, inventory, and operations.",
+      "dashboard.sub":"Real-time overview of sales, inventory, and operations.","dashboard.actionBand.title":"Pending Work","dashboard.actionBand.approvals":"awaiting approval","dashboard.actionBand.holds":"units on hold","dashboard.actionBand.allClear":"Nothing pending — you're all caught up.",
       "dashboard.stat.totalLeads":"Total Leads","dashboard.stat.todayLeads":"Today's Leads","dashboard.stat.presentations":"In Presentation",
       "dashboard.stat.holds":"On Hold","dashboard.stat.reservations":"Reserved","dashboard.stat.deposits":"Deposit Paid",
       "dashboard.stat.contracts":"In Contract","dashboard.stat.sales":"Sales","dashboard.stat.revenue":"Revenue",
@@ -306,7 +306,7 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Статус обновлён: ","common.unknown":"неизвестно",
 
       "nav.group.general":"Общее","nav.group.operations":"Операции","nav.group.salesCustomer":"Продажи и клиенты",
-      "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система",
+      "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система","nav.group.approvals":"Запросы на одобрение","nav.group.roadmap":"План развития",
       "nav.item.dashboard":"Панель","nav.item.assistant":"AI-ассистент","nav.item.projects":"Проекты","nav.item.inventory":"Инвентарь",
       "nav.item.presentations":"Показы","nav.item.reservations":"Резервации","nav.item.leads":"Лиды",
       "nav.item.customers":"Клиенты","nav.item.sales":"Продажи","nav.item.crm":"CRM","nav.item.payments":"Запросы на одобрение",
@@ -332,7 +332,7 @@ window.VERALIQ_PORTAL_I18N = {
       "login.loginBtn":"Войти","login.hint":"Этот портал подключён к реальному бэкенду на Cloudflare D1 — ваши данные хранятся на сервере.",
       "login.errRequired":"Требуются email и пароль.",
 
-      "dashboard.sub":"Обзор продаж, склада и операций в реальном времени.",
+      "dashboard.sub":"Обзор продаж, склада и операций в реальном времени.","dashboard.actionBand.title":"Ожидающие задачи","dashboard.actionBand.approvals":"ожидают одобрения","dashboard.actionBand.holds":"объектов в резерве","dashboard.actionBand.allClear":"Нет ожидающих задач — всё в порядке.",
       "dashboard.stat.totalLeads":"Всего лидов","dashboard.stat.todayLeads":"Лиды сегодня","dashboard.stat.presentations":"На показе",
       "dashboard.stat.holds":"Придержано","dashboard.stat.reservations":"Забронировано","dashboard.stat.deposits":"Задаток внесён",
       "dashboard.stat.contracts":"В договоре","dashboard.stat.sales":"Продажи","dashboard.stat.revenue":"Выручка",

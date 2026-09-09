@@ -145,7 +145,7 @@ Kullanıcı kararı: Aylık 25.000 TL+KDV, Yıllık 250.000 TL+KDV, Başarı pri
 - "Sınırsız Proje Sunumu" otomatik korunmayacak — capability ledger sonucuna göre
   dürüst yeniden yazılacak (Faz 6 ile birlikte ele alınabilir).
 
-## Faz 8 — Admin ve portal bilgi mimarisi (P1)
+## Faz 8 — Admin ve portal bilgi mimarisi (P1) — TAMAMLANDI ✅
 
 - Admin nav: Genel Bakış, Demo Talepleri, Şirketler ve Onboarding, Kullanıcılar ve
   Erişim, Hizmet/Provider Sağlığı, Paket ve Yetkilendirme (gerçek bir billing

@@ -386,10 +386,23 @@
   // ============================================================
   // NAV — madde 13/18: Company Portal Menü (tam liste, gruplu).
   // ============================================================
+  // Faz 8 (bilgi mimarisi): sıra artık "bekleyen onaylar en önemli"
+  // ilkesine göre — Onay Talepleri kendi grubunda, Satış&Müşteri'nin
+  // hemen üstünde. Henüz gerçek bir backend'i olmayan ekranlar (calendar,
+  // crm, integrations — bkz. bu ekranların kendi "gap notice" metinleri)
+  // artık dağınık değil, tek bir "Yol Haritası" grubunda, en altta.
   var NAV = [
     { groupKey: 'nav.group.general', items: [
       { id: 'dashboard' },
       { id: 'assistant' },
+    ]},
+    { groupKey: 'nav.group.approvals', items: [
+      { id: 'payments' },
+    ]},
+    { groupKey: 'nav.group.salesCustomer', items: [
+      { id: 'leads' },
+      { id: 'customers' },
+      { id: 'sales' },
     ]},
     { groupKey: 'nav.group.operations', items: [
       { id: 'projects' },
@@ -397,26 +410,22 @@
       { id: 'presentations' },
       { id: 'reservations' },
     ]},
-    { groupKey: 'nav.group.salesCustomer', items: [
-      { id: 'leads' },
-      { id: 'customers' },
-      { id: 'sales' },
-      { id: 'crm' },
-    ]},
     { groupKey: 'nav.group.financeDoc', items: [
-      { id: 'payments' },
       { id: 'contracts' },
       { id: 'documents' },
     ]},
     { groupKey: 'nav.group.planning', items: [
-      { id: 'calendar' },
       { id: 'reports' },
     ]},
     { groupKey: 'nav.group.system', items: [
       { id: 'agents' },
       { id: 'team' },
-      { id: 'integrations' },
       { id: 'settings' },
+    ]},
+    { groupKey: 'nav.group.roadmap', items: [
+      { id: 'calendar' },
+      { id: 'crm' },
+      { id: 'integrations' },
     ]},
   ];
 
@@ -582,7 +591,22 @@
     var body = viewHead(container, T('nav.item.dashboard'), T('dashboard.sub'));
     try {
       var d = await api('/api/dashboard');
-      var html = '<div class="stat-grid">' +
+      // Faz 8 (bilgi mimarisi): bekleyen onaylar/hold'daki birimler artık
+      // vitrin istatistik grid'inin İÇİNDE bir kart olarak değil, ÖNÜNDE
+      // ayrı bir "Bekleyen İşler" bandı olarak gösteriliyor — master prompt
+      // gereği aksiyon gerektiren durumlar genel metriklerden önce görünür
+      // olmalı. Mevcut /api/dashboard alanlarıyla (pending_approvals, holds)
+      // çalışır, yeni bir API alanı gerektirmez.
+      var actionItems = [];
+      if (d.pending_approvals > 0) actionItems.push('<button type="button" data-goto="payments" class="pill pill-gold" style="border:none;cursor:pointer;">' + d.pending_approvals + ' ' + esc(T('dashboard.actionBand.approvals')) + '</button>');
+      if (d.holds > 0) actionItems.push('<button type="button" data-goto="inventory" class="pill" style="border:none;cursor:pointer;">' + d.holds + ' ' + esc(T('dashboard.actionBand.holds')) + '</button>');
+      var html = '<div class="card" style="margin-bottom:16px;">' +
+        '<div class="stat-label" style="margin-bottom:10px;">' + esc(T('dashboard.actionBand.title')) + '</div>' +
+        (actionItems.length
+          ? '<div class="row" style="gap:8px;flex-wrap:wrap;">' + actionItems.join('') + '</div>'
+          : '<p class="muted" style="font-size:13px;margin:0;">' + esc(T('dashboard.actionBand.allClear')) + '</p>') +
+        '</div>';
+      html += '<div class="stat-grid">' +
         statCard(T('dashboard.stat.totalLeads'), d.total_leads) +
         statCard(T('dashboard.stat.todayLeads'), d.today_leads, 'mint') +
         statCard(T('dashboard.stat.presentations'), d.presentations, 'mint') +
@@ -602,6 +626,9 @@
           '<div><div class="pill pill-gold" style="margin-bottom:6px;">' + esc(T('common.humanAgent')) + '</div><div class="stat-value">' + d.human_agent_presentations + '</div><div class="muted" style="font-size:12px;">' + esc(T('dashboard.presentationsStarted')) + '</div></div>' +
         '</div></div>';
       body.innerHTML = html;
+      body.querySelectorAll('[data-goto]').forEach(function(btn){
+        btn.addEventListener('click', function(){ navigate(btn.getAttribute('data-goto')); });
+      });
       refreshApprovalBadge();
     } catch (e) {
       body.innerHTML = '<div class="empty">' + esc(T('dashboard.loadFailed')) + esc(errMsg(e)) + '</div>';

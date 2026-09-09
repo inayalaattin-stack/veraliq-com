@@ -347,12 +347,18 @@
   }
 
   // ---------------- NAV / ROUTER ----------------
+  // Faz 8 (bilgi mimarisi): VERALIQ'in KENDİ işini yöneten bir yapıya göre
+  // gruplandı — sağlayıcı/servis sağlığı bir arada, henüz gerçek bir
+  // backend'i olmayan CRM/ERP/Entegrasyonlar (bkz. gapView notları) artık
+  // dağınık değil, tek bir "Yol Haritası" grubunda, en altta.
   var NAV = [
-    { group: 'Genel', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'}, {id:'assistant', label:'AI Asistan'} ] },
-    { group: 'Platform', items: [ {id:'companies', label:'Şirketler'}, {id:'users', label:'Kullanıcılar'}, {id:'projects', label:'Projeler'}, {id:'subscriptions', label:'Abonelikler'} ] },
-    { group: 'Yapay Zekâ', items: [ {id:'agents', label:'Agent\'lar'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'} ] },
-    { group: 'Entegrasyon', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
-    { group: 'Sistem', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Denetim Kaydı'}, {id:'health', label:'Sistem Sağlığı'} ] },
+    { group: 'Genel Bakış', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'}, {id:'assistant', label:'AI Asistan'} ] },
+    { group: 'Şirketler ve Onboarding', items: [ {id:'companies', label:'Şirketler'}, {id:'projects', label:'Projeler'} ] },
+    { group: 'Kullanıcılar ve Erişim', items: [ {id:'users', label:'Kullanıcılar'} ] },
+    { group: 'Hizmet ve Provider Sağlığı', items: [ {id:'agents', label:'Agent Performansı'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'}, {id:'health', label:'Sistem Sağlığı'} ] },
+    { group: 'Paket ve Yetkilendirme', items: [ {id:'subscriptions', label:'Abonelikler'} ] },
+    { group: 'Audit ve Güvenlik', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Denetim Kaydı'} ] },
+    { group: 'Yol Haritası', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
   ];
   var VIEW_TITLES = {};
   NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_TITLES[it.id] = it.label; }); });
