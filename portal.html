@@ -759,7 +759,7 @@
         for (var i = 0; i < rowEls.length; i++) {
           var get = function(f){ return rowEls[i].querySelector('[data-f="' + f + '"]').value.trim(); };
           var unitNo = get('unit_no');
-          var hasAnyValue = unitNo || get('block') || get('unit_type') || get('gross_area') || get('net_area') || get('price');
+          var hasAnyValue = unitNo || get('block') || get('floor') || get('unit_type') || get('gross_area') || get('net_area') || get('price');
           if (!hasAnyValue) continue; // tamamen boş satır — sessizce atla
           if (!unitNo) { errEl.textContent = T('projects.unitNoRequired'); errEl.style.display = 'block'; return; }
           items.push({
