@@ -162,7 +162,46 @@ Kullanıcı kararı: Aylık 25.000 TL+KDV, Yıllık 250.000 TL+KDV, Başarı pri
   mobil görünüm görev-odaklı olacak (bekleyen işler, lead detayı, birim durumu,
   onay, arama/mesaj kısayolu). Native/PWA yalnızca ayrı bir kararla.
 
-## Faz 9 — Kurumsal görsel sistem (P1)
+## Faz 9 — Kurumsal görsel sistem (P1) — KISMEN TAMAMLANDI ⚠️
+
+Görsel değerlendirme (index/pricing/admin/portal ekran görüntüleri): mevcut
+tasarım ZATEN master promptun istediği estetiğe yakın (açık taş-beyazı zemin,
+grafit metin, mavi-gri vurgu, pricing.html'de kontrollü koyu premium istisna)
+— büyük bir yeniden tasarım gerekmedi. Bu turda odaklanılan, SOMUT ve TEST
+EDİLEBİLİR erişilebilirlik/taşma sorunları:
+
+- **Gerçek bulgu:** demo formunun honeypot alanı (`left:-9999px` tekniği)
+  `document.documentElement.scrollWidth`'i 11.424px'e kadar şişiriyordu —
+  her dilde/yönde (RTL'e özgü değil) gerçek bir yatay taşma nedeniydi.
+  Standart "visually hidden" (clip) deseniyle düzeltildi; 390/768/1024/1440
+  genişliklerde, TR/AR/FA (RTL) ve LTR'de gerçek tarayıcı ölçümüyle
+  doğrulandı — hiçbirinde taşma kalmadı.
+- **Gerçek bulgu:** index.html'in demo formundaki `<label>` etiketleri
+  `for`/`id` ile input'lara BAĞLI DEĞİLDİ (yalnızca görsel yakınlık) — ekran
+  okuyucu için WCAG 1.3.1/3.3.2 ihlali. 6 alan + honeypot için düzeltildi,
+  gerçek DOM sorgusuyla doğrulandı.
+- **Zaten doğru olduğu doğrulanan:** admin.html/portal.html login
+  formlarının `<label for>` kullanımı; `:focus-visible` stilinin gerçek
+  Tab-tuşu navigasyonuyla görünür olduğu (varsayımla değil, gerçek klavye
+  eventi + `:focus-visible` eşleşmesiyle test edildi); `prefers-reduced-
+  motion` desteği (index.html/pricing.html/enterprise-light.css'te zaten
+  vardı); call-consent.js'in native `<dialog>`+`showModal()` kullanması
+  (tarayıcı native focus trap sağlıyor); satış sunumundaki ürün
+  görüntülerinin gerçek ekran görüntüleri olduğu (footnote'larla açıkça
+  belirtilmiş, sahte değil).
+- **Bilinçli olarak bu turda YAPILMAYAN (dürüstçe kayıtlı):** admin.html/
+  portal.html'deki İKİNCİL dinamik formlarda (proje/lead/müşteri ekleme
+  diyalogları — JS ile innerHTML üzerinden oluşturulan ~15+ alan) aynı
+  label/for eksikliği MEVCUT ama düzeltilmedi — kapsam/zaman nedeniyle ana
+  halka açık form + login formlarına öncelik verildi. Widget'ın köşe/yarım/
+  tam ekran davranışına HİÇ dokunulmadı (korundu). Tam bir görsel yeniden
+  tasarım (mimari çizim/saha planı estetiği, yeni SVG varlıkları) bu turda
+  YAPILMADI — mevcut tasarım zaten yakın kabul edildi.
+
+**Faz 9'un çözülmemiş çelişkisi çözüldü:** Kullanıcı, "voice-only, yazılı
+sohbet yok" kuralının (CLAUDE.md, önceden tamamlanmış/pushlanmış) master
+promptun "metin fallback'ini kaldırma" talimatına göre ÜSTÜN tutulmasına
+karar verdi — metin fallback'i GERİ GETİRİLMEDİ.
 
 Görsel dönüşüm yalnızca işlev/iddia düzeltmelerinden SONRA uygulanır.
 - Ana site/admin/portal: açık taş-beyazı zemin, grafit metin, mavi-gri vurgu,

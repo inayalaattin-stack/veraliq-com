@@ -426,8 +426,12 @@
   /* Honeypot: gerçek ziyaretçilerin GÖRMEYECEĞİ/dolduramayacağı bir alan
      (bkz. worker-portal/demo-requests.js) — display:none yerine ekran
      dışına taşıma kullanılıyor çünkü bazı botlar display:none alanları
-     zaten atlıyor; bu daha güvenilir bir honeypot deseni. */
-  .hp-field{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+     zaten atlıyor; bu daha güvenilir bir honeypot deseni. Faz 9 düzeltmesi:
+     "left:-9999px" tekniği document'in scrollWidth'ini devasa büyütüp
+     (11.424px'e kadar test edildi) HER dilde/yönde gerçek bir yatay taşma
+     sorununa yol açıyordu — standart "visually hidden" clip deseni
+     kullanılıyor, sayfa akışını etkilemez. */
+  .hp-field{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
   /* Footer */
   footer{padding:48px 0 32px;}
@@ -1128,18 +1132,18 @@
       <p style="margin-top:20px;"><a href="mailto:info@veraliq.com" class="btn btn-ghost">info@veraliq.com</a></p>
     </div>
     <form class="demo-form" id="demoForm">
-      <div><label data-i18n="form.name">Ad Soyad</label><input type="text" name="name" required></div>
-      <div><label data-i18n="form.company">Şirket</label><input type="text" name="company" required></div>
-      <div><label data-i18n="form.phone">Telefon</label><input type="tel" name="phone" required></div>
-      <div><label data-i18n="form.email">E-posta</label><input type="email" name="email" required></div>
-      <div><label data-i18n="form.type">Şirket Türü</label>
-        <select name="type">
+      <div><label for="demoName" data-i18n="form.name">Ad Soyad</label><input type="text" id="demoName" name="name" required></div>
+      <div><label for="demoCompany" data-i18n="form.company">Şirket</label><input type="text" id="demoCompany" name="company" required></div>
+      <div><label for="demoPhone" data-i18n="form.phone">Telefon</label><input type="tel" id="demoPhone" name="phone" required></div>
+      <div><label for="demoEmail" data-i18n="form.email">E-posta</label><input type="email" id="demoEmail" name="email" required></div>
+      <div><label for="demoType" data-i18n="form.type">Şirket Türü</label>
+        <select id="demoType" name="type">
           <option data-i18n="form.typeOpt1">Müteahhit</option>
           <option data-i18n="form.typeOpt2">Gayrimenkul Şirketi</option>
           <option data-i18n="form.typeOpt3">Diğer</option>
         </select>
       </div>
-      <div><label data-i18n="form.volume">Aylık Lead / Satış Hacmi (opsiyonel)</label><input type="text" name="volume"></div>
+      <div><label for="demoVolume" data-i18n="form.volume">Aylık Lead / Satış Hacmi (opsiyonel)</label><input type="text" id="demoVolume" name="volume"></div>
       <div class="hp-field" aria-hidden="true"><label for="demoWebsite">Website</label><input type="text" id="demoWebsite" name="website" tabindex="-1" autocomplete="off"></div>
       <button type="submit" class="btn btn-primary" style="justify-content:center;margin-top:6px;" data-i18n="form.submit">Demo Talep Et</button>
       <div class="form-status" id="formStatus"></div>
