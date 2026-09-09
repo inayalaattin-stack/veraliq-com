@@ -28,6 +28,12 @@
 import { hashPassword, verifyPassword, signJWT, verifyJWT, generateId } from './auth.js';
 import { handleDemoRequestSubmit, handleDemoRequestsList, handleDemoRequestUpdate } from './demo-requests.js';
 import { handleTenantResolve, handleTenantProjects, handleTenantUnits, handleTenantVisitorSession, handleTenantLeadCreate } from './tenant-widget.js';
+import {
+  handleExpertGroupCreate, handleExpertGroupsList, handleExpertGroupDetail, handleExpertGroupMemberAdd, handleExpertGroupMemberUpdate,
+  handleExpertQueryCreate, handleExpertQueriesList, handleExpertQueryDetail, handleExpertAnswerSubmit,
+  handleCustomerMemoryGet, handleCustomerMemoryUpsert,
+  handleKnowledgeCandidateCreate, handleKnowledgeCandidatePublish, handleKnowledgeCandidatesList,
+} from './expert-assist.js';
 
 export { PresentationLock } from './presentation-lock-do.js';
 
@@ -1302,6 +1308,22 @@ async function route(request, url, env) {
     if (approval.status !== 'pending') return json({ error: 'already_decided' }, 409);
     const body = await request.json();
     const decision = body.decision === 'approved' ? 'approved' : 'rejected';
+    // Silent Expert Assist review bulgusu (tasarım §5/§11): bir kullanıcı
+    // expert_group_members'ta AÇIKÇA bir approval_limit ile kayıtlıysa
+    // (yalnızca o durumda — hiç kayıtlı değilse mevcut owner/manager
+    // davranışı DEĞİŞMEZ, bu kontrol GERİYE DÖNÜK UYUMLU bir ek kısıttır),
+    // onayladığı tutar bu limitlerin EN YÜKSEĞİNİ bile aşıyorsa reddedilir.
+    if (decision === 'approved' && approval.amount != null) {
+      const { results: limitRows } = await env.DB.prepare(
+        `SELECT approval_limit FROM expert_group_members WHERE user_id = ? AND active = 1 AND approval_limit IS NOT NULL`
+      ).bind(auth.sub).all();
+      if (limitRows.length > 0) {
+        const maxLimit = Math.max(...limitRows.map((r) => r.approval_limit));
+        if (approval.amount > maxLimit) {
+          return json({ error: 'approval_limit_exceeded', limit: maxLimit, amount: approval.amount }, 403);
+        }
+      }
+    }
     // Yukarıdaki SELECT+status kontrolü tek başına eşzamanlı iki isteğe karşı
     // yeterli DEĞİL (ikisi de UPDATE'ten önce 'pending' okuyabilir). Gerçek
     // atomiklik, UPDATE'in KENDİSİNİN 'pending' şartına bağlanmasından gelir
@@ -1313,6 +1335,131 @@ async function route(request, url, env) {
     }
     await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'approval.' + decision, entity_type: 'approval_request', entity_id: approvalId, request });
     return json({ ok: true, status: decision });
+  }
+
+  // ---- SILENT EXPERT ASSIST (bkz. repo kökündeki SILENT-EXPERT-ASSIST-
+  // DESIGN.md, kullanıcı onaylı tasarım) — 1. uygulama turu: veri modeli +
+  // durum makinesi + atomik "ilk geçerli cevap" kabulü. WebSocket/DO canlı
+  // push VE portal notification UI/PWA/push BU TURUN KAPSAMINDA DEĞİL. -----
+  if (path === '/api/expert-groups' && method === 'POST') {
+    // Kimin "yetkili" sayılacağını belirlemek hassas bir yapılandırma —
+    // yalnızca owner (company_manager DEĞİL, bilerek daha dar).
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertGroupCreate(request, env, { json, writeAudit, auth });
+  }
+  if (path === '/api/expert-groups' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertGroupsList(request, env, { json, auth });
+  }
+  if ((m = path.match(/^\/api\/expert-groups\/([^/]+)$/)) && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertGroupDetail(request, env, { json, auth, id: m[1] });
+  }
+  if ((m = path.match(/^\/api\/expert-groups\/([^/]+)\/members$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertGroupMemberAdd(request, env, { json, writeAudit, auth, id: m[1] });
+  }
+  if ((m = path.match(/^\/api\/expert-groups\/([^/]+)\/members\/([^/]+)$/)) && method === 'PATCH') {
+    const auth = await requireAuth(request, env, ['company_owner']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertGroupMemberUpdate(request, env, { json, writeAudit, auth, id: m[1], memberId: m[2] });
+  }
+
+  if (path === '/api/expert-queries' && method === 'POST') {
+    // /api/conversations POST ile AYNI dual-auth deseni: bu uç genellikle
+    // müşteriyle konuşan AI agent tarafından (X-Agent-Key) çağrılır, ama
+    // bir portal kullanıcısı da manuel bir soru açabilir.
+    const auth = await requireAuth(request, env, null);
+    let companyId, requestedByUserId;
+    if (auth && ['company_owner', 'company_staff'].includes(auth.role)) {
+      companyId = auth.company_id; requestedByUserId = auth.sub;
+    } else if (checkAgentKey(request, env)) {
+      const body0 = await request.clone().json();
+      companyId = body0.company_id; requestedByUserId = 'AI';
+      if (!companyId) return json({ error: 'company_id_required' }, 400);
+    } else {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    return handleExpertQueryCreate(request, env, { json, writeAudit, companyId, requestedByUserId });
+  }
+  if (path === '/api/expert-queries' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertQueriesList(request, env, { json, auth }, url);
+  }
+  if ((m = path.match(/^\/api\/expert-queries\/([^/]+)$/)) && method === 'GET') {
+    // Agent da (durum polling'i için) kendi oluşturduğu sorunun durumunu
+    // sorgulayabilmeli — units/lock ile AYNI dual-auth ilkesi.
+    const auth = await requireAuth(request, env, null);
+    let companyId;
+    if (auth && ['company_owner', 'company_staff'].includes(auth.role)) {
+      companyId = auth.company_id;
+    } else if (checkAgentKey(request, env)) {
+      companyId = url.searchParams.get('company_id');
+      if (!companyId) return json({ error: 'company_id_required' }, 400);
+    } else {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    return handleExpertQueryDetail(request, env, { json, companyId, id: m[1] });
+  }
+  if (path === '/api/expert-answers' && method === 'POST') {
+    // Yetkililer HER ZAMAN portal kullanıcısıdır (agent-key ile cevap
+    // VERİLEMEZ — Zero Trust AI: agent yalnızca soru açabilir, cevap
+    // yalnızca gerçek bir insan yetkiliden gelir).
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleExpertAnswerSubmit(request, env, { json, writeAudit, auth });
+  }
+
+  if ((m = path.match(/^\/api\/customers\/([^/]+)\/memory$/)) && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleCustomerMemoryGet(request, env, { json, companyId: auth.company_id, customerId: m[1] });
+  }
+  if ((m = path.match(/^\/api\/customers\/([^/]+)\/memory$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, null);
+    let companyId, actorUserId;
+    if (auth && ['company_owner', 'company_staff'].includes(auth.role)) {
+      companyId = auth.company_id; actorUserId = auth.sub;
+    } else if (checkAgentKey(request, env)) {
+      const body0 = await request.clone().json();
+      companyId = body0.company_id; actorUserId = 'AI';
+      if (!companyId) return json({ error: 'company_id_required' }, 400);
+    } else {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    return handleCustomerMemoryUpsert(request, env, { json, writeAudit, companyId, customerId: m[1], actorUserId });
+  }
+
+  if (path === '/api/knowledge-candidates' && method === 'POST') {
+    const auth = await requireAuth(request, env, null);
+    let companyId, actorUserId;
+    if (auth && ['company_owner', 'company_staff'].includes(auth.role)) {
+      companyId = auth.company_id; actorUserId = auth.sub;
+    } else if (checkAgentKey(request, env)) {
+      const body0 = await request.clone().json();
+      companyId = body0.company_id; actorUserId = 'AI';
+      if (!companyId) return json({ error: 'company_id_required' }, 400);
+    } else {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    return handleKnowledgeCandidateCreate(request, env, { json, writeAudit, companyId, actorUserId });
+  }
+  if (path === '/api/knowledge-candidates' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleKnowledgeCandidatesList(request, env, { json, auth }, url);
+  }
+  if ((m = path.match(/^\/api\/knowledge-candidates\/([^/]+)\/publish$/)) && method === 'POST') {
+    // company_wide yayın BİLEREK dar: yalnızca owner/manager (madde 43 RBAC
+    // genişlemesiyle AYNI çizgi — approval_requests kararı ile eşdeğer önem).
+    const auth = await requireAuth(request, env, ['company_owner', 'company_manager']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleKnowledgeCandidatePublish(request, env, { json, writeAudit, auth, id: m[1] });
   }
 
   // ---- AUDIT LOG (read-only) -------------------------------------------------

@@ -350,3 +350,128 @@ CREATE TABLE IF NOT EXISTS demo_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_demo_requests_status ON demo_requests(status);
 CREATE INDEX IF NOT EXISTS idx_demo_requests_created ON demo_requests(created_at);
+
+-- ===========================================================================
+-- SILENT EXPERT ASSIST (bkz. repo kökündeki SILENT-EXPERT-ASSIST-DESIGN.md,
+-- kullanıcı onaylı tasarım) — 1. uygulama turu: veri modeli + durum makinesi
+-- + atomik "ilk geçerli cevap" kabulü. WebSocket/DO canlı push VE portal
+-- notification UI/PWA/push bu turun KAPSAMINDA DEĞİL (tasarımın kendi
+-- kademeli rollout planı §13). Aynı içerik migrations/0007'ye de kopyalandı.
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS expert_groups (
+  id          TEXT PRIMARY KEY,
+  company_id  TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_expert_groups_company ON expert_groups(company_id);
+
+-- Bir gruba en fazla 3 AKTİF üye — bu sınır DB'de değil, expert-assist.js'in
+-- handleExpertGroupMemberAdd/Update route'larında (server-side COUNT
+-- kontrolü) uygulanır (SQLite'ta declarative bir "max N satır" kısıtı yok).
+CREATE TABLE IF NOT EXISTS expert_group_members (
+  id                TEXT PRIMARY KEY,
+  expert_group_id   TEXT NOT NULL REFERENCES expert_groups(id) ON DELETE CASCADE,
+  user_id           TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  scope_type        TEXT NOT NULL DEFAULT 'company',  -- 'company'|'project'|'topic'
+  scope_project_id  TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  scope_topic       TEXT,
+  approval_limit    REAL,             -- NULL = ticari onay VEREMEZ, yalnızca bilgi cevaplayabilir
+  active            INTEGER NOT NULL DEFAULT 1,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(expert_group_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_expert_members_group ON expert_group_members(expert_group_id);
+CREATE INDEX IF NOT EXISTS idx_expert_members_user ON expert_group_members(user_id);
+
+-- Canlı görüşmeden doğan, yetkiliye iletilen soru. `topic`, tasarım
+-- dokümanının ilk taslağında yoktu — scope_type='topic' üyelerin hangi
+-- sorguya eşleşeceğini belirlemek için uygulama sırasında eklendi.
+CREATE TABLE IF NOT EXISTS expert_queries (
+  id                    TEXT PRIMARY KEY,
+  company_id            TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  conversation_id       TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  customer_id           TEXT REFERENCES customers(id) ON DELETE SET NULL,
+  project_id            TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  unit_id               TEXT REFERENCES units(id) ON DELETE SET NULL,
+  expert_group_id       TEXT NOT NULL REFERENCES expert_groups(id),
+  question_text         TEXT NOT NULL,
+  category              TEXT NOT NULL DEFAULT 'info',  -- 'info' | 'commercial_approval'
+  topic                 TEXT,
+  required_valid_answers INTEGER NOT NULL DEFAULT 1,
+  sent_to               TEXT NOT NULL,   -- JSON dizi: sorgulanan user_id'ler (<=3)
+  status                TEXT NOT NULL DEFAULT 'pending', -- 'pending'|'answered'|'timeout'|'unresolved'|'cancelled'
+  accepted_answer_id    TEXT,
+  timeout_at            TEXT NOT NULL,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_at           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_expert_queries_company ON expert_queries(company_id);
+CREATE INDEX IF NOT EXISTS idx_expert_queries_conversation ON expert_queries(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_expert_queries_status ON expert_queries(status);
+
+-- Bir yetkilinin verdiği cevap. Yarışan tüm cevaplar buraya yazılır,
+-- yalnızca İLK geçerli olan result='accepted' alır.
+CREATE TABLE IF NOT EXISTS expert_answers (
+  id                TEXT PRIMARY KEY,
+  expert_query_id   TEXT NOT NULL REFERENCES expert_queries(id) ON DELETE CASCADE,
+  answered_by       TEXT NOT NULL REFERENCES users(id),
+  answer_text       TEXT NOT NULL,
+  attachment_doc_id TEXT REFERENCES documents(id) ON DELETE SET NULL,
+  result            TEXT NOT NULL,  -- 'accepted'|'already_answered'|'rejected_invalid'|'rejected_unauthorized'
+  created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_expert_answers_query ON expert_answers(expert_query_id);
+
+-- Yapılandırılmış müşteri hafızası — ham transkript DEĞİL, özet birim.
+-- customers.consent_status = 'declined' ise HEM yazma HEM okuma
+-- expert-assist.js'teki tek geçit fonksiyonunda (memoryAllowed) engellenir.
+CREATE TABLE IF NOT EXISTS conversation_memories (
+  id                    TEXT PRIMARY KEY,
+  company_id            TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  customer_id           TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  key_type              TEXT NOT NULL,  -- 'preference'|'interested_unit'|'interested_project'|
+                                          -- 'objection'|'document_sent'|'open_question'|
+                                          -- 'follow_up_preference'|'consent_snapshot'
+  key                   TEXT NOT NULL,
+  value                 TEXT NOT NULL,  -- JSON string
+  source_conversation_id TEXT REFERENCES conversations(id) ON DELETE SET NULL,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at            TEXT            -- retention — NULL = henüz belirlenmedi (açık ürün kararı)
+);
+CREATE INDEX IF NOT EXISTS idx_conv_memories_customer ON conversation_memories(company_id, customer_id);
+
+-- Bir yetkili cevabından doğan, ŞİRKET-GENELİ bilgiye dönüşme ADAYI.
+-- Otomatik yayınlanmaz — company_wide yayın ayrı bir onay adımı gerektirir.
+CREATE TABLE IF NOT EXISTS company_knowledge_candidates (
+  id                      TEXT PRIMARY KEY,
+  company_id              TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  source_expert_answer_id TEXT NOT NULL REFERENCES expert_answers(id),
+  question_text           TEXT NOT NULL,
+  answer_text             TEXT NOT NULL,
+  scope                   TEXT NOT NULL DEFAULT 'this_conversation',
+                          -- 'this_conversation'|'this_customer'|'this_unit'|'this_project'|'company_wide'
+  source_reference        TEXT,
+  valid_until             TEXT,
+  status                  TEXT NOT NULL DEFAULT 'pending_review', -- 'pending_review'|'published'|'rejected'|'expired'
+  answered_by             TEXT NOT NULL REFERENCES users(id),
+  approved_by             TEXT REFERENCES users(id),
+  created_at              TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_company ON company_knowledge_candidates(company_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_status ON company_knowledge_candidates(status);
+
+-- Web Push için gereken abonelik satırı — tasarım dokümanının 6 tablosuna
+-- dahil değil, 2. uygulama turunda (PWA/Web Push) kullanılacak.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint    TEXT NOT NULL,
+  p256dh_key  TEXT NOT NULL,
+  auth_key    TEXT NOT NULL,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, endpoint)
+);

@@ -1134,6 +1134,173 @@ const run = async () => {
   data = await r.json();
   check('review fix: yabancı project_id GERÇEKTEN null kaldı, başka şirketin id\'si sızmadı', data.lead.project_id === null, data);
 
+  // ---------------------------------------------------------------------
+  // H) Silent Expert Assist (bkz. repo kökündeki SILENT-EXPERT-ASSIST-
+  // DESIGN.md, kullanıcı onaylı tasarım) — 1. uygulama turu.
+  // ---------------------------------------------------------------------
+  r = await worker.fetch(req('POST', '/api/expert-groups', { name: 'Fiyat/İskonto Yetkilileri' }, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('expert-assist: company_staff (owner değil) yetkili grubu OLUŞTURAMAZ (401)', r.status === 401);
+
+  r = await worker.fetch(req('POST', '/api/expert-groups', { name: 'Fiyat/İskonto Yetkilileri' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const expertGroupId = data.id;
+  check('expert-assist: owner yetkili grubu oluşturabilir', r.status === 201 && !!expertGroupId, data);
+
+  const expertThree = await inviteAndLogin('company_staff', 'expert-three@veraliq.com');
+  // company_staff-tier ama HİÇBİR expert_group'un üyesi DEĞİL — "yetkisiz
+  // yetkili" testinde kullanılacak (company_viewer BİLEREK kullanılmıyor:
+  // o zaten requireAuth seviyesinde POST'lardan 401 alır, 403
+  // unauthorized_expert yolunu hiç test etmez).
+  const nonExpertStaff = await inviteAndLogin('company_staff', 'non-expert-answer@veraliq.com');
+
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: manager.userId, scope_type: 'company', approval_limit: 50000 }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: 1. üye (manager, approval_limit=50000) eklendi', r.status === 201);
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: salesAgent.userId, scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: 2. üye (salesAgent, limitsiz) eklendi', r.status === 201);
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: expertThree.userId, scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: 3. üye (expertThree, limitsiz) eklendi', r.status === 201);
+
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: viewer.userId, scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: 4. üye eklenemez — MAX 3 aktif yetkili sınırı', r.status === 400 && data.error === 'max_active_experts_reached', data);
+
+  r = await worker.fetch(req('POST', `/api/expert-groups/${expertGroupId}/members`, { user_id: 'not-a-real-user-id', scope_type: 'company' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: var olmayan/başka şirketin user_id\'si ile üye eklenemez (400)', r.status === 400);
+
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Expert Assist Müşterisi', phone: '5551110000' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const eaCustomerId = data.id;
+  r = await worker.fetch(req('POST', '/api/conversations', { customer_id: eaCustomerId, agent_type: 'AI', channel: 'web' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const eaConversationId = data.id;
+
+  // ABC'nin gerçek company_id'sini mevcut ownerToken'ın (Faz 5'te parola
+  // değişikliği sonrası TAZE) JWT payload'ından alıyoruz — sabit parolayla
+  // yeniden login OLMAYA gerek yok (ve owner'ın parolası bu dosyanın
+  // başında zaten değiştirildi, eski parola artık geçersiz).
+  const ownerPayload = await verifyJWT(ownerToken, env.JWT_SECRET);
+  const abcCompanyId = ownerPayload.company_id;
+
+  // Agent (X-Agent-Key), "bilmiyorum" durumunda soruyu arka planda açar.
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: 'not-a-real-company-id', conversation_id: eaConversationId, expert_group_id: expertGroupId,
+    question_text: 'Test', category: 'info',
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  check('expert-assist: agent, yanlış/var olmayan company_id ile soru AÇAMAZ (400)', r.status === 400);
+
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: abcCompanyId, conversation_id: eaConversationId, expert_group_id: expertGroupId,
+    question_text: 'B Blok 4. kat için özel iskonto mümkün mü?', category: 'info', customer_id: eaCustomerId,
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  data = await r.json();
+  const expertQueryId = data.id;
+  check('expert-assist: agent geçerli company_id ile soru açabilir, sent_to 3 yetkiliyi içerir', r.status === 201 && Array.isArray(data.sent_to) && data.sent_to.length === 3, data);
+
+  r = await worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: expertQueryId, answer_text: 'Evet, %5 mümkün.' }, { Authorization: 'Bearer ' + nonExpertStaff.token }), env);
+  data = await r.json();
+  check('expert-assist: company_staff ama grubun üyesi OLMAYAN biri cevap veremez (403 unauthorized_expert)', r.status === 403 && data.error === 'unauthorized_expert', data);
+
+  // Kategori ayrımı için "önce" sayacı — bilgi cevabının approval_requests'e
+  // HİÇ dokunmadığını, cevaptan ÖNCE/SONRA sayı değişmeyerek kanıtlıyoruz.
+  r = await worker.fetch(req('GET', '/api/approvals', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  const approvalsBeforeCount = (await r.json()).approvals.length;
+
+  // Üç yetkilinin eşzamanlı cevap yarışı — YALNIZCA 1 'accepted' olmalı.
+  const raceAnswers = await Promise.all([
+    worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: expertQueryId, answer_text: 'Yöneticiden: Evet %5.' }, { Authorization: 'Bearer ' + manager.token }), env).then((rr) => rr.json()),
+    worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: expertQueryId, answer_text: 'Satış temsilcisinden: Evet %5.' }, { Authorization: 'Bearer ' + salesAgent.token }), env).then((rr) => rr.json()),
+    worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: expertQueryId, answer_text: 'Üçüncü yetkiliden: Evet %5.' }, { Authorization: 'Bearer ' + expertThree.token }), env).then((rr) => rr.json()),
+  ]);
+  // Node tek-iplikli olduğu ve requireAuth'un GERÇEK Web Crypto imza
+  // doğrulaması await noktaları içerdiği için, "kaybeden" iki istek İKİ
+  // farklı yoldan sonuçlanabilir: (a) atomik UPDATE'e YETİŞİR ama 0 satır
+  // etkiler -> result:'already_answered' (200), YA DA (b) kendi ilk SELECT'i
+  // sorgunun ZATEN 'answered' olduğunu görür -> error:'already_resolved'
+  // (409, hiç expert_answers satırı yazmadan). İkisi de AYNI güvenlik
+  // özelliğini kanıtlar: asla ikinci bir 'accepted' YOK — eşzamanlı aynı-
+  // hedefli PATCH testindeki "200+200 ya da 200+409" ile AYNI ilke.
+  const accepted = raceAnswers.filter((a) => a.result === 'accepted');
+  const losers = raceAnswers.filter((a) => a !== accepted[0]);
+  const allLosersValid = losers.every((a) => a.result === 'already_answered' || a.error === 'already_resolved');
+  check('expert-assist: üç eşzamanlı cevaptan YALNIZCA 1 tanesi accepted, diğer ikisi kaybeder (already_answered/already_resolved)', accepted.length === 1 && losers.length === 2 && allLosersValid, raceAnswers);
+
+  r = await worker.fetch(req('GET', `/api/expert-queries/${expertQueryId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: sorgu artık answered, accepted_answer_id dolu, tam olarak 1 accepted cevap kaydı var', data.expert_query.status === 'answered' && !!data.expert_query.accepted_answer_id && data.answers.filter((a) => a.result === 'accepted').length === 1, data);
+  const acceptedAnswerId = data.answers.find((a) => a.result === 'accepted').id;
+
+  r = await worker.fetch(req('GET', `/api/expert-queries/${expertQueryId}`, null, { Authorization: 'Bearer ' + xyzToken }), env);
+  check('TENANT-NEGATİF: XYZ, ABC\'nin expert_query\'sini GÖREMEZ (404)', r.status === 404);
+
+  r = await worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: expertQueryId, answer_text: 'Geç kalan cevap' }, { Authorization: 'Bearer ' + manager.token }), env);
+  data = await r.json();
+  check('expert-assist: zaten cevaplanmış bir sorguya YENİ cevap denemesi 409 already_resolved', r.status === 409 && data.error === 'already_resolved', data);
+
+  // Kategori ayrımı: bilgi cevabı, approval_requests'e HİÇ dokunmadı.
+  r = await worker.fetch(req('GET', '/api/approvals', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: category=\'info\' cevabı approval_requests\'te YENİ bir kayıt AÇMAZ', data.approvals.length === approvalsBeforeCount, { before: approvalsBeforeCount, after: data.approvals.length });
+
+  // approval_limit: manager (limit 50000) 100.000 TL'lik bir onayı VEREMEZ;
+  // salesAgent (limitsiz — expert_group_members'ta hiç kaydı yok) verebilir.
+  r = await worker.fetch(req('POST', '/api/approvals', { type: 'discount', amount: 100000, notes: 'Büyük iskonto' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const bigApprovalId = data.id;
+  r = await worker.fetch(req('POST', `/api/approvals/${bigApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + manager.token }), env);
+  data = await r.json();
+  check('expert-assist: approval_limit\'i (50.000) aşan bir onayı manager VEREMEZ (403)', r.status === 403 && data.error === 'approval_limit_exceeded' && data.limit === 50000, data);
+  r = await worker.fetch(req('POST', `/api/approvals/${bigApprovalId}/decide`, { decision: 'approved' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: approval_limit kaydı OLMAYAN owner aynı onayı verebilir (geriye dönük uyum korunuyor)', r.status === 200);
+
+  // Timeout: DO/alarm bu turda yok — erişim anında lazy expiry (raw DB ile
+  // timeout_at'i geçmişe çekip GET'in status'ü 'unresolved'e çevirdiğini
+  // doğruluyoruz).
+  r = await worker.fetch(req('POST', '/api/expert-queries', {
+    company_id: abcCompanyId, conversation_id: eaConversationId, expert_group_id: expertGroupId,
+    question_text: 'Teslim tarihi kesinleşti mi?', category: 'info', timeout_minutes: 30,
+  }, { 'X-Agent-Key': env.AGENT_SHARED_SECRET }), env);
+  data = await r.json();
+  const timeoutQueryId = data.id;
+  db.prepare(`UPDATE expert_queries SET timeout_at = ? WHERE id = ?`).run(new Date(Date.now() - 60000).toISOString(), timeoutQueryId);
+  r = await worker.fetch(req('GET', `/api/expert-queries/${timeoutQueryId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: süresi dolmuş pending sorgu erişim anında UNRESOLVED\'e döner (tahmin yürütülmeden)', data.expert_query.status === 'unresolved', data);
+  r = await worker.fetch(req('POST', '/api/expert-answers', { expert_query_id: timeoutQueryId, answer_text: 'Geç cevap' }, { Authorization: 'Bearer ' + manager.token }), env);
+  check('expert-assist: UNRESOLVED bir sorguya artık cevap verilemez (409)', r.status === 409);
+
+  // Hafıza — rıza kapılı okuma/yazma.
+  r = await worker.fetch(req('POST', `/api/customers/${eaCustomerId}/memory`, { key_type: 'preference', key: 'oda_tipi', value: '3+1' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: rıza reddedilmemiş müşteri için hafıza yazılabilir', r.status === 201);
+  r = await worker.fetch(req('GET', `/api/customers/${eaCustomerId}/memory`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: yazılan hafıza geri okunabiliyor', r.status === 200 && data.memories.length === 1 && data.memories[0].key === 'oda_tipi', data);
+  r = await worker.fetch(req('POST', `/api/customers/${eaCustomerId}/memory`, { key_type: 'bilinmeyen_tur', key: 'x', value: 'y' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: sabit key_type listesi DIŞINDA bir tür reddedilir (400)', r.status === 400);
+
+  r = await worker.fetch(req('POST', '/api/customers', { name: 'Rızası Olmayan Müşteri', phone: '5552220000', consent_status: 'declined' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const declinedCustomerId = data.id;
+  r = await worker.fetch(req('POST', `/api/customers/${declinedCustomerId}/memory`, { key_type: 'preference', key: 'x', value: 'y' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: consent_status=declined ise hafıza YAZILAMAZ (403)', r.status === 403);
+  r = await worker.fetch(req('GET', `/api/customers/${declinedCustomerId}/memory`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('expert-assist: consent_status=declined ise hafıza OKUNAMAZ (403)', r.status === 403);
+
+  // Kurumsal bilgiye dönüşüm — otomatik yayın YOK, ayrı onay gerekir.
+  r = await worker.fetch(req('POST', '/api/knowledge-candidates', { expert_answer_id: acceptedAnswerId, scope: 'company_wide' }, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const knowledgeCandidateId = data.id;
+  check('expert-assist: kabul edilmiş bir cevaptan bilgi adayı oluşturulabilir (henüz YAYINLANMADI)', r.status === 201, data);
+  r = await worker.fetch(req('GET', '/api/knowledge-candidates', null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('expert-assist: yeni aday status=pending_review ile listede (otomatik yayın YOK)', data.knowledge_candidates.find((k) => k.id === knowledgeCandidateId).status === 'pending_review', data);
+  r = await worker.fetch(req('POST', `/api/knowledge-candidates/${knowledgeCandidateId}/publish`, {}, { Authorization: 'Bearer ' + salesAgent.token }), env);
+  check('expert-assist: company_wide yayını yalnızca owner/manager yapabilir (salesAgent 401)', r.status === 401);
+  r = await worker.fetch(req('POST', `/api/knowledge-candidates/${knowledgeCandidateId}/publish`, {}, { Authorization: 'Bearer ' + manager.token }), env);
+  data = await r.json();
+  check('expert-assist: manager company_wide bilgiyi yayınlayabilir', r.status === 200 && data.status === 'published', data);
+  r = await worker.fetch(req('POST', `/api/knowledge-candidates/${knowledgeCandidateId}/publish`, {}, { Authorization: 'Bearer ' + manager.token }), env);
+  check('expert-assist: zaten yayınlanmış bir adayı tekrar yayınlamak 409 döner', r.status === 409);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
 };
