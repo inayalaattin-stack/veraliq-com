@@ -337,9 +337,10 @@
 
   // ---------------- NAV / ROUTER ----------------
   // Faz 8 (bilgi mimarisi): VERALIQ'in KENDİ işini yöneten bir yapıya göre
-  // gruplandı — sağlayıcı/servis sağlığı bir arada, henüz gerçek bir
-  // backend'i olmayan CRM/ERP/Entegrasyonlar (bkz. gapView notları) artık
-  // dağınık değil, tek bir "Yol Haritası" grubunda, en altta.
+  // gruplandı — sağlayıcı/servis sağlığı bir arada. CRM/ERP/Entegrasyonlar
+  // ("Yol Haritası" grubu) kaldırıldı: kurucu için hiçbir işlevi yoktu,
+  // yalnızca "bu henüz yok" diyen bilgilendirme notlarıydı (bkz. git geçmişi
+  // — gapView() fonksiyonu ve renderCrm/renderErp/renderIntegrations).
   var NAV = [
     { group: 'Genel Bakış', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'} ] },
     { group: 'Şirketler ve Onboarding', items: [ {id:'companies', label:'Şirketler'}, {id:'projects', label:'Projeler'} ] },
@@ -347,7 +348,6 @@
     { group: 'Hizmet ve Provider Sağlığı', items: [ {id:'agents', label:'Agent Performansı'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'}, {id:'health', label:'Sistem Sağlığı'} ] },
     { group: 'Paket ve Yetkilendirme', items: [ {id:'subscriptions', label:'Abonelikler'} ] },
     { group: 'Audit ve Güvenlik', items: [ {id:'security', label:'Güvenlik'}, {id:'audit', label:'Denetim Kaydı'} ] },
-    { group: 'Yol Haritası', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
   ];
   var VIEW_TITLES = {};
   NAV.forEach(function(g){ g.items.forEach(function(it){ VIEW_TITLES[it.id] = it.label; }); });
@@ -384,13 +384,6 @@
     dashboard: renderDashboard, 'demo-requests': renderDemoRequests,
     companies: renderCompanies, users: renderUsers, projects: renderProjects, subscriptions: renderSubscriptions,
     agents: renderAgents, 'ai-providers': renderAiProviders, 'avatar-providers': renderAvatarProviders, 'voice-providers': renderVoiceProviders,
-    // crm/erp/integrations are built via gapView() further down the file —
-    // wrapped in closures here so the lookup happens at CALL time (after the
-    // whole script has run and renderCrm/renderErp/renderIntegrations are
-    // assigned), not at RENDERERS-literal-construction time (which runs
-    // before those `var` assignments execute and would otherwise capture
-    // `undefined`).
-    crm: function(el){ renderCrm(el); }, erp: function(el){ renderErp(el); }, integrations: function(el){ renderIntegrations(el); },
     security: renderSecurity, audit: renderAudit, health: renderHealth,
   };
   function navigate(view){
@@ -670,17 +663,6 @@
       providerCard('Konuşma Tanıma (STT)', [['Provider','webspeech (WebSpeechSTTProvider)'],['Tip','Tarayıcı-yerel, ücretsiz'],['Alternatif','whisper (kod içinde tanımlı, self-hosted sunucu gerektirir)']],
         'Daha iyi/ücretsiz bir Türkçe TTS bulunduğunda yalnızca ttsProvider değişecek — avatarProvider aynı kalacak (İmparator\'ın bilinçli kararı).');
   }
-
-  // ---------------- CRM / ERP / INTEGRATIONS — honest gap notices ----------------
-  function gapView(title, sub, note){
-    return function(el){ el.innerHTML = viewHead(title, sub) + '<div class="note-gap">'+note+'</div>'; };
-  }
-  var renderCrm = gapView('CRM', 'Harici CRM sistemleriyle (Salesforce, HubSpot, kendi CRM\'iniz) çift yönlü senkronizasyon.',
-    'Bu ekran henüz gerçek bir CRM entegrasyonu yapmıyor. Platformun kendi dahili "CRM"i zaten var — şirket portalındaki Leads/Customers/Sales ekranları (portal.html) gerçek D1 verisiyle çalışıyor. Harici bir CRM\'e senkronizasyon (webhook/OAuth) ayrı bir entegrasyon projesi gerektirir.');
-  var renderErp = gapView('ERP', 'Muhasebe/finans (ERP) sistemleriyle entegrasyon — fatura, tahsilat, cari hesap senkronizasyonu.',
-    'Bu ekran henüz gerçek bir ERP entegrasyonu yapmıyor. worker-portal/schema.sql\'de bu amaçla ayrılmış bir tablo henüz yok — bir sonraki fazda (Contract/Payment tabloları ile birlikte) eklenmesi planlanıyor.');
-  var renderIntegrations = gapView('Entegrasyonlar', 'WhatsApp Business API, e-posta, SMS ve üçüncü parti webhook entegrasyonları.',
-    'Bu ekran henüz gerçek bir entegrasyon yönetimi sunmuyor. Şu an platformda gerçekten çalışan tek dış entegrasyon, index.html\'deki canlı avatar/TTS altyapısıdır (Spatius). WhatsApp/e-posta/webhook entegrasyonları için ayrı bir API anahtarı + worker route\'u gerekecek.');
 
   // ---------------- GÜVENLİK (madde 45 "Security") ----------------
   async function renderSecurity(el){

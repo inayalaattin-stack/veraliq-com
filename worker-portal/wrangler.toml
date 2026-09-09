@@ -38,6 +38,20 @@ tag = "v1"
 new_sqlite_classes = ["PresentationLock"]
 
 # ---------------------------------------------------------------------------
+# Proje belgeleri (PDF/Word/Excel/PowerPoint/görsel) — gerçek R2 depolama
+# (bkz. documents.js). `documents` tablosu (schema.sql) daha önce YALNIZCA
+# metadata için vardı, gerçek dosya baytları hiçbir yere yazılmıyordu.
+#
+# ÖNEMLİ — SİZİN ÇALIŞTIRMANIZ GEREKEN ADIM:
+#   `npx wrangler r2 bucket create veraliq-documents`
+#   (bu komut gerçek bir R2 bucket'ı oluşturur — Claude bunu sizin adınıza
+#   yapamaz, gerçek bir Cloudflare hesap/kaynak oluşturma işlemidir)
+# ---------------------------------------------------------------------------
+[[r2_buckets]]
+binding = "DOCUMENTS_BUCKET"
+bucket_name = "veraliq-documents"
+
+# ---------------------------------------------------------------------------
 # Faz 4 — /api/public/demo-requests için gerçek IP-bazlı rate limiting.
 # Cloudflare'in resmi Workers Rate Limiting binding'i (worker-spatius'ta
 # Faz 2'de aynı şekilde doğrulanmış — developers.cloudflare.com/workers/

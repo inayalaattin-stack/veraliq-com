@@ -87,6 +87,24 @@ class DONamespaceShim {
   }
 }
 
+// ---- R2 shim (documents.js) — gerçek R2 API'sinin minimum bir taklidi:
+// yalnızca put/get/delete, in-memory Map üzerinde. httpMetadata.contentType
+// ve .body (bir ReadableStream/BodyInit) gerçek R2GetResult şeklini taklit
+// eder — documents.js'in Response(obj.body, ...) kullanımı bununla çalışır.
+class R2BucketShim {
+  constructor() { this.map = new Map(); }
+  async put(key, value, opts) {
+    this.map.set(key, { value, httpMetadata: (opts && opts.httpMetadata) || {} });
+    return { key };
+  }
+  async get(key) {
+    const entry = this.map.get(key);
+    if (!entry) return null;
+    return { body: entry.value, httpMetadata: entry.httpMetadata };
+  }
+  async delete(key) { this.map.delete(key); }
+}
+
 // ---- Setup DB ----------------------------------------------------------------
 const db = new DatabaseSync(':memory:');
 const schema = readFileSync(new URL('../schema.sql', import.meta.url), 'utf8');
@@ -97,6 +115,7 @@ db.exec(seed);
 const env = {
   DB: new D1Shim(db),
   PRESENTATION_LOCK: new DONamespaceShim(),
+  DOCUMENTS_BUCKET: new R2BucketShim(),
   JWT_SECRET: 'test-jwt-secret',
   AGENT_SHARED_SECRET: 'test-agent-secret',
   // Faz 4: /api/public/demo-requests fail-closed rate limiting gerektirir
@@ -1386,6 +1405,83 @@ const run = async () => {
   r = await worker.fetch(req('GET', `/api/expert-queries/${foreignCustomerQueryId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
   data = await r.json();
   check('review fix: yabancı customer_id GERÇEKTEN null kaldı, XYZ\'nin id\'si sızmadı', data.expert_query.customer_id === null, data);
+
+  // ---------------------------------------------------------------------
+  // I) Proje Belgeleri (documents.js — gerçek R2 depolama)
+  // ---------------------------------------------------------------------
+  function uploadReq(path, formData, headers) {
+    return new Request('https://portal-api.test' + path, {
+      method: 'POST', headers: { Origin: 'https://veraliq.com', ...(headers || {}) }, body: formData,
+    });
+  }
+  var pdfBytes = new TextEncoder().encode('%PDF-1.4 sahte-ama-gerçek-baytlı-test-içeriği');
+
+  var fd1 = new FormData();
+  fd1.set('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'fiyat-listesi.pdf');
+  fd1.set('category', 'price_list');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd1, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const uploadedDocId = data.id;
+  check('documents: geçerli bir PDF yüklenebilir (201)', r.status === 201 && !!uploadedDocId, data);
+
+  r = await worker.fetch(req('GET', `/api/projects/${projectId}/documents`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  const listedDoc = data.documents.find((d) => d.id === uploadedDocId);
+  check('documents: yüklenen belge proje belge listesinde doğru ad/kategoriyle görünür', !!listedDoc && listedDoc.filename === 'fiyat-listesi.pdf' && listedDoc.category === 'price_list' && listedDoc.file_type === 'pdf', data);
+
+  var fd2 = new FormData();
+  fd2.set('file', new Blob([pdfBytes], { type: 'application/x-msdownload' }), 'virus.exe');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd2, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('documents: desteklenmeyen uzantı (.exe) reddedilir (400)', r.status === 400 && data.error === 'unsupported_file_type', data);
+
+  var fd3 = new FormData();
+  fd3.set('file', new Blob([], { type: 'application/pdf' }), 'bos.pdf');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd3, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('documents: boş (0 bayt) dosya reddedilir (400)', r.status === 400);
+
+  var oversized = new Uint8Array(21 * 1024 * 1024);
+  var fd4 = new FormData();
+  fd4.set('file', new Blob([oversized], { type: 'application/pdf' }), 'buyuk.pdf');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd4, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('documents: 20MB sınırını aşan dosya reddedilir (413)', r.status === 413 && data.error === 'file_too_large', data);
+
+  var noBucketEnv = Object.assign({}, env); delete noBucketEnv.DOCUMENTS_BUCKET;
+  var fd5 = new FormData();
+  fd5.set('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'test.pdf');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd5, { Authorization: 'Bearer ' + ownerToken }), noBucketEnv);
+  check('documents: R2 binding yapılandırılmamışsa fail-closed (500), sessizce "başarılı" DÖNMEZ', r.status === 500);
+
+  var fd6 = new FormData();
+  fd6.set('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'xyz-deneme.pdf');
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd6, { Authorization: 'Bearer ' + xyzToken }), env);
+  check('TENANT-NEGATİF: XYZ, ABC\'nin projesine belge YÜKLEYEMEZ (404)', r.status === 404);
+
+  r = await worker.fetch(req('GET', `/api/documents/${uploadedDocId}/download`, null, { Authorization: 'Bearer ' + xyzToken }), env);
+  check('TENANT-NEGATİF: XYZ, ABC\'nin belgesini İNDİREMEZ (404)', r.status === 404);
+
+  r = await worker.fetch(req('GET', `/api/documents/${uploadedDocId}/download`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  var downloadedBuf = Buffer.from(await r.arrayBuffer());
+  check('documents: indirilen dosya İÇERİĞİ yüklenenle BİREBİR aynı (binary bozulma yok — global .text()->.arrayBuffer() düzeltmesi)', r.status === 200 && downloadedBuf.equals(Buffer.from(pdfBytes)), { contentType: r.headers.get('Content-Type'), disposition: r.headers.get('Content-Disposition') });
+  check('documents: indirme yanıtı doğru Content-Type ve dosya adını taşır', r.headers.get('Content-Type') === 'application/pdf' && (r.headers.get('Content-Disposition') || '').includes('fiyat-listesi.pdf'));
+
+  r = await worker.fetch(req('DELETE', `/api/documents/${uploadedDocId}`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('documents: sahibi belgeyi silebilir', r.status === 200);
+  r = await worker.fetch(req('GET', `/api/documents/${uploadedDocId}/download`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  check('documents: silinen belge artık indirilemez (404)', r.status === 404);
+  r = await worker.fetch(req('GET', `/api/projects/${projectId}/documents`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('documents: silinen belge listede de artık YOK', !data.documents.some((d) => d.id === uploadedDocId), data);
+
+  var fd7 = new FormData();
+  fd7.set('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'viewer-deneme.pdf');
+  // NOT: viewer.token DEĞİL viewerNewToken kullanılıyor — viewer'ın parolası
+  // yukarıda (satır ~726) değiştirildi, token_version arttı, eski
+  // viewer.token artık ZATEN geçersiz (401 alırdık ama YANLIŞ sebepten —
+  // RBAC'ı değil, süresi dolmuş token'ı test etmiş olurduk).
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd7, { Authorization: 'Bearer ' + viewerNewToken }), env);
+  check('SECURITY(RBAC): company_viewer belge yükleyemez (401, salt-okunur)', r.status === 401);
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);

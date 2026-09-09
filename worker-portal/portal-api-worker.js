@@ -34,6 +34,7 @@ import {
   handleCustomerMemoryGet, handleCustomerMemoryUpsert,
   handleKnowledgeCandidateCreate, handleKnowledgeCandidatePublish, handleKnowledgeCandidatesList,
 } from './expert-assist.js';
+import { handleDocumentUpload, handleProjectDocumentsList, handleDocumentDownload, handleDocumentDelete } from './documents.js';
 
 export { PresentationLock } from './presentation-lock-do.js';
 
@@ -386,7 +387,12 @@ export default {
 
     try {
       const resp = await route(request, url, env);
-      const body = await resp.text();
+      // Belge indirme (documents.js) BİNARY gövde döndürebilir — .text()
+      // bunu UTF-8 olarak decode edip geri encode ederdi, bu da PDF/docx/
+      // görsel gibi ikili dosyaları GERİ DÖNÜLEMEZ şekilde bozardı.
+      // .arrayBuffer() ham baytları korur; JSON yanıtlar için de (metin de
+      // bir bayt dizisidir) davranış birebir aynı kalır.
+      const body = await resp.arrayBuffer();
       return new Response(body, { status: resp.status, headers: { ...headers, ...Object.fromEntries(resp.headers) } });
     } catch (err) {
       // GÜVENLİK DÜZELTMESİ (2026-08-27, gerçek testle bulundu): bozuk/geçersiz
@@ -898,6 +904,32 @@ async function route(request, url, env) {
       await writeAudit(env, { company_id: project.company_id, user_id: auth.sub, action: 'unit.bulk_create', entity_type: 'project', entity_id: projectId, new_value: { count: items.length }, request });
       return json({ ok: true, count: items.length }, 201);
     }
+  }
+
+  // ---- PROJE BELGELERİ (documents.js — gerçek R2 depolama) -----------------
+  // Şirket yetkilileri projeleri için PDF/Word/Excel/PowerPoint/görsel
+  // yükleyebilir (fiyat listesi, ödeme planı, sunum, sözleşme vb. — kat/
+  // daire/m²/stok/fiyat GİBİ yapılandırılmış veri DEĞİL, bkz. units route'u
+  // yukarıda; bu yalnızca serbest-formatlı belge YÜKLEME).
+  if ((m = path.match(/^\/api\/projects\/([^/]+)\/documents$/)) && method === 'POST') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleDocumentUpload(request, env, { json, writeAudit, auth, projectId: m[1] });
+  }
+  if ((m = path.match(/^\/api\/projects\/([^/]+)\/documents$/)) && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleProjectDocumentsList(request, env, { json, auth, projectId: m[1] });
+  }
+  if ((m = path.match(/^\/api\/documents\/([^/]+)\/download$/)) && method === 'GET') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleDocumentDownload(request, env, { json, auth, id: m[1] });
+  }
+  if ((m = path.match(/^\/api\/documents\/([^/]+)$/)) && method === 'DELETE') {
+    const auth = await requireAuth(request, env, ['company_owner', 'company_staff']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleDocumentDelete(request, env, { json, writeAudit, auth, id: m[1] });
   }
 
   if ((m = path.match(/^\/api\/units\/([^/]+)$/)) && (method === 'GET' || method === 'PATCH')) {

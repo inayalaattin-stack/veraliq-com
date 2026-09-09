@@ -327,6 +327,42 @@
     return data;
   }
 
+  // Dosya yükleme — api()'nin AYNI auth/hata deseni, ama Content-Type
+  // ELLE ayarlanmaz (tarayıcı multipart boundary'sini kendisi üretir) ve
+  // body doğrudan bir FormData'dır (JSON.stringify EDİLMEZ).
+  async function apiUpload(path, formData){
+    var headers = {};
+    var token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var resp = await fetch(API_BASE + path, { method: 'POST', headers: headers, body: formData });
+    var data = null;
+    try { data = await resp.json(); } catch(e){}
+    if (!resp.ok) {
+      var err = new Error((data && data.error) || ('http_' + resp.status));
+      err.status = resp.status; err.data = data;
+      throw err;
+    }
+    return data;
+  }
+  // Dosya indirme — düz bir <a href> Authorization header'ı TAŞIYAMAZ (bu
+  // uç JWT gerektiriyor), bu yüzden fetch + blob + geçici link ile indirilir.
+  async function apiDownload(path, fallbackFilename){
+    var headers = {};
+    var token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var resp = await fetch(API_BASE + path, { headers: headers });
+    if (!resp.ok) { var data = null; try { data = await resp.json(); } catch(e){} var err = new Error((data && data.error) || ('http_' + resp.status)); err.status = resp.status; throw err; }
+    var disposition = resp.headers.get('Content-Disposition') || '';
+    var m = /filename="([^"]+)"/.exec(disposition);
+    var filename = m ? m[1] : fallbackFilename;
+    var blob = await resp.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   function esc(s){
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
       return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
@@ -390,6 +426,7 @@
       { id: 'leads' },
       { id: 'customers' },
       { id: 'sales' },
+      { id: 'crm' },
     ]},
     { groupKey: 'nav.group.operations', items: [
       { id: 'projects' },
@@ -408,11 +445,6 @@
       { id: 'agents' },
       { id: 'team' },
       { id: 'settings' },
-    ]},
-    { groupKey: 'nav.group.roadmap', items: [
-      { id: 'calendar' },
-      { id: 'crm' },
-      { id: 'integrations' },
     ]},
   ];
 
@@ -546,8 +578,7 @@
     inventory: renderInventory, presentations: renderPresentations, reservations: renderReservations,
     leads: renderLeads, customers: renderCustomers, sales: renderSales, crm: renderCrm,
     payments: renderPayments, contracts: renderContracts, documents: renderDocuments,
-    calendar: renderCalendar, reports: renderReports, agents: renderAgents, team: renderTeam,
-    integrations: renderIntegrations, settings: renderSettings,
+    reports: renderReports, agents: renderAgents, team: renderTeam, settings: renderSettings,
   };
 
   function navigate(view){
@@ -1071,19 +1102,84 @@
   }
 
   // ============================================================
-  // DOCUMENTS / CALENDAR / INTEGRATIONS — dürüst altyapı notları
-  // ============================================================
-  function renderDocuments(container){
+  // DOCUMENTS — gerçek R2 depolama (bkz. worker-portal/documents.js).
+  // Proje bazlı: fiyat listesi/ödeme planı/sunum/sözleşme gibi serbest-
+  // formatlı belgeleri (PDF/Word/Excel/PowerPoint/görsel) yükleme, listeleme,
+  // indirme ve silme. Kat/daire/m²/stok/fiyat GİBİ yapılandırılmış envanter
+  // verisi BURADA DEĞİL — o "Projeler" ekranındaki "Birim Ekle" formundan
+  // girilir (bu, serbest belge YÜKLEME, yapılandırılmış veri GİRİŞİ değil).
+  var DOC_CATEGORIES = ['price_list', 'payment_plan', 'presentation', 'contract', 'image', 'video', 'other'];
+  var DOC_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.mp4';
+  async function renderDocuments(container){
     var body = viewHead(container, T('nav.item.documents'), T('documents.sub'));
-    body.innerHTML = '<div class="note-gap">' + T('documents.note') + '</div>';
-  }
-  function renderCalendar(container){
-    var body = viewHead(container, T('nav.item.calendar'), T('calendar.sub'));
-    body.innerHTML = '<div class="note-gap">' + T('calendar.note') + '</div>';
-  }
-  function renderIntegrations(container){
-    var body = viewHead(container, T('nav.item.integrations'), T('integrations.sub'));
-    body.innerHTML = '<div class="note-gap">' + T('integrations.note') + '</div>';
+    var projects;
+    try { var res = await api('/api/projects'); projects = res.projects; }
+    catch (e) { body.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; return; }
+    if (!projects.length) { body.innerHTML = '<div class="empty">' + esc(T('projects.noProjects')) + '</div>'; return; }
+    body.innerHTML =
+      '<div class="card"><div class="field"><label>' + esc(T('nav.item.projects')) + '</label>' +
+        '<select id="docsProjectSelect">' + projects.map(function(p){ return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') + '</select>' +
+      '</div></div><div id="docsBody" style="margin-top:14px;"></div>';
+    var docsBody = document.getElementById('docsBody');
+    document.getElementById('docsProjectSelect').addEventListener('change', function(e){ loadDocsForProject(e.target.value); });
+    await loadDocsForProject(projects[0].id);
+
+    async function loadDocsForProject(projectId){
+      docsBody.innerHTML =
+        '<div class="card"><div class="row">' +
+          '<div class="field"><label>' + esc(T('documents.fileLabel')) + '</label><input type="file" id="docFileInput" accept="' + DOC_ACCEPT + '"></div>' +
+          '<div class="field"><label>' + esc(T('documents.categoryLabel')) + '</label><select id="docCategorySelect">' +
+            DOC_CATEGORIES.map(function(c){ return '<option value="' + c + '">' + esc(T('documents.category.' + c)) + '</option>'; }).join('') +
+          '</select></div>' +
+        '</div>' +
+        '<button class="btn btn-primary btn-sm" id="docUploadBtn">' + esc(T('documents.uploadBtn')) + '</button>' +
+        '<div class="err-msg" id="docErr" style="display:none;"></div></div>' +
+        '<div id="docList" style="margin-top:14px;"></div>';
+
+      document.getElementById('docUploadBtn').addEventListener('click', async function(){
+        var errEl = document.getElementById('docErr');
+        var file = document.getElementById('docFileInput').files[0];
+        if (!file) { errEl.textContent = T('documents.fileRequired'); errEl.style.display = 'block'; return; }
+        var fd = new FormData();
+        fd.append('file', file);
+        fd.append('category', document.getElementById('docCategorySelect').value);
+        try {
+          await apiUpload('/api/projects/' + projectId + '/documents', fd);
+          errEl.style.display = 'none';
+          toast(T('documents.uploaded'));
+          loadDocList();
+        } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+      });
+      await loadDocList();
+
+      async function loadDocList(){
+        var listWrap = document.getElementById('docList');
+        listWrap.innerHTML = '<div class="empty">' + esc(T('common.loading')) + '</div>';
+        try {
+          var r = await api('/api/projects/' + projectId + '/documents');
+          if (!r.documents.length) { listWrap.innerHTML = '<div class="empty">' + esc(T('common.noRecords')) + '</div>'; return; }
+          var rows = r.documents.map(function(d){
+            return '<tr><td>' + esc(d.filename) + '</td><td>' + esc(T('documents.category.' + d.category)) + '</td>' +
+              '<td class="mono muted">' + fmtDate(d.created_at) + '</td>' +
+              '<td><button class="btn btn-ghost btn-sm" data-download-doc="' + d.id + '" data-filename="' + esc(d.filename) + '">' + esc(T('documents.downloadBtn')) + '</button> ' +
+              '<button class="btn btn-danger btn-sm" data-delete-doc="' + d.id + '">' + esc(T('common.remove')) + '</button></td></tr>';
+          }).join('');
+          listWrap.innerHTML = '<div class="table-wrap"><table><thead><tr><th>' + esc(T('documents.colFile')) + '</th><th>' + esc(T('documents.colCategory')) + '</th><th>' + esc(T('table.colDate')) + '</th><th>' + esc(T('table.colAction')) + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+          listWrap.querySelectorAll('[data-download-doc]').forEach(function(btn){
+            btn.addEventListener('click', async function(){
+              try { await apiDownload('/api/documents/' + btn.getAttribute('data-download-doc') + '/download', btn.getAttribute('data-filename')); }
+              catch (e) { toast(errMsg(e)); }
+            });
+          });
+          listWrap.querySelectorAll('[data-delete-doc]').forEach(function(btn){
+            btn.addEventListener('click', async function(){
+              try { await api('/api/documents/' + btn.getAttribute('data-delete-doc'), { method: 'DELETE' }); toast(T('documents.deleted')); loadDocList(); }
+              catch (e) { toast(errMsg(e)); }
+            });
+          });
+        } catch (e) { listWrap.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+      }
+    }
   }
 
   // ============================================================

@@ -42,12 +42,12 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Durum güncellendi: ","common.unknown":"bilinmeyen",
 
       "nav.group.general":"Genel","nav.group.operations":"Operasyon","nav.group.salesCustomer":"Satış & Müşteri",
-      "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem","nav.group.approvals":"Onay Talepleri","nav.group.roadmap":"Yol Haritası",
+      "nav.group.financeDoc":"Finans & Belge","nav.group.planning":"Planlama","nav.group.system":"Sistem","nav.group.approvals":"Onay Talepleri",
       "nav.item.dashboard":"Panel","nav.item.projects":"Projeler","nav.item.inventory":"Envanter",
       "nav.item.presentations":"Sunumlar","nav.item.reservations":"Rezervasyonlar","nav.item.leads":"Lead'ler",
       "nav.item.customers":"Müşteriler","nav.item.sales":"Satışlar","nav.item.crm":"CRM","nav.item.payments":"Onay Talepleri",
-      "nav.item.contracts":"Sözleşmeler","nav.item.documents":"Belgeler","nav.item.calendar":"Takvim","nav.item.reports":"Raporlar",
-      "nav.item.agents":"Agent'lar","nav.item.team":"Ekip","nav.item.integrations":"Entegrasyonlar","nav.item.settings":"Ayarlar",
+      "nav.item.contracts":"Sözleşmeler","nav.item.documents":"Belgeler","nav.item.reports":"Raporlar",
+      "nav.item.agents":"Agent'lar","nav.item.team":"Ekip","nav.item.settings":"Ayarlar",
 
       "status.unit.AVAILABLE":"Boşta","status.unit.PRESENTATION":"Sunumda","status.unit.HOLD":"Tutuldu",
       "status.unit.RESERVED":"Rezerve","status.unit.DEPOSIT_PAID":"Kapora Alındı","status.unit.CONTRACT":"Sözleşmede","status.unit.SOLD":"Satıldı",
@@ -123,14 +123,12 @@ window.VERALIQ_PORTAL_I18N = {
       "payments.approve":"Onayla","payments.reject":"Reddet",
       "payments.notPaymentRecord":"Bu ekran yalnızca indirim/ödeme planı ONAY TALEPLERİNİ listeler. Gerçek bir tahsilat, fatura veya ödeme kaydı ETMEZ — ayrı bir muhasebe/faturalama modülü yoktur.",
 
-      "documents.sub":"Proje ve sözleşme belgeleri.",
-      "documents.note":"<b>Bu ekran henüz dosya yükleme yapamıyor.</b> Veritabanı şemasında belge METADATA'sı için bir tablo hazır, ancak gerçek dosya depolama (Cloudflare R2 bucket) bu şirket hesabında henüz kurulmadı. Bu, sahte bir \"yükle\" butonu koymak yerine dürüst bir şekilde burada belirtiliyor — R2 bucket'ı kurulduğunda bu ekran gerçek yükleme/indirme ile çalışacak şekilde bağlanacak.",
-
-      "calendar.sub":"Randevu ve takvim yönetimi.",
-      "calendar.note":"<b>Randevu/takvim altyapısı henüz kurulmadı.</b> Veritabanında bir randevu tablosu yok — bu, ayrı bir geliştirme fazı (yeni bir tablo + API uçları) gerektiriyor. Sahte randevu göstermek yerine bu gerçek durumu belirtiyoruz.",
-
-      "integrations.sub":"Harici CRM/ERP ve diğer servis bağlantıları.",
-      "integrations.note":"<b>Harici entegrasyon (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/ödeme sağlayıcısı) henüz bağlı değil.</b> Bunların her biri kendi API anahtarınızı/hesabınızı gerektiriyor. VERALIQ mimarisi provider-agnostic tasarlandığı için bu servisler siz hazır olduğunuzda mevcut mimariye eklenebilir.",
+      "documents.sub":"Proje belgeleri — fiyat listesi, ödeme planı, sunum, sözleşme (PDF/Word/Excel/PowerPoint/görsel).",
+      "documents.fileLabel":"Dosya","documents.categoryLabel":"Kategori","documents.uploadBtn":"Yükle",
+      "documents.fileRequired":"Lütfen bir dosya seçin.","documents.uploaded":"Belge yüklendi.","documents.deleted":"Belge silindi.",
+      "documents.downloadBtn":"İndir","documents.colFile":"Dosya","documents.colCategory":"Kategori",
+      "documents.category.price_list":"Fiyat Listesi","documents.category.payment_plan":"Ödeme Planı","documents.category.presentation":"Sunum",
+      "documents.category.contract":"Sözleşme","documents.category.image":"Görsel","documents.category.video":"Video","documents.category.other":"Diğer",
 
       "reports.sub":"Gerçek verilerden anlık rapor ve dışa aktarma.","reports.downloadCsv":"CSV İndir",
       "reports.csvHeader":"metrik,değer","reports.csvFilename":"veraliq-rapor.csv",
@@ -172,12 +170,12 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Status updated: ","common.unknown":"unknown",
 
       "nav.group.general":"General","nav.group.operations":"Operations","nav.group.salesCustomer":"Sales & Customers",
-      "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System","nav.group.approvals":"Approval Requests","nav.group.roadmap":"Roadmap",
+      "nav.group.financeDoc":"Finance & Docs","nav.group.planning":"Planning","nav.group.system":"System","nav.group.approvals":"Approval Requests",
       "nav.item.dashboard":"Dashboard","nav.item.projects":"Projects","nav.item.inventory":"Inventory",
       "nav.item.presentations":"Presentations","nav.item.reservations":"Reservations","nav.item.leads":"Leads",
       "nav.item.customers":"Customers","nav.item.sales":"Sales","nav.item.crm":"CRM","nav.item.payments":"Approval Requests",
-      "nav.item.contracts":"Contracts","nav.item.documents":"Documents","nav.item.calendar":"Calendar","nav.item.reports":"Reports",
-      "nav.item.agents":"Agents","nav.item.team":"Team","nav.item.integrations":"Integrations","nav.item.settings":"Settings",
+      "nav.item.contracts":"Contracts","nav.item.documents":"Documents","nav.item.reports":"Reports",
+      "nav.item.agents":"Agents","nav.item.team":"Team","nav.item.settings":"Settings",
 
       "status.unit.AVAILABLE":"Available","status.unit.PRESENTATION":"In Presentation","status.unit.HOLD":"On Hold",
       "status.unit.RESERVED":"Reserved","status.unit.DEPOSIT_PAID":"Deposit Paid","status.unit.CONTRACT":"In Contract","status.unit.SOLD":"Sold",
@@ -253,14 +251,12 @@ window.VERALIQ_PORTAL_I18N = {
       "payments.approve":"Approve","payments.reject":"Reject",
       "payments.notPaymentRecord":"This screen only lists discount/payment-plan APPROVAL REQUESTS. It does not record an actual payment, invoice, or collection — there is no separate accounting/billing module.",
 
-      "documents.sub":"Project and contract documents.",
-      "documents.note":"<b>This screen can't upload files yet.</b> The database schema has a table ready for document METADATA, but real file storage (a Cloudflare R2 bucket) hasn't been set up for this company account yet. Rather than adding a fake \"upload\" button, this is stated honestly here — once the R2 bucket is set up, this screen will be wired up for real upload/download.",
-
-      "calendar.sub":"Appointment and calendar management.",
-      "calendar.note":"<b>Appointment/calendar infrastructure isn't set up yet.</b> There's no appointments table in the database — that requires a separate development phase (a new table + API endpoints). Rather than showing fake appointments, this states the real status.",
-
-      "integrations.sub":"External CRM/ERP and other service connections.",
-      "integrations.note":"<b>External integrations (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/payment provider) aren't connected yet.</b> Each requires your own API key/account. Since VERALIQ's architecture is provider-agnostic by design, these services can be added whenever you're ready.",
+      "documents.sub":"Project documents — price list, payment plan, presentation, contract (PDF/Word/Excel/PowerPoint/image).",
+      "documents.fileLabel":"File","documents.categoryLabel":"Category","documents.uploadBtn":"Upload",
+      "documents.fileRequired":"Please choose a file.","documents.uploaded":"Document uploaded.","documents.deleted":"Document deleted.",
+      "documents.downloadBtn":"Download","documents.colFile":"File","documents.colCategory":"Category",
+      "documents.category.price_list":"Price List","documents.category.payment_plan":"Payment Plan","documents.category.presentation":"Presentation",
+      "documents.category.contract":"Contract","documents.category.image":"Image","documents.category.video":"Video","documents.category.other":"Other",
 
       "reports.sub":"Real-time reporting and export from real data.","reports.downloadCsv":"Download CSV",
       "reports.csvHeader":"metric,value","reports.csvFilename":"veraliq-report.csv",
@@ -302,12 +298,12 @@ window.VERALIQ_PORTAL_I18N = {
       "common.statusUpdatedPrefix":"Статус обновлён: ","common.unknown":"неизвестно",
 
       "nav.group.general":"Общее","nav.group.operations":"Операции","nav.group.salesCustomer":"Продажи и клиенты",
-      "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система","nav.group.approvals":"Запросы на одобрение","nav.group.roadmap":"План развития",
+      "nav.group.financeDoc":"Финансы и документы","nav.group.planning":"Планирование","nav.group.system":"Система","nav.group.approvals":"Запросы на одобрение",
       "nav.item.dashboard":"Панель","nav.item.projects":"Проекты","nav.item.inventory":"Инвентарь",
       "nav.item.presentations":"Показы","nav.item.reservations":"Резервации","nav.item.leads":"Лиды",
       "nav.item.customers":"Клиенты","nav.item.sales":"Продажи","nav.item.crm":"CRM","nav.item.payments":"Запросы на одобрение",
-      "nav.item.contracts":"Договоры","nav.item.documents":"Документы","nav.item.calendar":"Календарь","nav.item.reports":"Отчёты",
-      "nav.item.agents":"Агенты","nav.item.team":"Команда","nav.item.integrations":"Интеграции","nav.item.settings":"Настройки",
+      "nav.item.contracts":"Договоры","nav.item.documents":"Документы","nav.item.reports":"Отчёты",
+      "nav.item.agents":"Агенты","nav.item.team":"Команда","nav.item.settings":"Настройки",
 
       "status.unit.AVAILABLE":"Свободно","status.unit.PRESENTATION":"На показе","status.unit.HOLD":"Придержано",
       "status.unit.RESERVED":"Забронировано","status.unit.DEPOSIT_PAID":"Задаток внесён","status.unit.CONTRACT":"В договоре","status.unit.SOLD":"Продано",
@@ -383,14 +379,12 @@ window.VERALIQ_PORTAL_I18N = {
       "payments.approve":"Одобрить","payments.reject":"Отклонить",
       "payments.notPaymentRecord":"Этот экран показывает только ЗАПРОСЫ НА ОДОБРЕНИЕ скидок/планов платежей. Он не фиксирует фактический платёж, счёт или поступление средств — отдельного модуля учёта/биллинга нет.",
 
-      "documents.sub":"Документы по проектам и договорам.",
-      "documents.note":"<b>Этот экран пока не может загружать файлы.</b> В схеме базы данных готова таблица для метаданных документов, но реальное хранилище файлов (бакет Cloudflare R2) для этой компании ещё не настроено. Вместо фиктивной кнопки «загрузить» это честно указано здесь — после настройки бакета R2 экран будет подключён к реальной загрузке/скачиванию.",
-
-      "calendar.sub":"Управление встречами и календарём.",
-      "calendar.note":"<b>Инфраструктура встреч/календаря ещё не настроена.</b> В базе данных нет таблицы встреч — нужен отдельный этап разработки. Вместо фиктивных встреч здесь указано реальное положение дел.",
-
-      "integrations.sub":"Внешние подключения CRM/ERP и других сервисов.",
-      "integrations.note":"<b>Внешние интеграции (HubSpot/Salesforce/Zoho/Dynamics/WhatsApp Business API/платёжный провайдер) пока не подключены.</b> Каждая требует вашего API-ключа/аккаунта. Архитектура VERALIQ независима от провайдера, поэтому эти сервисы можно добавить, когда вы будете готовы.",
+      "documents.sub":"Документы проекта — прайс-лист, план оплаты, презентация, договор (PDF/Word/Excel/PowerPoint/изображение).",
+      "documents.fileLabel":"Файл","documents.categoryLabel":"Категория","documents.uploadBtn":"Загрузить",
+      "documents.fileRequired":"Пожалуйста, выберите файл.","documents.uploaded":"Документ загружен.","documents.deleted":"Документ удалён.",
+      "documents.downloadBtn":"Скачать","documents.colFile":"Файл","documents.colCategory":"Категория",
+      "documents.category.price_list":"Прайс-лист","documents.category.payment_plan":"План оплаты","documents.category.presentation":"Презентация",
+      "documents.category.contract":"Договор","documents.category.image":"Изображение","documents.category.video":"Видео","documents.category.other":"Другое",
 
       "reports.sub":"Отчётность и экспорт в реальном времени на основе реальных данных.","reports.downloadCsv":"Скачать CSV",
       "reports.csvHeader":"показатель,значение","reports.csvFilename":"veraliq-otchet.csv",

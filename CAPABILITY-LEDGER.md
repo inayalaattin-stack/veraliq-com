@@ -33,8 +33,11 @@ ve yakın planda değil.
 | Tenant emlak lead/müşteri yönetimi (kendi D1) | ACTIVE | `worker-portal/portal-api-worker.js` — leads/customers tabloları |
 | Harici CRM (Salesforce/HubSpot vb.) senkronu | NOT_AVAILABLE | Kodda hiçbir harici CRM API çağrısı yok | "Otomatik CRM senkronu" DENEMEZ — doğru ifade: "VERALIQ'in kendi lead/müşteri kayıt sistemi" |
 | Resmi WhatsApp Business entegrasyonu | NOT_AVAILABLE | Kodda WhatsApp API/webhook yok | |
-| Randevu oluşturma / otomatik follow-up | NOT_AVAILABLE | Kodda takvim/hatırlatma sistemi yok | |
-| PDF/PPT/Excel dosyası anlatma (ingestion) | NOT_AVAILABLE | R2/dosya-işleme entegrasyonu yok | |
+| Randevu oluşturma / otomatik follow-up | NOT_AVAILABLE | Kodda takvim/hatırlatma sistemi yok; portal.html'deki Takvim ekranı KALDIRILDI (bu turda) | |
+| Proje belgesi yükleme/indirme (PDF/Word/Excel/PowerPoint/görsel) | ACTIVE (bu turda eklendi) | `worker-portal/documents.js`, gerçek Cloudflare R2 depolama, portal.html "Belgeler" ekranı | Yalnızca İNSAN yükleme/indirmesi için — bkz. alttaki satır |
+| AI'ın yüklenen belge içeriğini okuması/anlaması (ingestion) | NOT_AVAILABLE | Belgeler R2'de saklanıyor ama hiçbir agent/LLM bunları OKUMUYOR — yalnızca insan indirip kendisi okuyor | "AI dokümanlarınızı anlıyor" DENEMEZ |
+| Birim/envanter (kat/daire/m²/stok/fiyat) girişi | ACTIVE, MANUEL | portal.html "Projeler" ekranındaki "Birim Ekle" formu, `POST /api/projects/:id/units` | Şirket yetkilisi tek tek/toplu elle girer |
+| Birim/envanter verisinin şirketin kendi CRM'inden OTOMATİK çekilmesi | ROADMAP | Kodda hiçbir harici CRM'e bağlanan bir senkron mekanizması yok | Ürün sahibinin planı: ileride kat/daire/m²/stok/fiyat şirketin kendi CRM'inden otomatik çekilecek — bu turda YAZILMADI, yalnızca konum/ada/parsel gibi diğer alanlarla birlikte hâlâ MANUEL |
 | TBDY/mevzuat/emtia izleme modülü | NOT_AVAILABLE | Kodda böyle bir modül yok | |
 
 ## Platform/erişim
@@ -93,6 +96,20 @@ Explore agent'ın tam envanterine göre (11 madde), şu düzeltmeler yapıldı:
 yok ama `approval_requests` sistemi kısmi bir alt yapı sağlıyor, sınır net
 değil, ayrı bir incelemeyi hak ediyor); footer'daki "ticari faaliyet yok"
 metni (BUSINESS-DECISIONS-REQUIRED.md'ye taşındı, karar bekliyor).
+
+## Admin/portal ekran temizliği (2026-09-10, kurucu talebiyle)
+
+İşlevsiz/salt-bilgi ekranlar KALDIRILDI (önceden "gap notice" olarak
+tutuluyordu, artık hiç yok):
+- `admin.html`: "Yol Haritası" grubu (CRM/ERP/Entegrasyonlar) tamamen
+  kaldırıldı — kurucu için hiçbir aksiyon alınabilir işlevi yoktu.
+- `portal.html`: Takvim ve Entegrasyonlar ekranları kaldırıldı (aynı sebep).
+  CRM ekranı KORUNDU (kaldırılmadı) — bu ekran gerçek lead durumu
+  sayaçlarını gösteriyor (yalnızca "harici CRM'e senkron değil" notu var),
+  bu yüzden diğerlerinden farklı olarak GERÇEK bir işlevi var; "Satış &
+  Müşteri" grubuna taşındı (artık "Yol Haritası" değil).
+- `portal.html`: "Belgeler" ekranı SIFIRDAN gerçek bir özelliğe dönüştürüldü
+  (yukarıdaki tabloya bakın) — artık bir "gap notice" değil.
 
 ## Ticari pozisyon gerilimi (BUSINESS-DECISIONS-REQUIRED.md'ye taşındı)
 
