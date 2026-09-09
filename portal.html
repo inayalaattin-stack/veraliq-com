@@ -694,10 +694,91 @@
             (p.ada ? ' · ' + esc(T('projects.adaLabel')) + ' ' + esc(p.ada) : '') + (p.parsel ? ' / ' + esc(T('projects.parselLabel')) + ' ' + esc(p.parsel) : '') +
             (p.delivery_date ? ' · ' + esc(T('projects.deliveryPrefix')) + ' ' + esc(p.delivery_date) : '') + '</div>' +
             (p.description ? '<div class="muted" style="font-size:12.5px;margin-top:6px;">' + esc(p.description) + '</div>' : '') +
+            '<div style="margin-top:10px;"><button class="btn btn-ghost btn-sm" data-toggle-units="' + p.id + '">' + esc(T('projects.addUnitBtn')) + '</button></div>' +
+            '<div class="inline-form" id="unitForm_' + p.id + '" style="margin-top:10px;"></div>' +
           '</div>';
         });
         wrap.innerHTML = html;
+        wrap.querySelectorAll('[data-toggle-units]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var pid = btn.getAttribute('data-toggle-units');
+            var formEl = document.getElementById('unitForm_' + pid);
+            var willOpen = !formEl.classList.contains('open');
+            formEl.classList.toggle('open');
+            if (willOpen && !formEl.dataset.built) { buildUnitForm(formEl, pid); formEl.dataset.built = '1'; }
+          });
+        });
       } catch (e) { wrap.innerHTML = '<div class="empty">' + esc(errMsg(e)) + '</div>'; }
+    }
+
+    // Bir projeye birden fazla birim (bağımsız bölüm) satır satır ekleyip
+    // TEK seferde kaydetme — backend zaten toplu ekleme destekliyor
+    // (POST /api/projects/:id/units, dizi kabul eder), bu formdan önce
+    // hiçbir UI onu çağırmıyordu (bir şirket proje kabuğu açabiliyordu ama
+    // tek bir daire bile giremiyordu — gerçek bir eksiklikti).
+    function unitRowHtml(){
+      return '<div class="card unit-row" style="margin-bottom:8px;padding:12px;">' +
+        '<div class="row3">' +
+          '<div class="field"><label>' + esc(T('projects.unitBlockLabel')) + '</label><input data-f="block"></div>' +
+          '<div class="field"><label>' + esc(T('projects.unitFloorLabel')) + '</label><input type="number" data-f="floor"></div>' +
+          '<div class="field"><label>' + esc(T('projects.unitNoLabel')) + '</label><input data-f="unit_no"></div>' +
+        '</div>' +
+        '<div class="row3">' +
+          '<div class="field"><label>' + esc(T('projects.unitTypeLabel')) + '</label><input data-f="unit_type"></div>' +
+          '<div class="field"><label>' + esc(T('projects.unitGrossLabel')) + '</label><input type="number" step="0.01" data-f="gross_area"></div>' +
+          '<div class="field"><label>' + esc(T('projects.unitNetLabel')) + '</label><input type="number" step="0.01" data-f="net_area"></div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<div class="field"><label>' + esc(T('projects.unitPriceLabel')) + '</label><input type="number" step="0.01" data-f="price"></div>' +
+          '<div class="field" style="display:flex;align-items:flex-end;"><button type="button" class="btn btn-ghost btn-sm" data-remove-row>' + esc(T('common.remove')) + '</button></div>' +
+        '</div>' +
+      '</div>';
+    }
+    function buildUnitForm(formEl, projectId){
+      formEl.innerHTML =
+        '<div class="card"><div id="unitRows_' + projectId + '"></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-add-row>' + esc(T('projects.addUnitRowBtn')) + '</button> ' +
+          '<button type="button" class="btn btn-primary btn-sm" data-save-units="' + projectId + '">' + esc(T('projects.saveUnitsBtn')) + '</button>' +
+          '<div class="err-msg" id="unitErr_' + projectId + '" style="display:none;"></div>' +
+        '</div>';
+      var rowsWrap = document.getElementById('unitRows_' + projectId);
+      function addRow(){ rowsWrap.insertAdjacentHTML('beforeend', unitRowHtml()); wireRemove(); }
+      function wireRemove(){
+        rowsWrap.querySelectorAll('[data-remove-row]').forEach(function(btn){
+          btn.onclick = function(){
+            if (rowsWrap.querySelectorAll('.unit-row').length > 1) btn.closest('.unit-row').remove();
+          };
+        });
+      }
+      addRow();
+      formEl.querySelector('[data-add-row]').addEventListener('click', addRow);
+      formEl.querySelector('[data-save-units]').addEventListener('click', async function(){
+        var errEl = document.getElementById('unitErr_' + projectId);
+        var items = [];
+        var rowEls = rowsWrap.querySelectorAll('.unit-row');
+        for (var i = 0; i < rowEls.length; i++) {
+          var get = function(f){ return rowEls[i].querySelector('[data-f="' + f + '"]').value.trim(); };
+          var unitNo = get('unit_no');
+          var hasAnyValue = unitNo || get('block') || get('unit_type') || get('gross_area') || get('net_area') || get('price');
+          if (!hasAnyValue) continue; // tamamen boş satır — sessizce atla
+          if (!unitNo) { errEl.textContent = T('projects.unitNoRequired'); errEl.style.display = 'block'; return; }
+          items.push({
+            block: get('block'), floor: get('floor') ? Number(get('floor')) : null, unit_no: unitNo,
+            unit_type: get('unit_type'), gross_area: get('gross_area') ? Number(get('gross_area')) : null,
+            net_area: get('net_area') ? Number(get('net_area')) : null, price: get('price') ? Number(get('price')) : null,
+          });
+        }
+        if (!items.length) { errEl.textContent = T('projects.unitNoRequired'); errEl.style.display = 'block'; return; }
+        try {
+          await api('/api/projects/' + projectId + '/units', { method: 'POST', body: items });
+          errEl.style.display = 'none';
+          toast(T('projects.unitsAdded'));
+          // loadProjectList() rebuilds wrap.innerHTML from scratch — the
+          // form (and its 'open'/'built' state) is naturally replaced fresh
+          // and closed, no manual reset needed here.
+          await loadProjectList();
+        } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }
+      });
     }
   }
 

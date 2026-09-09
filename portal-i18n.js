@@ -83,6 +83,10 @@ window.VERALIQ_PORTAL_I18N = {
       "projects.adaLabel":"Ada","projects.parselLabel":"Parsel","projects.paftaLabel":"Pafta",
       "projects.nameRequired":"Proje adı gerekli.","projects.added":"Proje eklendi.","projects.noProjects":"Henüz proje eklenmedi.",
       "projects.deliveryPrefix":"Teslim:",
+      "projects.addUnitBtn":"Birim Ekle","projects.unitBlockLabel":"Blok","projects.unitFloorLabel":"Kat","projects.unitNoLabel":"Daire No *",
+      "projects.unitTypeLabel":"Tip (Örn. 2+1)","projects.unitGrossLabel":"Brüt m²","projects.unitNetLabel":"Net m²","projects.unitPriceLabel":"Fiyat (TL)",
+      "projects.addUnitRowBtn":"+ Satır Ekle","projects.saveUnitsBtn":"Birimleri Kaydet","projects.unitsAdded":"Birim(ler) eklendi.",
+      "projects.unitNoRequired":"Her satır için Daire No zorunludur.",
 
       "inventory.sub":"Tüm projelerdeki gerçek zamanlı birim envanteri.",
 
@@ -209,6 +213,10 @@ window.VERALIQ_PORTAL_I18N = {
       "projects.adaLabel":"Block","projects.parselLabel":"Parcel","projects.paftaLabel":"Sheet",
       "projects.nameRequired":"Project name is required.","projects.added":"Project added.","projects.noProjects":"No projects added yet.",
       "projects.deliveryPrefix":"Delivery:",
+      "projects.addUnitBtn":"Add Units","projects.unitBlockLabel":"Block","projects.unitFloorLabel":"Floor","projects.unitNoLabel":"Unit No *",
+      "projects.unitTypeLabel":"Type (e.g. 2+1)","projects.unitGrossLabel":"Gross m²","projects.unitNetLabel":"Net m²","projects.unitPriceLabel":"Price (TL)",
+      "projects.addUnitRowBtn":"+ Add Row","projects.saveUnitsBtn":"Save Units","projects.unitsAdded":"Unit(s) added.",
+      "projects.unitNoRequired":"Unit No is required for every row.",
 
       "inventory.sub":"Real-time unit inventory across all your projects.",
 
@@ -335,6 +343,10 @@ window.VERALIQ_PORTAL_I18N = {
       "projects.adaLabel":"Квартал","projects.parselLabel":"Участок","projects.paftaLabel":"Лист",
       "projects.nameRequired":"Требуется название проекта.","projects.added":"Проект добавлен.","projects.noProjects":"Проекты ещё не добавлены.",
       "projects.deliveryPrefix":"Сдача:",
+      "projects.addUnitBtn":"Добавить юниты","projects.unitBlockLabel":"Квартал","projects.unitFloorLabel":"Этаж","projects.unitNoLabel":"№ юнита *",
+      "projects.unitTypeLabel":"Тип (напр. 2+1)","projects.unitGrossLabel":"Общая м²","projects.unitNetLabel":"Чистая м²","projects.unitPriceLabel":"Цена (TL)",
+      "projects.addUnitRowBtn":"+ Добавить строку","projects.saveUnitsBtn":"Сохранить юниты","projects.unitsAdded":"Юнит(ы) добавлены.",
+      "projects.unitNoRequired":"№ юнита обязателен для каждой строки.",
 
       "inventory.sub":"Инвентарь юнитов по всем проектам в реальном времени.",
 
