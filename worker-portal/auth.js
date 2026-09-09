@@ -138,7 +138,7 @@ export async function verifyJWT(token, secret) {
     // worker'ın beklediği şekle sahip olduğunu doğrular.
     if (typeof payload.sub !== 'string' || !payload.sub) return null;
     if (typeof payload.role !== 'string' || !payload.role) return null;
-    if (payload.company_id !== null && typeof payload.company_id !== 'string') return null;
+    if (payload.company_id !== null && (typeof payload.company_id !== 'string' || !payload.company_id)) return null;
     if (payload.iss !== JWT_ISSUER || payload.aud !== JWT_AUDIENCE) return null;
     if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;

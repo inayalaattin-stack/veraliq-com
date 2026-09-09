@@ -132,6 +132,17 @@ export async function requireAuth(request, env, allowedRoles) {
   const currentUser = await env.DB.prepare(`SELECT token_version FROM users WHERE id = ?`).bind(payload.sub).first();
   if (!currentUser) return null; // kullanıcı silinmiş
   if ((payload.token_version || 0) !== (currentUser.token_version || 0)) return null;
+  // Review düzeltmesi (Faz 5): şirket askıya alınırsa (status != 'active'),
+  // önceden verilmiş personel token'ları company.status yalnızca LOGIN
+  // anında kontrol edildiği için TTL'e kadar (12 saat) geçerli kalmaya
+  // devam ediyordu — token_version ile AYNI sınıftan bir eksiklik. Şirket
+  // SİLİNİRSE zaten `ON DELETE CASCADE` ile users satırı da silinir (yukarıki
+  // currentUser kontrolü bunu zaten yakalar) — burada yalnızca "suspended"
+  // durumu ek olarak kapatılıyor.
+  if (payload.company_id) {
+    const company = await env.DB.prepare(`SELECT status FROM companies WHERE id = ?`).bind(payload.company_id).first();
+    if (!company || company.status !== 'active') return null;
+  }
   if (payload.role === 'company_viewer' && request.method !== 'GET') {
     const pathname = new URL(request.url).pathname;
     if (!VIEWER_SAFE_MUTATIONS.has(`${request.method} ${pathname}`)) return null;

@@ -823,6 +823,30 @@ const run = async () => {
     decWinners === 1 && decConflicts === 1, { statusA: decA.status, statusB: decB.status });
 
   // ---------------------------------------------------------------------
+  // Review düzeltmesi (Faz 5): şirket askıya alınırsa, önceden verilmiş
+  // personel token'ları TTL'e kadar geçerli kalmamalı — token_version ile
+  // AYNI sınıftan bir eksiklik (security-reviewer bulgusu).
+  // ---------------------------------------------------------------------
+  r = await worker.fetch(req('POST', '/api/companies', {
+    name: 'Askıya Alınacak Şirket', slug: 'suspend-test-co', owner_email: 'suspend-test@veraliq.com', owner_password: 'Suspend123!'
+  }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const suspendTestCompanyId = data.id;
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'suspend-test@veraliq.com', password: 'Suspend123!' }), env);
+  data = await r.json();
+  const suspendTestToken = data.token;
+  check('askıya alma testi: şirket + owner oluşturuldu, login başarılı', !!suspendTestCompanyId && !!suspendTestToken);
+
+  r = await worker.fetch(req('GET', '/api/companies/me', null, { Authorization: 'Bearer ' + suspendTestToken }), env);
+  check('askıya alınmadan ÖNCE token normal çalışıyor', r.status === 200);
+
+  r = await worker.fetch(req('PATCH', `/api/companies/${suspendTestCompanyId}`, { status: 'suspended' }, { Authorization: 'Bearer ' + adminToken }), env);
+  check('admin şirketi askıya alabilir', r.status === 200);
+
+  r = await worker.fetch(req('GET', '/api/companies/me', null, { Authorization: 'Bearer ' + suspendTestToken }), env);
+  check('review fix: ŞİRKET ASKIYA ALINDIKTAN SONRA önceden verilmiş token artık reddedilir (401)', r.status === 401);
+
+  // ---------------------------------------------------------------------
   // F) Faz 4 — /api/public/demo-requests (gerçek demo talebi akışı)
   // ---------------------------------------------------------------------
   async function demoCount() {
