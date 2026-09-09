@@ -27,6 +27,7 @@
 
 import { hashPassword, verifyPassword, signJWT, verifyJWT, generateId } from './auth.js';
 import { handleDemoRequestSubmit, handleDemoRequestsList, handleDemoRequestUpdate } from './demo-requests.js';
+import { handleTenantResolve, handleTenantProjects, handleTenantUnits, handleTenantVisitorSession, handleTenantLeadCreate } from './tenant-widget.js';
 
 export { PresentationLock } from './presentation-lock-do.js';
 
@@ -511,6 +512,27 @@ async function route(request, url, env) {
     return handleDemoRequestUpdate(request, env, { json, writeAudit, auth, id: m[1] });
   }
 
+  // ---- TENANT WIDGET (Faz 10 — gerçek son-müşteri ajanı, ayrı feature
+  // flag: companies.tenant_widget_enabled) — KİMLİK DOĞRULAMA GEREKTİRMEZ
+  // (bkz. tenant-widget.js'in kendi güvenlik notu: Origin kontrolü burada
+  // ÇALIŞMAZ çünkü tenant'ın kendi domain'i bilinmiyor; gerçek koruma rate
+  // limiting + kısa ömürlü visitor token'dır). --------------------------
+  if ((m = path.match(/^\/api\/public\/tenant\/([^/]+)$/)) && method === 'GET') {
+    return handleTenantResolve(request, env, { json }, m[1]);
+  }
+  if ((m = path.match(/^\/api\/public\/tenant\/([^/]+)\/projects$/)) && method === 'GET') {
+    return handleTenantProjects(request, env, { json }, m[1]);
+  }
+  if ((m = path.match(/^\/api\/public\/tenant\/([^/]+)\/units$/)) && method === 'GET') {
+    return handleTenantUnits(request, env, { json }, m[1], url);
+  }
+  if ((m = path.match(/^\/api\/public\/tenant\/([^/]+)\/visitor-session$/)) && method === 'POST') {
+    return handleTenantVisitorSession(request, env, { json }, m[1]);
+  }
+  if ((m = path.match(/^\/api\/public\/tenant\/([^/]+)\/leads$/)) && method === 'POST') {
+    return handleTenantLeadCreate(request, env, { json, writeAudit }, m[1]);
+  }
+
   // ---- COMPANIES (admin only) -----------------------------------------
   if (path === '/api/companies' && method === 'GET') {
     const auth = await requireAuth(request, env, ['veraliq_admin']);
@@ -671,7 +693,7 @@ async function route(request, url, env) {
     }
     if (method === 'PATCH') {
       const body = await request.json();
-      const fields = ['name', 'plan', 'status', 'remove_branding'];
+      const fields = ['name', 'plan', 'status', 'remove_branding', 'tenant_widget_enabled'];
       const sets = [], vals = [];
       for (const f of fields) if (f in body) { sets.push(`${f} = ?`); vals.push(body[f]); }
       if (!sets.length) return json({ error: 'no_fields' }, 400);

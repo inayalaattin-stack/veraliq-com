@@ -1,0 +1,12 @@
+-- 0006_tenant_widget.sql
+--
+-- Faz 10 (VERALIQ-CLAUDE-CODE-NIHAI-UYGULAMA-PROMPTU.md) — gerçek tenant
+-- son-müşteri ajanının minimum dikey dilimi. Ayrı bir feature flag olarak
+-- tasarlandı: bu sütun 0/false olduğu sürece hiçbir tenant public endpoint'i
+-- (worker-portal/tenant-widget.js) o şirket için veri döndürmez — varsayılan
+-- KAPALI, opt-in.
+--
+-- GÜVENLİ TEKRAR ÇALIŞTIRMA: SQLite'ta "ADD COLUMN IF NOT EXISTS" yoktur.
+-- Bu migration GÜVENLİ ŞEKİLDE TEKRAR ÇALIŞTIRILAMAZ — ikinci çalıştırma
+-- "duplicate column name" hatası verir. Yalnızca bir kez uygulayın.
+ALTER TABLE companies ADD COLUMN tenant_widget_enabled INTEGER NOT NULL DEFAULT 0;

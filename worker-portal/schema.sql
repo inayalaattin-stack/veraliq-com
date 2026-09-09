@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS companies (
   plan          TEXT NOT NULL DEFAULT 'trial',   -- 'trial' | 'starter' | 'pro' | 'enterprise'
   status        TEXT NOT NULL DEFAULT 'active',  -- 'active' | 'suspended'
   remove_branding INTEGER NOT NULL DEFAULT 0,    -- madde 78: filigran kaldırma feature flag
+  -- Faz 10 (bkz. migrations/0006): tenant son-müşteri ajanı ayrı bir
+  -- feature flag — varsayılan KAPALI. 1 olmadığı sürece
+  -- worker-portal/tenant-widget.js'in hiçbir public endpoint'i bu şirket
+  -- için veri döndürmez.
+  tenant_widget_enabled INTEGER NOT NULL DEFAULT 0,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -108,6 +108,9 @@ const env = {
   // doğruluyor; geri kalan TÜM testler (çoğu defalarca login çağırıyor) bu
   // varsayılan "izin ver" mock'una güveniyor.
   LOGIN_RATE_LIMITER: { limit: async () => ({ success: true }) },
+  // Faz 10: tenant widget (gerçek son-müşteri ajanı) rate limitleri.
+  TENANT_VISITOR_RATE_LIMITER: { limit: async () => ({ success: true }) },
+  TENANT_LEAD_RATE_LIMITER: { limit: async () => ({ success: true }) },
 };
 
 function req(method, path, body, headers) {
@@ -957,6 +960,139 @@ const run = async () => {
   const unconfiguredEnv = Object.assign({}, env); delete unconfiguredEnv.DEMO_REQUEST_RATE_LIMITER;
   r = await worker.fetch(req('POST', '/api/public/demo-requests', { name: 'X', company: 'Y', phone: '5550001111', email: 'rl2@example.com' }), unconfiguredEnv);
   check('demo-requests: rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429), sessizce açılmaz', r.status === 429);
+
+  // ---------------------------------------------------------------------
+  // G) Faz 10 — tenant widget (gerçek son-müşteri ajanının dikey dilimi)
+  // ---------------------------------------------------------------------
+  r = await worker.fetch(req('POST', '/api/companies', {
+    name: 'Tenant Test A.Ş.', slug: 'tenant-test-co', owner_email: 'tenant-test-owner@veraliq.com', owner_password: 'TenantTest123!'
+  }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const tenantTestCompanyId = data.id;
+  check('tenant widget testi: test şirketi oluşturuldu', r.status === 201 && !!tenantTestCompanyId, data);
+
+  // Widget flag'i varsayılan KAPALI — açmadan ÖNCE tüm public uçlar 404 dönmeli.
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co'), env);
+  check('tenant widget: flag KAPALIYKEN resolve 404 döner (varlığı bile sızdırmaz)', r.status === 404);
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co/projects'), env);
+  check('tenant widget: flag KAPALIYKEN /projects de 404 döner', r.status === 404);
+
+  r = await worker.fetch(req('PATCH', `/api/companies/${tenantTestCompanyId}`, { tenant_widget_enabled: 1 }, { Authorization: 'Bearer ' + adminToken }), env);
+  check('tenant widget: admin flag\'i açabilir', r.status === 200);
+
+  r = await worker.fetch(req('GET', '/api/public/tenant/does-not-exist'), env);
+  check('tenant widget: var olmayan slug için de 404 (aynı yanıt şekli)', r.status === 404);
+
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co'), env);
+  data = await r.json();
+  check('tenant widget: flag açıkken resolve başarılı, hassas alan yok', r.status === 200 && data.slug === 'tenant-test-co' && data.tenant_widget_enabled === undefined, data);
+
+  // Bir "selling" proje + AVAILABLE ve SOLD birim oluştur — public uç yalnızca
+  // yayınlanmış/mevcut olanı döndürmeli.
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'tenant-test-owner@veraliq.com', password: 'TenantTest123!' }), env);
+  data = await r.json();
+  const tenantOwnerToken = data.token;
+  r = await worker.fetch(req('POST', '/api/projects', { company_id: tenantTestCompanyId, name: 'Satıştaki Proje', location: 'İstanbul', status: 'selling' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  data = await r.json();
+  const tenantProjectId = data.id;
+  check('tenant widget testi: selling projesi oluşturuldu', r.status === 201 && !!tenantProjectId, data);
+  r = await worker.fetch(req('POST', `/api/projects/${tenantProjectId}/units`, { unit_no: 'A-1', unit_type: '2+1', price: 3000000 }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  check('tenant widget testi: AVAILABLE birim oluşturuldu', r.status === 201, await r.clone().json().catch(() => null));
+  r = await worker.fetch(req('POST', `/api/projects/${tenantProjectId}/units`, { unit_no: 'A-2', unit_type: '3+1', price: 4000000 }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  check('tenant widget testi: ikinci birim oluşturuldu', r.status === 201, await r.clone().json().catch(() => null));
+
+  r = await worker.fetch(req('GET', `/api/projects/${tenantProjectId}/units`, null, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  data = await r.json();
+  const tenantAvailableUnitId = (data.units || []).find(function (u) { return u.unit_no === 'A-1'; }).id;
+  const tenantSoldUnitId = (data.units || []).find(function (u) { return u.unit_no === 'A-2'; }).id;
+  await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'PRESENTATION' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'HOLD' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'RESERVED' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'DEPOSIT_PAID' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'CONTRACT' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  r = await worker.fetch(req('PATCH', `/api/units/${tenantSoldUnitId}`, { status: 'SOLD' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  check('tenant widget testi: ikinci birim SOLD durumuna taşındı (public uçtan görünmemeli)', r.status === 200, await r.clone().json().catch(() => null));
+
+  r = await worker.fetch(req('POST', '/api/projects', { company_id: tenantTestCompanyId, name: 'Planlama Aşamasındaki Proje', location: 'Ankara', status: 'planning' }, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  check('tenant widget testi: planning projesi oluşturuldu (public uçtan görünmemeli)', r.status === 201);
+
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co/projects'), env);
+  data = await r.json();
+  check('tenant widget: /projects YALNIZCA selling durumundaki projeyi döner (planning HARİÇ)',
+    r.status === 200 && data.projects.length === 1 && data.projects[0].name === 'Satıştaki Proje', data);
+
+  r = await worker.fetch(req('GET', `/api/public/tenant/tenant-test-co/units?project_id=${tenantProjectId}`), env);
+  data = await r.json();
+  const publicUnit = (data.units || [])[0];
+  check('tenant widget: /units YALNIZCA AVAILABLE birimi döner (SOLD HARİÇ)',
+    r.status === 200 && data.units.length === 1 && data.units[0].id === tenantAvailableUnitId, data);
+  check('tenant widget: /units yanıtı source-timestamp içerir (as_of)', typeof data.as_of === 'string' && !!publicUnit && !!publicUnit.updated_at, data);
+  check('tenant widget: /units İÇ operasyon alanlarını (sold_price, assigned_agent_type) HİÇ döndürmez',
+    !!publicUnit && publicUnit.sold_price === undefined && publicUnit.assigned_agent_type === undefined && publicUnit.presentation_session_id === undefined, publicUnit);
+
+  // Visitor session + lead creation
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/visitor-session', {}), env);
+  data = await r.json();
+  const tenantVisitorToken = data.visitorToken;
+  check('tenant widget: visitor-session token üretir', r.status === 200 && !!tenantVisitorToken, data);
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', { name: 'Ahmet Yılmaz', phone: '5551234567' }), env);
+  check('tenant widget: visitor token OLMADAN lead oluşturma 401 döner', r.status === 401);
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', { name: 'Ali Veli' }, { Authorization: 'Bearer ' + tenantVisitorToken }), env);
+  data = await r.json();
+  check('tenant widget: eksik alan (phone) 400 döner', r.status === 400 && data.error === 'missing_fields', data);
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', {
+    name: 'Ahmet Yılmaz', phone: '+905551234567', project_id: tenantProjectId, interest: 'A-1 birimiyle ilgileniyor', requestHuman: true,
+  }, { Authorization: 'Bearer ' + tenantVisitorToken }), env);
+  data = await r.json();
+  check('tenant widget: geçerli visitor token ile lead oluşturulur', r.status === 201 && !!data.id, data);
+  const tenantLeadId = data.id;
+
+  r = await worker.fetch(req('GET', `/api/leads/${tenantLeadId}`, null, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  data = await r.json();
+  check('tenant widget: oluşturulan lead şirket portalında (gerçek D1 kaydı olarak) görünür, insan-devri notu işlenmiş',
+    r.status === 200 && data.lead.name === 'Ahmet Yılmaz' && data.lead.phone === '+905551234567' && data.lead.source === 'tenant_widget_ai' && /İNSAN TEMSİLCİ TALEP EDİLDİ/.test(data.lead.notes), data);
+
+  r = await worker.fetch(req('GET', '/api/audit-log', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const tenantLeadAudit = (data.entries || []).find(function (e) { return e.action === 'lead.create_from_tenant_widget' && e.entity_id === tenantLeadId; });
+  check('tenant widget: lead oluşturma audit_log\'a yazılır', !!tenantLeadAudit, tenantLeadAudit);
+
+  // Honeypot
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', {
+    name: 'Bot', phone: '5550000000', website: 'http://spam.example',
+  }, { Authorization: 'Bearer ' + tenantVisitorToken }), env);
+  data = await r.json();
+  check('tenant widget: honeypot dolu -> "başarılı" görünür (gerçek id gibi) ama kayıt açılmaz', r.status === 201 && typeof data.id === 'string' && data.id.startsWith('lead_'));
+
+  // TENANT-NEGATİF: ikinci bir tenant test şirketi + bu şirketin visitor
+  // token'ı, İLK şirketin slug'ında KULLANILAMAMALI.
+  r = await worker.fetch(req('POST', '/api/companies', {
+    name: 'İkinci Tenant Test', slug: 'tenant-test-co-2', owner_email: 'tenant-test-owner-2@veraliq.com', owner_password: 'TenantTest123!'
+  }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const tenantTestCompany2Id = data.id;
+  await worker.fetch(req('PATCH', `/api/companies/${tenantTestCompany2Id}`, { tenant_widget_enabled: 1 }, { Authorization: 'Bearer ' + adminToken }), env);
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co-2/visitor-session', {}), env);
+  data = await r.json();
+  const tenant2VisitorToken = data.visitorToken;
+  check('tenant widget testi: ikinci tenant için ayrı visitor token üretildi', r.status === 200 && !!tenant2VisitorToken && tenant2VisitorToken !== tenantVisitorToken, data);
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', { name: 'Cross-Tenant Deneme', phone: '5559990000' }, { Authorization: 'Bearer ' + tenant2VisitorToken }), env);
+  check('TENANT-NEGATİF: 2. şirketin visitor token\'ı 1. şirketin slug\'ında KULLANILAMAZ (401)', r.status === 401);
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co-2/leads', { name: 'Cross-Tenant Deneme', phone: '5559990000' }, { Authorization: 'Bearer ' + tenantVisitorToken }), env);
+  check('TENANT-NEGATİF: 1. şirketin visitor token\'ı 2. şirketin slug\'ında KULLANILAMAZ (401)', r.status === 401);
+
+  // Rate limiting fail-closed (Faz 2/4/5 ile AYNI ilke).
+  const tenantRateDenyEnv = Object.assign({}, env, { TENANT_VISITOR_RATE_LIMITER: { limit: async () => ({ success: false }) } });
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/visitor-session', {}), tenantRateDenyEnv);
+  check('tenant widget: visitor-session rate limiter reddederse 429', r.status === 429);
+  const tenantLeadRateDenyEnv = Object.assign({}, env); delete tenantLeadRateDenyEnv.TENANT_LEAD_RATE_LIMITER;
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', { name: 'X', phone: '5550001111' }, { Authorization: 'Bearer ' + tenantVisitorToken }), tenantLeadRateDenyEnv);
+  check('tenant widget: lead rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429)', r.status === 429);
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
