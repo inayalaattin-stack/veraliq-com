@@ -348,7 +348,7 @@
 
   // ---------------- NAV / ROUTER ----------------
   var NAV = [
-    { group: 'Genel', items: [ {id:'dashboard', label:'Panel'}, {id:'assistant', label:'AI Asistan'} ] },
+    { group: 'Genel', items: [ {id:'dashboard', label:'Panel'}, {id:'demo-requests', label:'Demo Talepleri'}, {id:'assistant', label:'AI Asistan'} ] },
     { group: 'Platform', items: [ {id:'companies', label:'Şirketler'}, {id:'users', label:'Kullanıcılar'}, {id:'projects', label:'Projeler'}, {id:'subscriptions', label:'Abonelikler'} ] },
     { group: 'Yapay Zekâ', items: [ {id:'agents', label:'Agent\'lar'}, {id:'ai-providers', label:'AI Sağlayıcıları'}, {id:'avatar-providers', label:'Avatar Sağlayıcıları'}, {id:'voice-providers', label:'Ses Sağlayıcıları'} ] },
     { group: 'Entegrasyon', items: [ {id:'crm', label:'CRM'}, {id:'erp', label:'ERP'}, {id:'integrations', label:'Entegrasyonlar'} ] },
@@ -386,7 +386,7 @@
   }
 
   var RENDERERS = {
-    dashboard: renderDashboard, assistant: renderAssistant,
+    dashboard: renderDashboard, 'demo-requests': renderDemoRequests, assistant: renderAssistant,
     companies: renderCompanies, users: renderUsers, projects: renderProjects, subscriptions: renderSubscriptions,
     agents: renderAgents, 'ai-providers': renderAiProviders, 'avatar-providers': renderAvatarProviders, 'voice-providers': renderVoiceProviders,
     // crm/erp/integrations are built via gapView() further down the file —
@@ -548,6 +548,57 @@
         var id = btn.getAttribute('data-del');
         if (!confirm('Bu şirketi ve tüm projelerini silmek istediğinize emin misiniz?')) return;
         try { await api('/api/companies/'+id, { method:'DELETE' }); toast('Şirket silindi.'); renderCompanyTable(); }
+        catch(e){ toast(errMsg(e)); }
+      });
+    });
+  }
+
+  // ---------------- DEMO TALEPLERİ (Faz 4 — gerçek demo talebi akışı) ----------------
+  var DEMO_STATUS_LABELS = { new:'Yeni', contacted:'Arandı', scheduled:'Demo Planlandı', won:'Kazanıldı', lost:'Kaybedildi' };
+  var DEMO_STATUS_PILL = { new:'pill-gold', contacted:'pill-gold', scheduled:'pill-gold', won:'pill-green', lost:'pill-red' };
+  async function renderDemoRequests(el){
+    el.innerHTML = viewHead('Demo Talepleri', 'veraliq.com üzerinden gelen gerçek demo talepleri — index.html\'deki form artık doğrudan buraya kaydeder.') +
+      '<div id="demoReqWrap" class="card"><div class="empty">Yükleniyor…</div></div>';
+    renderDemoRequestsTable();
+  }
+  async function renderDemoRequestsTable(){
+    var wrap = document.getElementById('demoReqWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+    var list;
+    try { list = await api('/api/admin/demo-requests'); }
+    catch(e){ wrap.innerHTML = '<div class="empty">'+esc(errMsg(e))+'</div>'; return; }
+    var rows = list.demo_requests || [];
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">Henüz demo talebi yok.</div>'; return; }
+    var html = '<table><thead><tr><th>Talep Eden</th><th>İletişim</th><th>Tür / Hacim</th><th>Durum</th><th>Not</th><th>Tarih</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var statusOptions = Object.keys(DEMO_STATUS_LABELS).map(function(s){
+        return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+esc(DEMO_STATUS_LABELS[s]||s)+'</option>';
+      }).join('');
+      html += '<tr>' +
+        '<td><b>'+esc(r.name)+'</b><div class="muted" style="margin-top:2px;">'+esc(r.company)+'</div></td>' +
+        '<td><div class="mono" style="font-size:12.5px;">'+esc(r.email)+'</div><div class="mono" style="font-size:12.5px;color:var(--text-dim);">'+esc(r.phone)+'</div></td>' +
+        '<td>'+esc(r.company_type||'-')+'<div class="muted" style="margin-top:2px;">'+esc(r.volume||'-')+'</div></td>' +
+        '<td><span class="pill '+(DEMO_STATUS_PILL[r.status]||'pill-gold')+'" style="margin-bottom:6px;display:inline-block;">'+esc(DEMO_STATUS_LABELS[r.status]||r.status)+'</span>' +
+          '<select data-status="'+r.id+'" style="display:block;margin-top:4px;">'+statusOptions+'</select></td>' +
+        '<td style="min-width:200px;"><textarea data-notes="'+r.id+'" rows="2" style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px;font-size:12.5px;">'+esc(r.notes||'')+'</textarea>' +
+          '<button class="btn-ghost btn-sm" data-save-notes="'+r.id+'" style="margin-top:4px;">Kaydet</button></td>' +
+        '<td class="muted mono" style="font-size:12px;">'+fmtDate(r.created_at)+(r.notified_at?'':'<div style="margin-top:4px;color:var(--text-dim);">Bildirim gönderilmedi</div>')+'</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('[data-status]').forEach(function(sel){
+      sel.addEventListener('change', async function(){
+        try { await api('/api/admin/demo-requests/'+sel.getAttribute('data-status'), { method:'PATCH', body:{ status: sel.value } }); toast('Durum güncellendi.'); renderDemoRequestsTable(); }
+        catch(e){ toast(errMsg(e)); }
+      });
+    });
+    wrap.querySelectorAll('[data-save-notes]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var id = btn.getAttribute('data-save-notes');
+        var notes = wrap.querySelector('[data-notes="'+id+'"]').value;
+        try { await api('/api/admin/demo-requests/'+id, { method:'PATCH', body:{ notes: notes } }); toast('Not kaydedildi.'); }
         catch(e){ toast(errMsg(e)); }
       });
     });

@@ -31,5 +31,8 @@ __pycache__/
 *.pyc
 
 # Yedekler ve büyük binary'ler repo köküne düşerse görmezden gel (D:\yedekler'e taşınmalı)
-*.sql
+# NOT: kök-ankraj (/*.sql) kasıtlı — ankrajsız bir *.sql, worker-portal/schema.sql
+# ve worker-portal/migrations/*.sql gibi GERÇEK, izlenmesi gereken kaynak
+# dosyalarını da (yanlışlıkla) her derinlikte görmezden gelirdi.
+/*.sql
 *.bundle

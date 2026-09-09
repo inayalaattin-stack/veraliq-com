@@ -195,26 +195,52 @@ window.VeraliqI18N = VeraliqI18N;
     });
   });
 
-  // ---- Demo form: honest fallback — opens a prefilled email, since no
-  // backend CRM endpoint is wired up yet. ----
+  // ---- Demo form: Faz 4 — gerçek backend'e (worker-portal) POST eder.
+  // Önceden yalnızca bir mailto: linki açıyordu (hiçbir kayıt tutulmuyordu).
+  // Başarı YALNIZCA backend kaydı gerçekten oluşturduysa gösterilir —
+  // asla iyimser/varsayımsal bir "başarılı" mesajı verilmez. ----
+  var DEMO_API_ENDPOINT = 'https://veraliq-portal-api.veraliq-com.workers.dev/api/public/demo-requests';
   var demoForm = document.getElementById('demoForm');
   if (demoForm) {
     demoForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      var data = new FormData(demoForm);
-      var subject = encodeURIComponent('Veraliq Demo Talebi — ' + (data.get('company') || ''));
-      var bodyLines = [
-        'Ad Soyad: ' + (data.get('name') || ''),
-        'Şirket: ' + (data.get('company') || ''),
-        'Telefon: ' + (data.get('phone') || ''),
-        'E-posta: ' + (data.get('email') || ''),
-        'Şirket Türü: ' + (data.get('type') || ''),
-        'Aylık Lead/Satış Hacmi: ' + (data.get('volume') || '')
-      ];
-      var body = encodeURIComponent(bodyLines.join('\n'));
-      window.location.href = 'mailto:info@veraliq.com?subject=' + subject + '&body=' + body;
       var status = document.getElementById('formStatus');
-      if (status) status.classList.add('show');
+      var submitBtn = demoForm.querySelector('button[type="submit"]');
+      var data = new FormData(demoForm);
+      var payload = {
+        name: data.get('name') || '',
+        company: data.get('company') || '',
+        phone: data.get('phone') || '',
+        email: data.get('email') || '',
+        type: data.get('type') || '',
+        volume: data.get('volume') || '',
+        website: data.get('website') || '', // honeypot — gerçek ziyaretçiler bunu görmez/dolduramaz
+      };
+      if (submitBtn) submitBtn.disabled = true;
+      fetch(DEMO_API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(function (resp) {
+        return resp.json().then(function (body) { return { ok: resp.ok, body: body }; });
+      }).then(function (result) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (!status) return;
+        if (result.ok) {
+          status.textContent = (window.VeraliqI18N && VeraliqI18N.t('form.status')) || 'Teşekkürler — talebiniz alındı, en kısa sürede size dönüş yapacağız.';
+          status.classList.remove('error');
+          status.classList.add('show');
+          demoForm.reset();
+        } else {
+          status.textContent = (window.VeraliqI18N && VeraliqI18N.t('form.statusError')) || 'Bir şeyler ters gitti — lütfen tekrar deneyin veya bize e-posta ile ulaşın: info@veraliq.com';
+          status.classList.add('show', 'error');
+        }
+      }).catch(function () {
+        if (submitBtn) submitBtn.disabled = false;
+        if (!status) return;
+        status.textContent = (window.VeraliqI18N && VeraliqI18N.t('form.statusError')) || 'Bir şeyler ters gitti — lütfen tekrar deneyin veya bize e-posta ile ulaşın: info@veraliq.com';
+        status.classList.add('show', 'error');
+      });
     });
   }
 

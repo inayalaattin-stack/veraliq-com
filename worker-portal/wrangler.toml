@@ -36,3 +36,17 @@ class_name = "PresentationLock"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["PresentationLock"]
+
+# ---------------------------------------------------------------------------
+# Faz 4 — /api/public/demo-requests için gerçek IP-bazlı rate limiting.
+# Cloudflare'in resmi Workers Rate Limiting binding'i (worker-spatius'ta
+# Faz 2'de aynı şekilde doğrulanmış — developers.cloudflare.com/workers/
+# runtime-apis/bindings/rate-limit/). `period` yalnızca 10 veya 60 saniye
+# olabilir (Cloudflare'in kendi kısıtı). namespace_id, worker-spatius'takilerden
+# (2001-2003) farklı bir aralıkta seçildi — aynı hesap içinde çakışmasın diye.
+[[ratelimits]]
+name = "DEMO_REQUEST_RATE_LIMITER"
+namespace_id = "3001"
+  [ratelimits.simple]
+  limit = 5
+  period = 60

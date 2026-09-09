@@ -19,8 +19,14 @@
 //     tarafından doğrulanmış bir portal oturumu bu uçları kullanabilir.
 //     (Presentation Lock uçları bunun tek istisnasıdır ve KASITLIDIR: bkz.
 //     aşağıdaki /units/:id/lock route'unun başındaki not.)
+//   - Faz 4: /api/public/* öneki, KASITLI OLARAK kimlik doğrulaması
+//     GEREKTİRMEYEN uçlar için ayrılmıştır (bugün yalnızca demo talebi
+//     gönderimi) — sunucu tarafı doğrulama, rate limiting ve honeypot ile
+//     korunur (bkz. demo-requests.js). Başka hiçbir /api/* ucu bu önekle
+//     başlamamalı; yeni bir public uç eklerken bunu bilerek/açıkça yapın.
 
 import { hashPassword, verifyPassword, signJWT, verifyJWT, generateId } from './auth.js';
+import { handleDemoRequestSubmit, handleDemoRequestsList, handleDemoRequestUpdate } from './demo-requests.js';
 
 export { PresentationLock } from './presentation-lock-do.js';
 
@@ -39,14 +45,14 @@ function corsHeaders(origin) {
   };
 }
 
-function json(data, status, extraHeaders) {
+export function json(data, status, extraHeaders) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
     headers: { 'Content-Type': 'application/json', ...(extraHeaders || {}) },
   });
 }
 
-async function writeAudit(env, { company_id, user_id, action, entity_type, entity_id, old_value, new_value, request }) {
+export async function writeAudit(env, { company_id, user_id, action, entity_type, entity_id, old_value, new_value, request }) {
   try {
     await env.DB.prepare(
       `INSERT INTO audit_log (id, company_id, user_id, action, entity_type, entity_id, old_value, new_value, ip, device, created_at)
@@ -103,7 +109,7 @@ const VIEWER_SAFE_MUTATIONS = new Set([
 
 // Verilen isteğin JWT'sini doğrular. allowedRoles boşsa herhangi bir
 // oturum açmış kullanıcı geçer. Döner: {sub, company_id, role} ya da null.
-async function requireAuth(request, env, allowedRoles) {
+export async function requireAuth(request, env, allowedRoles) {
   const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return null;
@@ -417,6 +423,26 @@ async function route(request, url, env) {
     await env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).bind(newHash, user.id).run();
     await writeAudit(env, { company_id: user.company_id, user_id: user.id, action: 'user.change_password', entity_type: 'user', entity_id: user.id, request });
     return json({ ok: true });
+  }
+
+  // ---- DEMO REQUESTS (Faz 4 — gerçek demo talebi akışı) ----------------
+  // POST /api/public/demo-requests: KİMLİK DOĞRULAMA GEREKTİRMEZ (bkz.
+  // dosya başındaki güvenlik notu) — index.html'deki demo formu artık
+  // yalnızca bir mailto: linki açmak yerine buraya gerçek bir kayıt yazar.
+  if (path === '/api/public/demo-requests' && method === 'POST') {
+    return handleDemoRequestSubmit(request, env, { json, writeAudit });
+  }
+
+  if (path === '/api/admin/demo-requests' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleDemoRequestsList(request, env, { json });
+  }
+
+  if ((m = path.match(/^\/api\/admin\/demo-requests\/([^/]+)$/)) && method === 'PATCH') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
+    return handleDemoRequestUpdate(request, env, { json, writeAudit, auth, id: m[1] });
   }
 
   // ---- COMPANIES (admin only) -----------------------------------------

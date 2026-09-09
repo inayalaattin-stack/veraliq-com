@@ -53,7 +53,7 @@ testleri (yeni bir test dosyası, `worker-portal/test/portal-worker.test.mjs`
   bir faz olarak tasarlanacak.
 - Son metinlerin profesyonel hukuki incelemeye ihtiyacı olduğu açıkça belirtilecek.
 
-## Faz 4 — Gerçek demo talebi akışı (P1)
+## Faz 4 — Gerçek demo talebi akışı (P1) — TAMAMLANDI ✅
 
 - Demo talebi için ayrı veri modeli/endpoint (tenant emlak lead'lerinden ayrı).
 - Public endpoint: sunucu tarafı doğrulama/normalize/rate-limit/Turnstile/honeypot/

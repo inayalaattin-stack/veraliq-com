@@ -422,6 +422,12 @@
   .demo-form label{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;display:block;}
   .form-status{font-size:13px;color:var(--green);margin-top:10px;display:none;}
   .form-status.show{display:block;}
+  .form-status.error{color:#e07a7a;}
+  /* Honeypot: gerçek ziyaretçilerin GÖRMEYECEĞİ/dolduramayacağı bir alan
+     (bkz. worker-portal/demo-requests.js) — display:none yerine ekran
+     dışına taşıma kullanılıyor çünkü bazı botlar display:none alanları
+     zaten atlıyor; bu daha güvenilir bir honeypot deseni. */
+  .hp-field{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
 
   /* Footer */
   footer{padding:48px 0 32px;}
@@ -1138,8 +1144,9 @@
         </select>
       </div>
       <div><label data-i18n="form.volume">Aylık Lead / Satış Hacmi (opsiyonel)</label><input type="text" name="volume"></div>
+      <div class="hp-field" aria-hidden="true"><label for="demoWebsite">Website</label><input type="text" id="demoWebsite" name="website" tabindex="-1" autocomplete="off"></div>
       <button type="submit" class="btn btn-primary" style="justify-content:center;margin-top:6px;" data-i18n="form.submit">Demo Talep Et</button>
-      <div class="form-status" id="formStatus" data-i18n="form.status">Teşekkürler — e-posta uygulamanız açıldı, göndermeniz yeterli. En kısa sürede dönüş yapacağız.</div>
+      <div class="form-status" id="formStatus"></div>
     </form>
   </div>
 </section>
@@ -1242,8 +1249,8 @@
 <!-- Kapatıldığında: yeniden açma butonu -->
 <button type="button" class="agent-reopen" id="agentReopenBtn" hidden data-i18n="agent.reopenBtn">Agent'ı Aç</button>
 
-<script src="i18n.js?v=7"></script>
-<script src="script.js?v=9"></script>
+<script src="i18n.js?v=8"></script>
+<script src="script.js?v=10"></script>
 <script src="motion.js?v=1" defer></script>
 <script type="module" src="agent-core/widget.js?v=10"></script>
 </body>

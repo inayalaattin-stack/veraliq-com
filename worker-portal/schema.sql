@@ -306,3 +306,38 @@ CREATE TABLE IF NOT EXISTS conversation_summaries (
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_conv_summaries_conversation ON conversation_summaries(conversation_id);
+
+-- ---------------------------------------------------------------------------
+-- demo_requests — Faz 4: veraliq.com'un KENDİ demo/satış talepleri (VERALIQ'in
+-- muhtemel müşteri adayları). Kasıtlı olarak `leads` tablosundan AYRI:
+-- `leads`, bir tenant ŞİRKETİN kendi emlak alıcısı adaylarını tutar;
+-- `demo_requests` ise VERALIQ'in kendi ticari lead'lerini tutar — hiçbir
+-- company_id'ye bağlı değildir (henüz VERALIQ müşterisi olmayan bir şirketten
+-- gelir). ip/user_agent, DATA-PROCESSING-MAP.md'de belgelenen audit_log
+-- deseniyle aynı (kaynak: CF-Connecting-IP / User-Agent).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS demo_requests (
+  id                TEXT PRIMARY KEY,
+  name              TEXT NOT NULL,
+  company           TEXT NOT NULL,
+  phone             TEXT NOT NULL,
+  email             TEXT NOT NULL,
+  company_type      TEXT NOT NULL DEFAULT '',
+  volume            TEXT NOT NULL DEFAULT '',
+  source            TEXT NOT NULL DEFAULT 'website',
+  status            TEXT NOT NULL DEFAULT 'new',        -- 'new'|'contacted'|'scheduled'|'won'|'lost'
+  owner_user_id     TEXT REFERENCES users(id) ON DELETE SET NULL,
+  notes             TEXT NOT NULL DEFAULT '',
+  consent_version   TEXT NOT NULL DEFAULT '',
+  consent_timestamp TEXT,
+  ip                TEXT NOT NULL DEFAULT '',
+  user_agent        TEXT NOT NULL DEFAULT '',
+  -- notified_at: gerçek bir bildirim (e-posta/webhook) BAŞARIYLA gönderildiğinde
+  -- doldurulur — hiçbir zaman kayıt oluşturulurken "sanki gönderildi" gibi
+  -- otomatik doldurulmaz (bkz. portal-api-worker.js'deki demo-requests route'u).
+  notified_at       TEXT,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_demo_requests_status ON demo_requests(status);
+CREATE INDEX IF NOT EXISTS idx_demo_requests_created ON demo_requests(created_at);

@@ -98,6 +98,11 @@ const env = {
   PRESENTATION_LOCK: new DONamespaceShim(),
   JWT_SECRET: 'test-jwt-secret',
   AGENT_SHARED_SECRET: 'test-agent-secret',
+  // Faz 4: /api/public/demo-requests fail-closed rate limiting gerektirir
+  // (bkz. demo-requests.js) — testlerin çoğu bunun izin vermesini bekler;
+  // rate-limit'in KENDİSİNİ test eden bloklar `Object.assign({}, env, {...})`
+  // ile bu binding'i geçici olarak reddedecek/kaldıracak şekilde override eder.
+  DEMO_REQUEST_RATE_LIMITER: { limit: async () => ({ success: true }) },
 };
 
 function req(method, path, body, headers) {
@@ -775,6 +780,98 @@ const run = async () => {
   const decConflicts = [decA.status === 409, decB.status === 409].filter(Boolean).length;
   check('FIX: eşzamanlı iki onay kararından yalnızca biri uygulanır, diğeri 409 döner',
     decWinners === 1 && decConflicts === 1, { statusA: decA.status, statusB: decB.status });
+
+  // ---------------------------------------------------------------------
+  // F) Faz 4 — /api/public/demo-requests (gerçek demo talebi akışı)
+  // ---------------------------------------------------------------------
+  async function demoCount() {
+    const row = await db.prepare(`SELECT COUNT(*) AS n FROM demo_requests`).get();
+    return row.n;
+  }
+
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', { name: 'Ali Veli' }), env); // company/phone/email eksik
+  data = await r.json();
+  check('demo-requests: eksik alanlar 400 döner', r.status === 400 && data.error === 'missing_fields', data);
+
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: 'Ali Veli', company: 'ABC İnşaat', phone: '5551112233', email: 'gecersiz-eposta',
+  }), env);
+  data = await r.json();
+  check('demo-requests: geçersiz e-posta 400 döner', r.status === 400 && data.error === 'invalid_email', data);
+
+  const beforeHoneypot = await demoCount();
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: 'Bot', company: 'Bot A.Ş.', phone: '5550000000', email: 'bot@example.com', website: 'http://spam.example',
+  }), env);
+  data = await r.json();
+  check('demo-requests: honeypot dolu -> "başarılı" görünür ama HİÇBİR KAYIT AÇILMAZ',
+    r.status === 201 && data.id === 'ignored' && (await demoCount()) === beforeHoneypot, data);
+
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: 'Zeynep Yıldız', company: 'Yıldız Gayrimenkul', phone: '5559998877', email: 'Zeynep@Example.com', type: 'Gayrimenkul Şirketi', volume: '50-100',
+  }), env);
+  data = await r.json();
+  check('demo-requests: geçerli talep 201 ile kalıcı kayıt oluşturur', r.status === 201 && !!data.id, data);
+  const demoReqId = data.id;
+
+  const dupBefore = await demoCount();
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: 'Zeynep Yıldız', company: 'Yıldız Gayrimenkul', phone: '5559998877', email: 'zeynep@example.com',
+  }), env);
+  data = await r.json();
+  check('demo-requests: aynı e-posta+telefonla kısa sürede tekrar gönderim -> YENİ KAYIT AÇMAZ (idempotent)',
+    r.status === 200 && data.duplicate === true && data.id === demoReqId && (await demoCount()) === dupBefore, data);
+
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: '=cmd|\'/c calc\'!A1', company: '+SUM(A1:A9)', phone: '5551234567', email: 'formula@example.com',
+  }), env);
+  data = await r.json();
+  check('demo-requests: formül-injection olabilecek değerler zararsızlaştırılarak kaydedilir', r.status === 201, data);
+
+  r = await worker.fetch(req('GET', '/api/admin/demo-requests', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const formulaRow = (data.demo_requests || []).find(function (row) { return row.email === 'formula@example.com'; });
+  check('demo-requests: kaydedilen isim/şirket alanları formül karakteriyle BAŞLAMIYOR (başına \' eklendi)',
+    !!formulaRow && formulaRow.name.startsWith("'=") && formulaRow.company.startsWith("'+"), formulaRow);
+
+  const xssPayload = '<script>alert(1)</script>';
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: xssPayload, company: 'XSS Test A.Ş.', phone: '5559871234', email: 'xss@example.com',
+  }), env);
+  check('demo-requests: XSS payload taşıyan talep de kalıcı olarak kaydedilir (kaçışlama render katmanının işidir)', r.status === 201);
+  r = await worker.fetch(req('GET', '/api/admin/demo-requests', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const xssRow = (data.demo_requests || []).find(function (row) { return row.email === 'xss@example.com'; });
+  check('demo-requests: XSS payload DEĞİŞTİRİLMEDEN (bozulmadan) saklanır — kaçışlama depoda değil admin.html renderinda yapılmalı',
+    !!xssRow && xssRow.name === xssPayload, xssRow);
+
+  r = await worker.fetch(req('GET', '/api/admin/demo-requests'), env); // Authorization yok
+  check('demo-requests admin listesi: kimlik doğrulama olmadan 401', r.status === 401);
+
+  r = await worker.fetch(req('GET', '/api/admin/demo-requests', null, { Authorization: 'Bearer ' + ownerToken }), env); // company_owner, admin DEĞİL
+  check('demo-requests admin listesi: veraliq_admin OLMAYAN bir rol 401 alır', r.status === 401);
+
+  r = await worker.fetch(req('PATCH', `/api/admin/demo-requests/${demoReqId}`, { status: 'contacted', notes: 'Aradık, ilgileniyorlar.' }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('demo-requests: admin durum/not güncelleyebilir', r.status === 200 && data.demo_request.status === 'contacted' && data.demo_request.notes === 'Aradık, ilgileniyorlar.', data);
+
+  r = await worker.fetch(req('GET', `/api/audit-log`, null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const demoAuditEntry = (data.entries || []).find(function (row) { return row.entity_type === 'demo_request' && row.entity_id === demoReqId; });
+  check('demo-requests: durum güncellemesi audit_log\'a yazılır', !!demoAuditEntry, demoAuditEntry);
+
+  r = await worker.fetch(req('PATCH', `/api/admin/demo-requests/does-not-exist`, { status: 'contacted' }, { Authorization: 'Bearer ' + adminToken }), env);
+  check('demo-requests: var olmayan id için 404', r.status === 404);
+
+  // Rate limiting: binding "hayır" derse 429; binding HİÇ yoksa da (yanlış
+  // yapılandırma) KAPALI başarısız olup 429 dönmeli — sessizce açık kalmamalı.
+  const denyingEnv = Object.assign({}, env, { DEMO_REQUEST_RATE_LIMITER: { limit: async () => ({ success: false }) } });
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', { name: 'X', company: 'Y', phone: '5550001111', email: 'rl@example.com' }), denyingEnv);
+  check('demo-requests: rate limiter reddederse 429', r.status === 429);
+
+  const unconfiguredEnv = Object.assign({}, env); delete unconfiguredEnv.DEMO_REQUEST_RATE_LIMITER;
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', { name: 'X', company: 'Y', phone: '5550001111', email: 'rl2@example.com' }), unconfiguredEnv);
+  check('demo-requests: rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429), sessizce açılmaz', r.status === 429);
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);
