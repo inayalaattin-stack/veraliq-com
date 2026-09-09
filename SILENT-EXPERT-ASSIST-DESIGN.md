@@ -348,9 +348,21 @@ BIRAKILMAZ (Zero Trust AI ilkesiyle tutarlı).
 - Her tur kendi migration + test + review döngüsünden geçer (Faz 1-10'daki
   AYNI disiplin — tek dev commit'te hepsini birden YAZILMAYACAK).
 
-## 14. Bu belgeyle YAPILMAYAN (açık sınır)
+## 14. Uygulama durumu (kullanıcı onayı sonrası güncellendi)
 
-Migration dosyası (`0007_...sql`) HENÜZ YAZILMADI. Hiçbir route kodu
-yazılmadı. `ExpertQueryChannel` DO'su yazılmadı. `wrangler.toml`'a hiçbir
-binding eklenmedi. Hiçbir test yazılmadı. Bunların HEPSİ, bu tasarımın
-kullanıcı tarafından onaylanmasından SONRAKİ bir adım.
+**1. tur TAMAMLANDI** (commit `1e99cc0`): `migrations/0007_silent_expert_assist.sql`
++ `schema.sql` (6 tablo + `push_subscriptions`), `worker-portal/expert-assist.js`,
+route wiring (`portal-api-worker.js`), `approval_requests` decide route'una
+`approval_limit` kontrolü, 29 yeni test (toplam worker-portal suite: 218
+PASS, 0 FAIL). Kapsam: veri modeli, durum makinesi, atomik "ilk geçerli
+cevap" kabulü, tenant/scope yetki kontrolü, kategori ayrımı, rıza kapılı
+hafıza, kurumsal bilgi onay akışı.
+
+**2-3. turlar HENÜZ YAPILMADI**: `ExpertQueryChannel` Durable Object'i
+yazılmadı — canlı görüşmeye geri push YOK, bu turda yalnızca polling
+(`GET /api/expert-queries/:id`) var. `wrangler.toml`'a hiçbir yeni binding
+eklenmedi. Portal notification center UI, PWA/Web Push, SMS/WhatsApp
+entegrasyonu YOK. Hiçbir migration canlı D1'e uygulanmadı, hiçbir worker
+deploy edilmedi, hiçbir commit push edilmedi — bunlar kullanıcının kendi
+PowerShell'inde yapması gereken adımlar (proje kuralı: Claude push/deploy
+çalıştırmaz).
