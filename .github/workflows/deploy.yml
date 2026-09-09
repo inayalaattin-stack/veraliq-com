@@ -21,44 +21,88 @@ jobs:
   deploy:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Publish boundary (Faz 1): the whole repo root used to be handed to
+      # Cloudflare Pages (`directory: .`), which meant worker source,
+      # schema.sql/seed.sql, migrations, tests, internal docs, and
+      # spatius-test.html (a real, callable Spatius session/TTS test page)
+      # were all served as public static files. build-public-dist.mjs copies
+      # only an explicit allowlist into public-dist/; verify-public-dist.mjs
+      # fails the build if a forbidden path sneaks in or a required page/
+      # local asset reference is missing. Only public-dist/ is ever deployed.
+      - name: Build public-dist (allowlisted static artifact)
+        run: node scripts/build-public-dist.mjs
+      - name: Verify public-dist (required pages present, forbidden paths absent, local refs resolve)
+        run: node scripts/verify-public-dist.mjs
+      - name: Deploy public-dist to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: veraliq-com
-          directory: .
+          command: pages deploy public-dist --project-name=veraliq-com
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
   security-scan:
     if: github.event.schedule == '0 1 * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run npm audit
-        run: npm audit --audit-level=high || true
-      - name: OWASP dependency check
-        uses: dependency-check/Dependency-Check_Action@main
+      - uses: actions/setup-node@v4
         with:
-          project: 'veraliq'
-          path: '.'
-          format: 'HTML'
-      - name: Upload report
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: reports/
+          node-version: '24'
+      # There is no package.json anywhere in this repo, so `npm audit` and an
+      # OWASP dependency-check scan had nothing to audit — `|| true` meant
+      # this "security scan" always reported green regardless of what it
+      # (didn't) check. Real checks for a dependency-free vanilla-JS repo:
+      # syntax-validate every script, re-run the worker-portal test suite
+      # (RBAC/tenant-isolation/race-condition coverage), and re-run the
+      # public-publish-boundary build+verify so a future change can't quietly
+      # reopen the Faz 1 data-exposure bug.
+      - name: Syntax-check every JS/MJS file
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' f; do
+            node --check "$f" || fail=1
+          done < <(find . \
+            -path ./.git -prune -o \
+            -path ./node_modules -prune -o \
+            -path ./.wrangler -prune -o \
+            -path ./public-dist -prune -o \
+            \( -name '*.js' -o -name '*.mjs' \) -print0)
+          exit $fail
+      - name: Run worker-portal test suite
+        working-directory: worker-portal/test
+        run: node --experimental-sqlite portal-worker.test.mjs
+      - name: Verify public-publish boundary (allowlist regression guard)
+        run: |
+          node scripts/build-public-dist.mjs
+          node scripts/verify-public-dist.mjs
 
   backup:
     if: github.event.schedule == '0 */6 * * *'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Run 3-2-1 backup
-        env:
-          SOURCE_DIR: ./data
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
-        run: bash backup-template.sh
+      # Previous job ran backup-template.sh against SOURCE_DIR=./data — that
+      # directory does not exist anywhere in this repo, so the job could
+      # only ever fail or no-op, while `schedule` jobs don't notify on
+      # failure the way a push does, making this look silently "handled".
+      # The real, working D1 backup script is worker-portal/scripts/backup-d1.sh
+      # (real `wrangler d1 export`, optional AES-256-CBC+PBKDF2 encryption
+      # with a mandatory decrypt-and-compare verification round-trip) — but
+      # it has never been run end-to-end in this sandbox (no Cloudflare
+      # credentials here), so wiring it into an unattended cron without ever
+      # having exercised it once would be worse than an honest gap. This
+      # step fails ON PURPOSE — see IMPLEMENTATION-BASELINE.md — instead of
+      # silently reporting success while backing up nothing.
+      - name: D1 backup is not wired yet — explicit setup-required failure
+        run: |
+          echo "::error::Scheduled D1 backup is not configured. Run worker-portal/scripts/backup-d1.sh once from a machine with 'wrangler login' access to verify it end-to-end, then wire this job to call it with CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / VERALIQ_BACKUP_PASSPHRASE as repo secrets and upload the resulting .enc file as a workflow artifact (or ship it to R2/S3). This job intentionally fails until that's done so the schedule stays visibly red instead of looking healthy while doing nothing."
+          exit 1
