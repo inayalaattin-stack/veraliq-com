@@ -111,6 +111,9 @@ const env = {
   // Faz 10: tenant widget (gerçek son-müşteri ajanı) rate limitleri.
   TENANT_VISITOR_RATE_LIMITER: { limit: async () => ({ success: true }) },
   TENANT_LEAD_RATE_LIMITER: { limit: async () => ({ success: true }) },
+  // Faz 10 review bulgusu: salt-okunur public uçlar da (resolve/projects/units)
+  // artık rate limitli.
+  TENANT_PUBLIC_READ_RATE_LIMITER: { limit: async () => ({ success: true }) },
 };
 
 function req(method, path, body, headers) {
@@ -1093,6 +1096,43 @@ const run = async () => {
   const tenantLeadRateDenyEnv = Object.assign({}, env); delete tenantLeadRateDenyEnv.TENANT_LEAD_RATE_LIMITER;
   r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', { name: 'X', phone: '5550001111' }, { Authorization: 'Bearer ' + tenantVisitorToken }), tenantLeadRateDenyEnv);
   check('tenant widget: lead rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429)', r.status === 429);
+
+  // Review fix: salt-okunur public uçlar (resolve/projects/units) da artık
+  // rate limitli ve AYNI fail-closed ilkesine tabi (binding yok VEYA reddeder).
+  const tenantReadRateDenyEnv = Object.assign({}, env, { TENANT_PUBLIC_READ_RATE_LIMITER: { limit: async () => ({ success: false }) } });
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co'), tenantReadRateDenyEnv);
+  check('review fix: tenant resolve rate limiter reddederse 429', r.status === 429);
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co/projects'), tenantReadRateDenyEnv);
+  check('review fix: tenant projects rate limiter reddederse 429', r.status === 429);
+  const tenantReadRateUnconfiguredEnv = Object.assign({}, env); delete tenantReadRateUnconfiguredEnv.TENANT_PUBLIC_READ_RATE_LIMITER;
+  r = await worker.fetch(req('GET', '/api/public/tenant/tenant-test-co/units'), tenantReadRateUnconfiguredEnv);
+  check('review fix: tenant units rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429)', r.status === 429);
+
+  // Review fix: lead oluştururken project_id, /api/leads'teki customer_id
+  // doğrulamasıyla AYNI ilkeyle kontrol edilir — başka bir şirketin (ya da
+  // hiç var olmayan) project_id'sine bağlanma denemesi sessizce reddedilir
+  // (null kalır), lead oluşturmayı ENGELLEMEZ.
+  r = await worker.fetch(req('POST', '/api/companies', {
+    name: 'Yabancı Proje Test A.Ş.', slug: 'tenant-foreign-proj-test', owner_email: 'tenant-foreign-owner@veraliq.com', owner_password: 'TenantTest123!'
+  }, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const foreignCompanyId = data.id;
+  await worker.fetch(req('PATCH', `/api/companies/${foreignCompanyId}`, { tenant_widget_enabled: 1 }, { Authorization: 'Bearer ' + adminToken }), env);
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'tenant-foreign-owner@veraliq.com', password: 'TenantTest123!' }), env);
+  data = await r.json();
+  const foreignOwnerToken = data.token;
+  r = await worker.fetch(req('POST', '/api/projects', { name: 'Yabancı Proje', status: 'selling' }, { Authorization: 'Bearer ' + foreignOwnerToken }), env);
+  data = await r.json();
+  const foreignProjectId = data.id;
+
+  r = await worker.fetch(req('POST', '/api/public/tenant/tenant-test-co/leads', {
+    name: 'Proje Sızıntı Denemesi', phone: '5553332211', project_id: foreignProjectId,
+  }, { Authorization: 'Bearer ' + tenantVisitorToken }), env);
+  data = await r.json();
+  check('review fix: başka şirketin project_id\'sine bağlama denemesi lead oluşturmayı ENGELLEMEZ (201)', r.status === 201 && !!data.id, data);
+  r = await worker.fetch(req('GET', `/api/leads/${data.id}`, null, { Authorization: 'Bearer ' + tenantOwnerToken }), env);
+  data = await r.json();
+  check('review fix: yabancı project_id GERÇEKTEN null kaldı, başka şirketin id\'si sızmadı', data.lead.project_id === null, data);
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail > 0 ? 1 : 0);

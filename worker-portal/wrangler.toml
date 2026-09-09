@@ -77,3 +77,15 @@ namespace_id = "3004"
   [ratelimits.simple]
   limit = 5
   period = 60
+
+# Faz 10 review bulgusu: salt-okunur public uçların (resolve/projects/units)
+# HİÇ rate limiti yoktu — bu, dosyanın kendi savunma modeliyle ("gerçek
+# savunma katmanı rate limiting'dir") çelişiyordu ve sınırsız slug tarama +
+# envanter kazımaya açıktı. Daha yüksek limit: bunlar salt-okunur ve normal
+# bir widget yüklemesi sırasında birkaç kez çağrılabilir.
+[[ratelimits]]
+name = "TENANT_PUBLIC_READ_RATE_LIMITER"
+namespace_id = "3005"
+  [ratelimits.simple]
+  limit = 30
+  period = 60

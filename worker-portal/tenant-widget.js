@@ -71,6 +71,8 @@ async function resolveTenant(env, slug) {
 
 /** GET /api/public/tenant/:slug — tenant resolution. */
 export async function handleTenantResolve(request, env, { json }, slug) {
+  const rateOk = await checkRateLimit(env.TENANT_PUBLIC_READ_RATE_LIMITER, (request.headers.get('CF-Connecting-IP') || 'unknown') + ':' + slug);
+  if (!rateOk) return json({ error: 'rate_limited' }, 429);
   const company = await resolveTenant(env, slug);
   // Bilerek 404 (401/403 değil) — bir slug'ın var olup olmadığını veya
   // widget'ının kapalı olduğunu dışarıya sızdırmamak için aynı yanıt.
@@ -80,6 +82,8 @@ export async function handleTenantResolve(request, env, { json }, slug) {
 
 /** GET /api/public/tenant/:slug/projects — yalnızca YAYINLANMIŞ (satışta) projeler. */
 export async function handleTenantProjects(request, env, { json }, slug) {
+  const rateOk = await checkRateLimit(env.TENANT_PUBLIC_READ_RATE_LIMITER, (request.headers.get('CF-Connecting-IP') || 'unknown') + ':' + slug);
+  if (!rateOk) return json({ error: 'rate_limited' }, 429);
   const company = await resolveTenant(env, slug);
   if (!company) return json({ error: 'not_found' }, 404);
   const { results } = await env.DB.prepare(
@@ -91,6 +95,8 @@ export async function handleTenantProjects(request, env, { json }, slug) {
 
 /** GET /api/public/tenant/:slug/units?project_id=X — yalnızca MEVCUT (AVAILABLE) birimler. */
 export async function handleTenantUnits(request, env, { json }, slug, url) {
+  const rateOk = await checkRateLimit(env.TENANT_PUBLIC_READ_RATE_LIMITER, (request.headers.get('CF-Connecting-IP') || 'unknown') + ':' + slug);
+  if (!rateOk) return json({ error: 'rate_limited' }, 429);
   const company = await resolveTenant(env, slug);
   if (!company) return json({ error: 'not_found' }, 404);
   const projectId = url.searchParams.get('project_id');
@@ -162,8 +168,16 @@ export async function handleTenantLeadCreate(request, env, { json, writeAudit },
   const phone = cleanPhone(body.phone); // telefon formül-nötrleştirmeye tabi DEĞİL (Faz 4 review bulgusu — "+90..." bozulmasın)
   const email = typeof body.email === 'string' ? cleanText(body.email).toLowerCase() : '';
   const interest = cleanText(body.interest, 500);
-  const projectId = typeof body.project_id === 'string' ? body.project_id : null;
   if (!name || !phone) return json({ error: 'missing_fields', required: ['name', 'phone'] }, 400);
+
+  // Faz 10 review bulgusu: /api/leads'teki customer_id doğrulamasıyla AYNI
+  // ilke — istemciden gelen project_id'ye KÖRÜ KÖRÜNE güvenilmez, bu tenant'a
+  // GERÇEKTEN ait mi diye kontrol edilir (yoksa/başka şirketinse null kalır).
+  let projectId = null;
+  if (typeof body.project_id === 'string' && body.project_id) {
+    const p = await env.DB.prepare(`SELECT id FROM projects WHERE id = ? AND company_id = ?`).bind(body.project_id, company.id).first();
+    if (p) projectId = p.id;
+  }
 
   let notes = 'VERALIQ tenant widget üzerinden AI ajanıyla görüşme sonucu oluşturuldu.';
   if (body.requestHuman === true) notes += ' İNSAN TEMSİLCİ TALEP EDİLDİ.';
