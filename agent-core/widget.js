@@ -14,7 +14,7 @@
 // index.html — module scripts defer automatically, so this always runs
 // after script.js (which defines window.VeraliqI18N) has executed.
 
-import { initAgentWidget } from './widget-runtime.js?v=8';
+import { initAgentWidget } from './widget-runtime.js?v=9';
 
 // The agent's identity on veraliq.com itself (spec section 11 — this is the
 // "VERALIQ Digital Sales Assistant" persona, distinct from any client

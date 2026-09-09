@@ -53,7 +53,7 @@ export const AGENT_PROVIDER_CONFIG = {
   // degisecek, avatarProvider ayni kalacak.
   // 2026-09-06 itibariyle Spatius kredisi tükendiği için YUKARIDAKI GEÇİCİ
   // GERİ ALMA notuna bakın — bu iki satır şu an 'mock' / 'webspeech'.
-  avatarProvider: 'mock',
+  avatarProvider: 'spatius',
   // 'googleTranslate' ZORUNLU eşleşme: 'spatius' provider'i speak() icinde
   // gercek bir audioBuffer bekliyor (yoksa throw ediyor) ve orchestrator.js
   // bu hatayi sessizce yutuyor — yani 'webspeech' ile birlikte kullanilirsa
@@ -64,7 +64,7 @@ export const AGENT_PROVIDER_CONFIG = {
   // (avatarProvider 'mock' olduğu sürece bu kısıtlama uygulanmaz —
   // MockAvatarProvider herhangi bir TTS ile çalışır, bkz. yukarıdaki GEÇİCİ
   // GERİ ALMA notu.)
-  ttsProvider: 'webspeech',
+  ttsProvider: 'googleTranslate',
   // 'webspeech' (default today — free, browser-native) | 'whisper'
   sttProvider: 'webspeech',
   // 'faq' (default today — free, deterministic, no API key) | 'openai' | 'anthropic'
