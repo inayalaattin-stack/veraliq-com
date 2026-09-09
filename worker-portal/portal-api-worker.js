@@ -430,6 +430,19 @@ async function route(request, url, env) {
   // dosya başındaki güvenlik notu) — index.html'deki demo formu artık
   // yalnızca bir mailto: linki açmak yerine buraya gerçek bir kayıt yazar.
   if (path === '/api/public/demo-requests' && method === 'POST') {
+    // Security review fix (Faz 4): bir tarayıcı Origin header'ı GÖNDERDİYSE
+    // (Origin, tarayıcının kendi eklediği, istemcinin taklit edemeyeceği bir
+    // başlıktır) ve bu ALLOWED_ORIGINS'te değilse reddet — bu, başka bir
+    // sitenin `Content-Type: text/plain` ile CORS preflight'ını atlatıp bu
+    // uca sahte talep gönderebilmesini (drive-by lead spam) engeller.
+    // Tarayıcı OLMAYAN istemciler (curl, sunucu-sunucu) zaten Origin
+    // göndermez — onlar için gerçek engel yine rate limiting'dir, Origin
+    // burada bir CSRF/bot kanıtı değil, yalnızca tarayıcı-kaynaklı istismarı
+    // kapatan ek bir katmandır.
+    const reqOrigin = request.headers.get('Origin');
+    if (reqOrigin && !ALLOWED_ORIGINS.has(reqOrigin)) {
+      return json({ error: 'origin_not_allowed' }, 403);
+    }
     return handleDemoRequestSubmit(request, env, { json, writeAudit });
   }
 

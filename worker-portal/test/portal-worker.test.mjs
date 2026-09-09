@@ -789,6 +789,14 @@ const run = async () => {
     return row.n;
   }
 
+  // Review fix regression test: bir tarayıcının gönderdiği güvenilmeyen
+  // Origin, drive-by lead-spam'i (başka bir sitenin gizli formu) engellemek
+  // için reddedilmeli.
+  r = await worker.fetch(req('POST', '/api/public/demo-requests',
+    { name: 'Kötü Niyetli', company: 'Evil Inc', phone: '5550000000', email: 'evil@example.com' },
+    { Origin: 'https://evil.example.com' }), env);
+  check('demo-requests: güvenilmeyen Origin 403 ile reddedilir', r.status === 403);
+
   r = await worker.fetch(req('POST', '/api/public/demo-requests', { name: 'Ali Veli' }), env); // company/phone/email eksik
   data = await r.json();
   check('demo-requests: eksik alanlar 400 döner', r.status === 400 && data.error === 'missing_fields', data);
@@ -804,8 +812,8 @@ const run = async () => {
     name: 'Bot', company: 'Bot A.Ş.', phone: '5550000000', email: 'bot@example.com', website: 'http://spam.example',
   }), env);
   data = await r.json();
-  check('demo-requests: honeypot dolu -> "başarılı" görünür ama HİÇBİR KAYIT AÇILMAZ',
-    r.status === 201 && data.id === 'ignored' && (await demoCount()) === beforeHoneypot, data);
+  check('demo-requests: honeypot dolu -> "başarılı" görünür (gerçek bir id gibi) ama HİÇBİR KAYIT AÇILMAZ',
+    r.status === 201 && typeof data.id === 'string' && data.id.startsWith('demo_') && (await demoCount()) === beforeHoneypot, data);
 
   r = await worker.fetch(req('POST', '/api/public/demo-requests', {
     name: 'Zeynep Yıldız', company: 'Yıldız Gayrimenkul', phone: '5559998877', email: 'Zeynep@Example.com', type: 'Gayrimenkul Şirketi', volume: '50-100',
@@ -833,6 +841,18 @@ const run = async () => {
   const formulaRow = (data.demo_requests || []).find(function (row) { return row.email === 'formula@example.com'; });
   check('demo-requests: kaydedilen isim/şirket alanları formül karakteriyle BAŞLAMIYOR (başına \' eklendi)',
     !!formulaRow && formulaRow.name.startsWith("'=") && formulaRow.company.startsWith("'+"), formulaRow);
+
+  // Review fix regression test: telefon alanı formül-nötrleştirmeden HARİÇ
+  // tutulmalı — uluslararası format "+90..." GERÇEK veridir, bozulmamalı.
+  r = await worker.fetch(req('POST', '/api/public/demo-requests', {
+    name: 'Uluslararası Numara', company: 'Test A.Ş.', phone: '+905551112233', email: 'intl-phone@example.com',
+  }), env);
+  check('demo-requests: uluslararası (+ ile başlayan) telefon kabul edilir', r.status === 201);
+  r = await worker.fetch(req('GET', '/api/admin/demo-requests', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  const intlPhoneRow = (data.demo_requests || []).find(function (row) { return row.email === 'intl-phone@example.com'; });
+  check('demo-requests: telefon numarası "+" ile BOZULMADAN saklanır (formül-nötrleştirme telefona uygulanmaz)',
+    !!intlPhoneRow && intlPhoneRow.phone === '+905551112233', intlPhoneRow);
 
   const xssPayload = '<script>alert(1)</script>';
   r = await worker.fetch(req('POST', '/api/public/demo-requests', {

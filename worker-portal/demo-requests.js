@@ -19,6 +19,8 @@
 
 import { generateId } from './auth.js';
 
+const DEMO_STATUSES = ['new', 'contacted', 'scheduled', 'won', 'lost']; // admin.html'in DEMO_STATUS_LABELS'ıyla eşleşmeli
+
 const HONEYPOT_FIELD = 'website'; // formda CSS ile GİZLİ tutulması gereken alan adı
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DUPLICATE_WINDOW_MINUTES = 5;
@@ -27,13 +29,24 @@ const DUPLICATE_WINDOW_MINUTES = 5;
 const CONSENT_VERSION = '2026-09-09';
 
 // Excel/Sheets'te açıldığında formül olarak yorumlanabilecek baştaki
-// karakterleri zararsız hale getirir (CSV/formula injection koruması).
+// karakterleri zararsız hale getirir (CSV/formula injection koruması —
+// bu alanlar ileride bir CSV export'a girebilir, Faz 6/8 kapsamı).
+// TELEFON HARİÇ: uluslararası format "+90..." ile başlar — bu KORUNMASI
+// GEREKEN gerçek veridir, formül değildir (code review bulgusu: ilk
+// sürümde clean() tüm alanlara uygulanıyordu ve gerçek telefon
+// numaralarını "'+90..." şeklinde bozuyordu).
 function neutralizeFormula(value) {
   return /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
 }
 
 function clean(value, maxLen) {
   return neutralizeFormula(String(value == null ? '' : value).trim().slice(0, maxLen || 300));
+}
+
+// Telefon için: formül-nötrleştirme YOK (yukarıdaki not), yalnızca trim +
+// uzunluk sınırı.
+function cleanPhone(value, maxLen) {
+  return String(value == null ? '' : value).trim().slice(0, maxLen || 300);
 }
 
 async function checkRateLimit(binding, key) {
@@ -57,12 +70,15 @@ export async function handleDemoRequestSubmit(request, env, { json, writeAudit }
   // gizli). Doluysa bot kabul edilir — istemciye "başarılı" görünen ama
   // hiçbir şey kaydetmeyen bir yanıt dönülür (bot formun "işe yaramadığını"
   // fark edip farklı bir yol denemeye başlamasın diye) — gerçek ziyaretçileri
-  // ETKİLEMEZ, onlar bu alanı hiç görmüyor.
-  if (body[HONEYPOT_FIELD]) return json({ ok: true, id: 'ignored' }, 201);
+  // ETKİLEMEZ, onlar bu alanı hiç görmüyor. Review fix: gerçek bir id ile
+  // AYNI ŞEKİLDE üretilmiş (ama hiçbir yere kaydedilmemiş) bir id dönülür —
+  // sabit bir "ignored" string'i, botun yanıt şeklinden honeypot'a
+  // takıldığını anlamasına izin verirdi.
+  if (body[HONEYPOT_FIELD]) return json({ ok: true, id: generateId('demo') }, 201);
 
   const name = clean(body.name);
   const company = clean(body.company);
-  const phone = clean(body.phone);
+  const phone = cleanPhone(body.phone);
   const email = clean(body.email).toLowerCase();
   const companyType = clean(body.type);
   const volume = clean(body.volume);
@@ -123,9 +139,12 @@ export async function handleDemoRequestUpdate(request, env, { json, writeAudit, 
   if (!before) return json({ error: 'not_found' }, 404);
 
   const body = await request.json().catch(() => ({}));
+  if (typeof body.status === 'string' && !DEMO_STATUSES.includes(body.status)) {
+    return json({ error: 'invalid_status', allowed: DEMO_STATUSES }, 400);
+  }
   const fields = [];
   const values = [];
-  if (typeof body.status === 'string') { fields.push('status = ?'); values.push(clean(body.status, 30)); }
+  if (typeof body.status === 'string') { fields.push('status = ?'); values.push(body.status); }
   if (typeof body.notes === 'string') { fields.push('notes = ?'); values.push(clean(body.notes, 2000)); }
   if (typeof body.owner_user_id === 'string' || body.owner_user_id === null) {
     fields.push('owner_user_id = ?'); values.push(body.owner_user_id || null);
