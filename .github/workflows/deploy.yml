@@ -87,6 +87,8 @@ jobs:
           node scripts/verify-public-dist.mjs
       - name: Verify i18n key parity across all languages (Faz 6)
         run: node scripts/verify-i18n-parity.mjs
+      - name: Verify pricing parity across all surfaces (Faz 7)
+        run: node scripts/verify-pricing-parity.mjs
 
   backup:
     if: github.event.schedule == '0 */6 * * *'

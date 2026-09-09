@@ -6,7 +6,13 @@
 (function () {
   'use strict';
 
-  var PRICES = { monthly: 25000, annual: 250000 };
+  // Faz 7 — tek doğruluk kaynağı (VERALIQ-CLAUDE-CODE-NIHAI-UYGULAMA-PROMPTU.md
+  // madde 7/9): aylık/yıllık platform bedeli VE başarı primi oranı BURADA
+  // tanımlıdır. i18n.js'deki "%0,5"/"0.5%" gibi yerel biçimlendirilmiş
+  // metinler bu sayısal değerle TUTARLI kalmalı — bkz.
+  // scripts/verify-pricing-parity.mjs (herhangi bir yüzeyde 0.005 dışında
+  // bir oran kalırsa CI'da başarısız olur).
+  var PRICES = { monthly: 25000, annual: 250000, successFeeRate: 0.005 };
   var MONEY = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 });
 
   function tl(n) { return MONEY.format(n) + ' TL'; }

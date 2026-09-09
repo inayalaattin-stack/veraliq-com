@@ -69,14 +69,12 @@ const KB = [
     id: 'pricing',
     keywords: ['fiyat', 'ücret', 'ne kadar', 'paket', 'price', 'cost', 'pricing', 'how much'],
     tr: [
-      'Fiyatlandırma, şirketinizin proje sayısına ve kullanım hacmine göre değişiyor — size özel bir teklif için kısa bir demo görüşmesi ayarlayalım mı?',
-      'Paketler proje sayınıza ve kullanım hacminize göre şekilleniyor, tek bir sabit fiyat yok — isterseniz demo görüşmesinde size özel bir teklif çıkaralım.',
-      'Bu, şirketinize göre değişen bir soru aslında — proje sayınızı ve hacminizi öğrendikten sonra net bir rakam verebiliriz. Kısa bir demo ayarlayalım mı?',
+      'Fiyatlandırmamız sabit: aylık 25.000 TL + KDV veya yıllık 250.000 TL + KDV platform bedeli, artı prim doğuran satış üzerinden %0,5 + KDV başarı primi. Ayrıntılar için /pricing.html sayfamıza bakabilir veya demo talep edebilirsiniz.',
+      'Sabit bir fiyatımız var — aylık 25.000 TL + KDV (ya da yıllık 250.000 TL + KDV) platform bedeli, ayrıca prim doğuran satış başına %0,5 + KDV başarı primi. Fiyatlandırma sayfamızda tüm detaylar var.',
     ],
     en: [
-      'Pricing depends on your project count and usage volume — would you like to set up a short demo call so we can put together a tailored quote?',
-      'There\'s no one-size-fits-all number — packages scale with your project count and usage. A short demo call would let us give you an exact quote.',
-      'That really depends on your scale, so let\'s figure it out together — shall we set up a quick demo to put together a tailored quote?',
+      'Our pricing is fixed: 25,000 TL + VAT monthly (or 250,000 TL + VAT annually) for the platform, plus a 0.5% + VAT success fee on the sale price that triggers it. See our /pricing.html page for details, or request a demo.',
+      'We have a fixed price — 25,000 TL + VAT monthly (or 250,000 TL + VAT annually) for the platform, plus a 0.5% + VAT success fee per qualifying sale. Full details are on our pricing page.',
     ],
     emotion: 'professional',
   },

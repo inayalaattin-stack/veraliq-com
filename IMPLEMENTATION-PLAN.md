@@ -123,7 +123,7 @@ Mevcut tenant/status/race düzeltmeleri korunarak:
 - Güncellenen tüm i18n anahtarları 8 dilde eksiksiz kalacak (site) ve TR/EN/RU'da
   eksiksiz kalacak (portal) — otomatik key-parity testi eklenecek.
 
-## Faz 7 — Fiyat kararı ve merkezi fiyatlandırma — KARAR VERİLDİ, UYGULAMA BEKLİYOR
+## Faz 7 — Fiyat kararı ve merkezi fiyatlandırma — TAMAMLANDI ✅
 
 Kullanıcı kararı: Aylık 25.000 TL+KDV, Yıllık 250.000 TL+KDV, Başarı primi
 %0,5+KDV/prim doğuran satış (matematiksel sabit: `0.005`). Bu fazda:
