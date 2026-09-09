@@ -225,18 +225,29 @@ Görsel dönüşüm yalnızca işlev/iddia düzeltmelerinden SONRA uygulanır.
 olan "yazılı sohbet tamamen kaldırıldı" kararıyla çelişiyor. Bkz.
 `IMPLEMENTATION-BASELINE.md` §7.
 
-## Faz 10 — Çekirdek son-müşteri ajanı, ayrı feature gate (ayrı, dikkatli faz)
+## Faz 10 — Çekirdek son-müşteri ajanı, ayrı feature gate — BACKEND TAMAMLANDI ✅ (frontend YAPILMADI)
 
-Eğer pazarlamanın vaat ettiği gerçek tenant son-müşteri ajanı bugün yoksa, metinle
-örtbas edilmeyecek — ayrı bir feature flag/faz olarak minimum dikey dilim
-tasarlanacak: şirket slug/domain allowlist ile tenant çözümleme, dar kapsamlı
-kısa ömürlü ziyaretçi oturumu, yalnızca yayınlanmış proje/birim/fiyat alanlarını
-okuyan güvenli sorgular, rıza tabanlı lead oluşturma, konuşmanın ilgili lead/
-müşteriye bağlanması, fiyat/stok cevaplarında kaynak-zaman damgası ve belirsizlik/
-fallback, insana devir, audit, rate-limiting, tenant-negatif testler. Randevu,
-otomatik follow-up, WhatsApp, belge ingestion, gerçek CRM connector'ları bu dilim
-gerçekten çalışana kadar "aktif" olarak işaretlenmeyecek — her biri ayrı backend/
-auth/hata-yönetimi/testle ayrı ayrı gönderilecek.
+Gerçek tenant son-müşteri ajanının BACKEND'i (`worker-portal/tenant-widget.js`),
+ayrı bir feature flag (`companies.tenant_widget_enabled`, varsayılan kapalı, bkz.
+migration 0006) arkasında teslim edildi: slug tabanlı tenant çözümleme (domain
+allowlist DEĞİL — bkz. dosyanın kendi güvenlik notu, tenant domain'i şu an
+saklanmıyor), kısa ömürlü (30 dk) ziyaretçi JWT'si, yalnızca yayınlanmış
+(`status='selling'`/`AVAILABLE`) proje/birim alanlarını okuyan sorgular (iç
+operasyon alanları — ada/parsel, sold_price, assigned_agent_*, presentation_
+session_id — hiçbir zaman dönmüyor), rıza tabanlı lead oluşturma + honeypot +
+insana devir işareti, audit_log yazımı, TÜM 5 uçta fail-closed rate limiting
+(review sonrası eklendi — ilk commit'te salt-okunur 3 uç limitsizdi), ve
+tenant-negatif izolasyon (bir tenant'ın visitor token'ı başka bir tenant'ta
+KULLANILAMAZ, testle kanıtlandı). commit `d8cc0c6` + review-fix `96831e2`,
+189/189 test PASS.
+
+**Bilinçli olarak YAPILMADI (kapsam dışı bırakıldı, "aktif" diye sunulmayacak):**
+frontend/demo widget bileşeni (agent-core'da ayrı bir "tenant sales brain" LLM
+provider'ı + gömülebilir bir script/iframe — henüz yok), admin.html'de flag'i
+açıp-kapama için bir UI toggle (şu an yalnızca `PATCH /api/companies/:id` API'si
+üzerinden mümkün), randevu, otomatik follow-up, WhatsApp, belge ingestion,
+gerçek CRM connector'ları. Bu backend, gömülecek bir widget'ı OLMADAN tek
+başına müşteriye "çalışan bir özellik" olarak sunulamaz.
 
 ## Her fazdan sonra ortak test/kalite kapısı
 
