@@ -351,13 +351,18 @@ export async function handleTts(request, env, headers) {
   if (!contentType.toLowerCase().includes('application/json')) {
     return jsonError(headers, 415, 'unsupported_content_type');
   }
-  const contentLength = Number(request.headers.get('Content-Length') || '0');
-  if (contentLength > TTS_MAX_BODY_BYTES) {
+
+  // Faz 2 review fix: Content-Length is client-supplied and can be omitted
+  // or understated — checking it alone doesn't bound anything. Read the
+  // actual body text and check ITS length before parsing.
+  let rawBody;
+  try { rawBody = await request.text(); } catch (e) { return jsonError(headers, 400, 'invalid_json'); }
+  if (rawBody.length > TTS_MAX_BODY_BYTES) {
     return jsonError(headers, 413, 'body_too_large');
   }
 
   let body;
-  try { body = await request.json(); } catch (e) { return jsonError(headers, 400, 'invalid_json'); }
+  try { body = JSON.parse(rawBody); } catch (e) { return jsonError(headers, 400, 'invalid_json'); }
 
   const text = typeof (body && body.text) === 'string' ? body.text.trim() : '';
   if (!text) return jsonError(headers, 400, 'missing_text');

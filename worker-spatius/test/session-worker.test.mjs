@@ -175,6 +175,30 @@ const run = async () => {
     check('session: expired visitor token -> 401 visitor_token_invalid/expired', resp.status === 401 && data.reason === 'expired', data);
   }
   {
+    // Signed with a DIFFERENT secret than the one /session checks against —
+    // exercises the actual HMAC-mismatch (bad_signature) branch, not just
+    // malformed/expired tokens.
+    const env = baseEnv();
+    const forged = await signVisitorToken('a-completely-different-secret', 20 * 60);
+    const r = req('POST', '/session', {}, { Authorization: 'Bearer ' + forged.token });
+    const resp = await handleSession(r, env, headersFor(r));
+    const data = await resp.json();
+    check('session: token signed with wrong secret -> 401 bad_signature', resp.status === 401 && data.reason === 'bad_signature', data);
+  }
+  {
+    // Flip one character in a validly-signed token's signature portion —
+    // exercises bad_signature via tampering rather than a wrong secret.
+    const env = baseEnv();
+    const good = await signVisitorToken(env.VISITOR_TOKEN_SECRET, 20 * 60);
+    const [payloadPart, sigPart] = good.token.split('.');
+    const tamperedChar = sigPart[0] === 'A' ? 'B' : 'A';
+    const tampered = payloadPart + '.' + tamperedChar + sigPart.slice(1);
+    const r = req('POST', '/session', {}, { Authorization: 'Bearer ' + tampered });
+    const resp = await handleSession(r, env, headersFor(r));
+    const data = await resp.json();
+    check('session: tampered signature byte -> 401 bad_signature', resp.status === 401 && data.reason === 'bad_signature', data);
+  }
+  {
     const env = baseEnv({ SPATIUS_API_KEY: undefined });
     const token = await validVisitorToken(env);
     const r = req('POST', '/session', {}, { Authorization: 'Bearer ' + token });
@@ -244,7 +268,19 @@ const run = async () => {
     const big = 'a'.repeat(5000);
     const r = new Request('https://x.test/tts', { method: 'POST', headers: { Origin: 'https://veraliq.com', 'Content-Type': 'application/json', 'Content-Length': String(big.length), Authorization: 'Bearer ' + token }, body: JSON.stringify({ text: big }) });
     const resp = await handleTts(r, env, headersFor(r));
-    check('tts: oversized body rejected (413) via Content-Length', resp.status === 413);
+    check('tts: oversized body rejected (413), honest Content-Length', resp.status === 413);
+  }
+  {
+    // Review fix regression test: an oversized body must still be rejected
+    // even when Content-Length is LIED about (omitted here — undici/fetch
+    // sets it from the real body anyway, but the handler must not rely on
+    // the header value for the size decision; it reads actual bytes).
+    const env = baseEnv();
+    const token = await validVisitorToken(env);
+    const big = 'a'.repeat(5000);
+    const r = new Request('https://x.test/tts', { method: 'POST', headers: { Origin: 'https://veraliq.com', 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ text: big }) });
+    const resp = await handleTts(r, env, headersFor(r));
+    check('tts: oversized body rejected (413) even without a Content-Length header', resp.status === 413);
   }
   {
     const env = baseEnv();

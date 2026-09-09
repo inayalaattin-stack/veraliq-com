@@ -69,13 +69,10 @@ export async function verifyVisitorToken(secret, token) {
   if (parts.length !== 2 || !parts[0] || !parts[1]) return { valid: false, reason: 'malformed' };
   const [payloadB64, sigB64] = parts;
 
-  let payload;
-  try {
-    payload = JSON.parse(decoder.decode(base64UrlDecode(payloadB64)));
-  } catch (e) {
-    return { valid: false, reason: 'malformed' };
-  }
-
+  // Verify the signature over the RAW payload string first, before ever
+  // parsing it as JSON — an attacker-controlled payload should never reach
+  // JSON.parse unauthenticated, even though nothing in this specific parser
+  // is currently exploitable (no eval, no merge into another object).
   let expectedSig;
   let actualSig;
   try {
@@ -94,6 +91,13 @@ export async function verifyVisitorToken(secret, token) {
   let diff = 0;
   for (let i = 0; i < expectedSig.length; i++) diff |= actualSig[i] ^ expectedSig[i];
   if (diff !== 0) return { valid: false, reason: 'bad_signature' };
+
+  let payload;
+  try {
+    payload = JSON.parse(decoder.decode(base64UrlDecode(payloadB64)));
+  } catch (e) {
+    return { valid: false, reason: 'malformed' };
+  }
 
   const now = Math.floor(Date.now() / 1000);
   if (typeof payload.exp !== 'number' || now >= payload.exp) return { valid: false, reason: 'expired' };
