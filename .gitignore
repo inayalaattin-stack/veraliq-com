@@ -30,6 +30,6 @@ services/tts/voice_profiles/*.wav
 __pycache__/
 *.pyc
 
-# Yedekler ve b�y�k binary'ler repo k�k�ne d��erse g�rmezden gel (D:\yedekler'e ta��nmal�)
+# Yedekler ve büyük binary'ler repo köküne düşerse görmezden gel (D:\yedekler'e taşınmalı)
 *.sql
 *.bundle

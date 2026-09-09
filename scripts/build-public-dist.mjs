@@ -17,7 +17,7 @@
 // Usage:  node scripts/build-public-dist.mjs [outDir]
 // Verify: node scripts/verify-public-dist.mjs [outDir]   (run this after)
 
-import { existsSync, mkdirSync, rmSync, cpSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, cpSync, statSync, lstatSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,6 +102,7 @@ let copiedFiles = 0;
 for (const rel of FILES) {
   const src = join(REPO_ROOT, rel);
   if (!existsSync(src)) fail(`allowlisted file is missing from the repo: ${rel}`);
+  if (lstatSync(src).isSymbolicLink()) fail(`allowlisted file is a symlink (not allowed): ${rel}`);
   const dest = join(OUT_DIR, rel);
   mkdirSync(dirname(dest), { recursive: true });
   cpSync(src, dest);
@@ -113,12 +114,24 @@ for (const { from, to, exclude } of DIRECTORIES) {
   const src = join(REPO_ROOT, from);
   if (!existsSync(src) || !statSync(src).isDirectory()) fail(`allowlisted directory is missing: ${from}`);
   const dest = join(OUT_DIR, to);
+  // A symlink anywhere inside the tree could point outside it (e.g. at
+  // worker source or a secret file) — cpSync's default dereference:false
+  // would copy the link itself, whose target this filter never inspects,
+  // so symlinks are rejected outright rather than silently included.
   cpSync(src, dest, {
     recursive: true,
     filter: (source) => {
+      if (lstatSync(source).isSymbolicLink()) fail(`symlink found under allowlisted directory ${from} (not allowed): ${source.slice(src.length + 1)}`);
       const rel = source.slice(src.length + 1).split('\\').join('/');
       if (!rel) return true; // the directory root itself
-      return !(exclude || []).some((ex) => rel === ex || rel.startsWith(ex + '/'));
+      if ((exclude || []).some((ex) => rel === ex || rel.startsWith(ex + '/'))) return false;
+      // Defense in depth beyond the explicit `exclude` list above: reject a
+      // test/tests/__tests__ directory (or anything inside one) at ANY
+      // depth — agent-core/ is copied wholesale, so a future provider
+      // subfolder adding its own nested test dir must be caught too, not
+      // just the one test/ folder that exists today.
+      if (rel.split('/').some((seg) => /^(test|tests|__tests__)$/i.test(seg))) return false;
+      return true;
     },
   });
   copiedDirs++;
