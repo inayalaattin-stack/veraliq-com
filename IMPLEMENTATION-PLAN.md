@@ -97,7 +97,7 @@ Mevcut tenant/status/race düzeltmeleri korunarak:
 
 **Test hedefi:** her değişiklik için negatif-yetkilendirme ve cross-tenant testleri.
 
-## Faz 6 — Capability ledger ve pazarlama/gerçeklik paritesi (P1)
+## Faz 6 — Capability ledger ve pazarlama/gerçeklik paritesi (P1) — TAMAMLANDI ✅
 
 - `CAPABILITY-LEDGER.md`: her özellik için durum (`ACTIVE`/`PILOT`/`PARTIAL`/
   `ROADMAP`/`NOT_AVAILABLE`), kanıt (dosya/API/test), müşteri-görünür yüzey,

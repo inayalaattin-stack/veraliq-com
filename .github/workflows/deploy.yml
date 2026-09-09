@@ -85,6 +85,8 @@ jobs:
         run: |
           node scripts/build-public-dist.mjs
           node scripts/verify-public-dist.mjs
+      - name: Verify i18n key parity across all languages (Faz 6)
+        run: node scripts/verify-i18n-parity.mjs
 
   backup:
     if: github.event.schedule == '0 */6 * * *'
