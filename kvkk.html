@@ -137,10 +137,12 @@
 
     <section>
       <h2>5. Kişisel Verilerin Aktarılması</h2>
-      <p>Kişisel verileriniz, hizmetin sunulabilmesi için sınırlı ölçüde aşağıdaki yurt dışı yerleşik alt işlemcilere aktarılabilir:</p>
+      <p>Kişisel verileriniz, hizmetin sunulabilmesi için sınırlı ölçüde aşağıdaki yurt dışı yerleşik alt işlemcilere aktarılabilir (bkz. <code>DATA-PROCESSING-MAP.md</code> — bu liste koddan doğrulanmıştır):</p>
       <ul>
-        <li><strong>Cloudflare, Inc.</strong> — barındırma, CDN ve güvenlik altyapısı,</li>
-        <li><strong>Google LLC</strong> — yapay zeka asistanının yanıt üretmesi (Gemini API) amacıyla, yalnızca sohbet anında ve anlık olarak.</li>
+        <li><strong>Cloudflare, Inc.</strong> — barındırma, CDN, güvenlik altyapısı ve backend veritabanı.</li>
+        <li><strong>Spatius</strong> — sesli asistanın görsel avatarını render etmesi amacıyla; tarayıcınız bu sağlayıcının sunucularına doğrudan bağlanır.</li>
+        <li><strong>Google LLC (Translate metinden-sese servisi)</strong> — asistanın yanıt METNİNİN sese çevrilmesi amacıyla, yalnızca konuşma anında ve anlık olarak. Resmi bir ticari kullanım anlaşması bulunmamaktadır; geçici/doğrulama amaçlı bir katmandır.</li>
+        <li><strong>Tarayıcınızın konuşma tanıma altyapısı</strong> — sesinizin metne çevrilmesi amacıyla; kullandığınız tarayıcıya/işletim sistemine göre değişen, bizim doğrudan kontrolümüzde olmayan üçüncü taraf servisler içerebilir.</li>
       </ul>
       <p>Bu aktarımlar, KVKK m. 9 kapsamında hizmet sağlayıcılarla yapılan sözleşmesel güvencelere dayanır ve yalnızca hizmetin sunulması için gerekli asgari veriyle sınırlıdır.</p>
     </section>

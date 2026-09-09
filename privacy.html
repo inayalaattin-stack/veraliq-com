@@ -107,17 +107,19 @@
         <tr><td>E-posta adresi</td><td>info@veraliq.com adresine yazdığınızda</td><td>Talebinize dönüş yapmak</td></tr>
         <tr><td>Temel teknik veriler (IP, tarayıcı, sayfa istekleri)</td><td>Siteyi ziyaret ettiğinizde</td><td>Güvenlik, performans, kötüye kullanım engelleme (barındırma sağlayıcımız Cloudflare tarafından standart sunucu logu olarak)</td></tr>
       </table>
-      <p>Asistan sohbet geçmişi yalnızca tarayıcınızın hafızasında (oturum boyunca) tutulur; sayfayı kapattığınızda veya yeniledğinizde silinir. Mesajlarınız yanıt üretmek amacıyla anlık olarak Google'qın Gemini API'sine iletilir (bkz. Bölüm 3).</p>
+      <p>Asistanla sesli görüşme, tarayıcınızın hafızasında (oturum boyunca) tutulur; sayfayı kapattığınızda veya yenilediğinizde silinir — <strong>bu istisna, giriş yapmış şirket personelinin Portal'daki Şirket Yönetim Asistanı ile yaptığı görüşmelerdir</strong>: bu görüşmeler ilgili şirketin kaydı olarak kalıcı olarak saklanır. Sesli görüşmenin nasıl işlendiğine dair ayrıntılar için Bölüm 3'e bakınız.</p>
     </section>
 
     <section>
       <h2>3. Üçüncü Taraf Hizmet Sağlayıcılar</h2>
-      <p>Siteyi çalıştırmak ve yapay zeka asistanını sunmak için aşağıdaki alt işlemcilerle çalışıyoruz:</p>
+      <p>Siteyi çalıştırmak ve sesli yapay zeka asistanını sunmak için aşağıdaki alt işlemcilerle çalışıyoruz (bkz. <code>DATA-PROCESSING-MAP.md</code> — bu liste koddan doğrulanmıştır):</p>
       <ul>
-        <li><strong>Cloudflare</strong> — web barındırma, içerik dağıtım ağı (CDN) ve güvenlik (DDoS/WAF koruması).</li>
-        <li><strong>Google (Gemini API)</strong> — yapay zeka asistanının verdiği yanıtları üretmek için sohbet mesajınız anlık olarak işlenir; mesajlar bizim sunucumuzda (Cloudflare Worker) kalıcı olarak saklanmaz.</li>
+        <li><strong>Cloudflare</strong> — web barındırma, içerik dağıtım ağı (CDN), güvenlik (DDoS/WAF koruması) ve backend veritabanı (Workers/D1).</li>
+        <li><strong>Spatius</strong> — asistanın görsel (video) avatarını render eder; tarayıcınız Spatius'un sunucularına doğrudan bağlanıp asistanın konuşma sesini iletir, karşılığında görüntü alır. Bu, sizin sesiniz değil, asistanın ürettiği yanıtın sesidir.</li>
+        <li><strong>Google (Translate metinden-sese servisi)</strong> — asistanın vereceği yanıt metni, sese çevrilmesi için bu servise anlık olarak iletilir. Resmi bir ticari kullanım anlaşmamız yoktur; bu, doğrulama amaçlı geçici bir katmandır ve ileride değişebilir.</li>
+        <li><strong>Tarayıcınızın kendi konuşma tanıma servisi</strong> — sesli konuştuğunuzda, sesiniz metne çevrilmesi için tarayıcınızın kendi altyapısına (kullandığınız tarayıcı/işletim sistemine göre değişir, örn. bazı tarayıcılarda bu bir bulut servisine gidebilir) iletilir. Bu işlemi biz yönetmeyiz ve göremeyiz.</li>
       </ul>
-      <p>Bu sağlayıcılarla paylaşılan veri, yalnızca hizmeti summak için gerekli asgari düzeydedir ve pazarlama amacıyla üçüncü taraflara satılmaz veya kiralanmaz.</p>
+      <p>Bu sağlayıcılarla paylaşılan veri, yalnızca hizmeti sunmak için gerekli asgari düzeydedir ve pazarlama amacıyla üçüncü taraflara satılmaz veya kiralanmaz.</p>
     </section>
 
     <section>
@@ -127,7 +129,7 @@
 
     <section>
       <h2>5. Veri Saklama</h2>
-      <p>E-posta yoluyla ilettiğiniz talepler, yanıtlama ve makul bir takip süresi boyunca saklanır. Asistan sohbet mesajlarınız sunucu tarafında kalıcı olarak saklanmaz; yalnızca yanıt üretme amacıyla anlık olarak işlenir.</p>
+      <p>E-posta yoluyla ilettiğiniz talepler, yanıtlama ve makul bir takip süresi boyunca saklanır. Genel ziyaretçi olarak sitedeki asistanla yaptığınız sesli görüşme sunucu tarafında kalıcı olarak saklanmaz; yalnızca yanıt üretme amacıyla anlık olarak işlenir. Giriş yapmış şirket personelinin Portal üzerinden asistanla yaptığı görüşmeler ise ilgili şirketin kaydı olarak kalıcı olarak saklanır. Bugün için ne bu kayıtlara ne de güvenlik amaçlı erişim loglarına (IP adresi, tarayıcı bilgisi) uygulanan otomatik bir silme/arşivleme süresi bulunmamaktadır; bu, ayrı bir teknik/hukuki karar konusu olarak değerlendirilmektedir.</p>
     </section>
 
     <section>
