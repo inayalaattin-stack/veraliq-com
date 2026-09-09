@@ -1,0 +1,21 @@
+-- 0005_auth_hardening.sql
+--
+-- Faz 5 (VERALIQ-CLAUDE-CODE-NIHAI-UYGULAMA-PROMPTU.md) — auth sertleştirme.
+-- token_version: bir kullanıcının parolası değiştiğinde (veya bir admin
+-- şifresini sıfırladığında), bu sayaç arttırılır ve o kullanıcı için
+-- ÖNCEDEN imzalanmış TÜM JWT'ler (yeni sayaçla eşleşmedikleri için)
+-- requireAuth() tarafından reddedilir — "parola değişince eski oturumlar
+-- geçersiz olsun" kuralının kod seviyesindeki karşılığı.
+--
+-- UYARI: SQLite'ta "ALTER TABLE ... ADD COLUMN IF NOT EXISTS" yoktur. Bu
+-- migration GÜVENLİ ŞEKİLDE TEKRAR ÇALIŞTIRILAMAZ — ikinci çalıştırma
+-- "duplicate column name" hatası verir. Yalnızca bir kez uygulayın.
+--
+-- GERİYE UYUMLULUK: Bu migrationdan ÖNCE üretilmiş JWT'lerin payload'ında
+-- token_version yoktur (undefined) — requireAuth() bunu 0'a eşit kabul eder
+-- (COALESCE benzeri bir davranışla), yani mevcut oturumlar KOPMAZ. Ayrıca bu
+-- fazda eklenen iss/aud claim doğrulaması nedeniyle bu migrationdan önce
+-- üretilmiş TÜM JWT'ler zaten geçersiz olacak (iss/aud alanları yok) —
+-- kullanıcıların yeniden giriş yapması gerekecek, bu KASITLI ve beklenen bir
+-- güvenlik sertleştirmesi sonucu.
+ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0;

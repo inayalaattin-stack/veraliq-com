@@ -53,6 +53,10 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,             -- PBKDF2-SHA256 (Web Crypto, bkz. auth.js) — düz metin ASLA
   role          TEXT NOT NULL,             -- 'veraliq_admin' | 'company_owner' | 'company_staff'
   name          TEXT NOT NULL DEFAULT '',
+  -- Faz 5 (auth sertleştirme, bkz. migrations/0005): parola değiştiğinde
+  -- artar; requireAuth() JWT'deki token_version ile bunu karşılaştırır —
+  -- eşleşmezse eski oturum reddedilir (server-side session revocation).
+  token_version INTEGER NOT NULL DEFAULT 0,
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

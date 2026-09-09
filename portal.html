@@ -1198,7 +1198,11 @@
       var errEl = document.getElementById('passErr');
       if (!cur || !next) { errEl.textContent = T('settings.bothFieldsRequired'); errEl.style.display='block'; return; }
       try {
-        await api('/api/auth/change-password', { method: 'POST', body: { current_password: cur, new_password: next } });
+        var res = await api('/api/auth/change-password', { method: 'POST', body: { current_password: cur, new_password: next } });
+        // Faz 5: parola değişince sunucu token_version'ı arttırıyor, yani
+        // ESKİ token artık geçersiz — hemen çıkışa düşmemek için sunucunun
+        // döndürdüğü TAZE token'ı kaydediyoruz.
+        if (res && res.token) setToken(res.token);
         errEl.style.display = 'none'; document.getElementById('curPass').value=''; document.getElementById('newPass').value='';
         toast(T('settings.passwordUpdated'));
       } catch (e) { errEl.textContent = errMsg(e); errEl.style.display = 'block'; }

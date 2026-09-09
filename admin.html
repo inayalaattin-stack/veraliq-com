@@ -755,12 +755,11 @@
 
   // ---------------- SİSTEM SAĞLIĞI (madde 45 "System Health") ----------------
   async function renderHealth(el){
-    el.innerHTML = viewHead('Sistem Sağlığı', 'worker-portal API + D1 veritabanı canlı durumu (GET /api/health, kimlik doğrulama gerektirmez).') + '<div id="healthWrap" class="card"><div class="empty">Kontrol ediliyor…</div></div>';
+    el.innerHTML = viewHead('Sistem Sağlığı', 'worker-portal API + D1 veritabanı canlı durumu (GET /api/admin/health — Faz 5: ayrıntılı sağlık bilgisi artık admin kimlik doğrulaması gerektiriyor).') + '<div id="healthWrap" class="card"><div class="empty">Kontrol ediliyor…</div></div>';
     var wrap = document.getElementById('healthWrap');
     var t0 = performance.now();
     try {
-      var resp = await fetch(API_BASE + '/api/health');
-      var data = await resp.json();
+      var data = await api('/api/admin/health');
       var ms = Math.round(performance.now() - t0);
       wrap.innerHTML =
         '<table><tbody>' +

@@ -50,3 +50,12 @@ namespace_id = "3001"
   [ratelimits.simple]
   limit = 5
   period = 60
+
+# Faz 5 — /api/auth/admin/login ve /api/auth/company/login için gerçek
+# IP-bazlı rate limiting (brute-force/credential-stuffing koruması).
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "3002"
+  [ratelimits.simple]
+  limit = 10
+  period = 60

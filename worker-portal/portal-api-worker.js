@@ -52,6 +52,14 @@ export function json(data, status, extraHeaders) {
   });
 }
 
+// Faz 5 — login rate limiting. Aynı fail-closed ilkesi worker-spatius
+// (Faz 2) ve demo-requests.js (Faz 4) ile AYNI: binding yoksa/bozuksa
+// isteği REDDET, "korumasız ama korumalı görünüyor" durumuna düşme.
+async function checkRateLimit(binding, key) {
+  if (!binding || typeof binding.limit !== 'function') return false;
+  try { return (await binding.limit({ key })).success; } catch (e) { return false; }
+}
+
 export async function writeAudit(env, { company_id, user_id, action, entity_type, entity_id, old_value, new_value, request }) {
   try {
     await env.DB.prepare(
@@ -115,6 +123,15 @@ export async function requireAuth(request, env, allowedRoles) {
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload) return null;
+  // Faz 5: token_version — parola değiştiğinde/sıfırlandığında kullanıcının
+  // token_version'ı artar (bkz. migrations/0005). Bu JWT o artıştan ÖNCE
+  // imzalanmışsa (eski değer taşıyorsa) reddedilir — "parola değişince eski
+  // oturumlar geçersiz olsun" kuralı. Bu migrationdan ÖNCE imzalanmış
+  // token'larda token_version alanı hiç yoktur (undefined) — 0 kabul edilir,
+  // mevcut kullanıcının DB'deki değeri de varsayılan 0 olduğu için kopmaz.
+  const currentUser = await env.DB.prepare(`SELECT token_version FROM users WHERE id = ?`).bind(payload.sub).first();
+  if (!currentUser) return null; // kullanıcı silinmiş
+  if ((payload.token_version || 0) !== (currentUser.token_version || 0)) return null;
   if (payload.role === 'company_viewer' && request.method !== 'GET') {
     const pathname = new URL(request.url).pathname;
     if (!VIEWER_SAFE_MUTATIONS.has(`${request.method} ${pathname}`)) return null;
@@ -363,7 +380,14 @@ export default {
       if (err instanceof SyntaxError) {
         return json({ error: 'invalid_json' }, 400, headers);
       }
-      return json({ error: 'internal_error', detail: String(err && err.message || err) }, 500, headers);
+      // Faz 5 güvenlik düzeltmesi: ham hata mesajı (`detail`) artık HİÇBİR
+      // ZAMAN istemciye dönmüyor (önceden dönüyordu — iç dosya yolları/sorgu
+      // metinleri/kütüphane iç detayları sızdırabilirdi). Sunucu tarafında
+      // bir correlation-id ile loglanıyor (Cloudflare Workers loglarında
+      // aranabilir), istemci yalnızca bu id'yi görüyor.
+      const correlationId = generateId('err');
+      console.error('[internal_error]', correlationId, err && err.stack || err);
+      return json({ error: 'internal_error', correlation_id: correlationId }, 500, headers);
     }
   },
 };
@@ -374,7 +398,14 @@ async function route(request, url, env) {
   let m;
 
   // ---- AUTH ----------------------------------------------------------
+  // Faz 5: her iki login ucu da IP-bazlı gerçek rate limiting'e tabi —
+  // önceden sınırsız deneme mümkündü (brute-force/credential-stuffing
+  // riski). Hesap numaralandırmayı önlemek için hem "kullanıcı yok" hem
+  // "şifre yanlış" durumu AYNI generic invalid_credentials'ı döner (bu
+  // zaten böyleydi, değiştirilmedi).
   if (path === '/api/auth/admin/login' && method === 'POST') {
+    const rateOk = await checkRateLimit(env.LOGIN_RATE_LIMITER, request.headers.get('CF-Connecting-IP') || 'unknown');
+    if (!rateOk) return json({ error: 'rate_limited' }, 429);
     const { email, password } = await request.json();
     if (!email || !password) return json({ error: 'missing_fields' }, 400);
     const user = await env.DB.prepare(
@@ -383,11 +414,13 @@ async function route(request, url, env) {
     if (!user || !(await verifyPassword(password, user.password_hash))) {
       return json({ error: 'invalid_credentials' }, 401);
     }
-    const token = await signJWT({ sub: user.id, company_id: null, role: user.role }, env.JWT_SECRET, 3600 * 12);
+    const token = await signJWT({ sub: user.id, company_id: null, role: user.role, token_version: user.token_version || 0 }, env.JWT_SECRET, 3600 * 12);
     return json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   }
 
   if (path === '/api/auth/company/login' && method === 'POST') {
+    const rateOk = await checkRateLimit(env.LOGIN_RATE_LIMITER, request.headers.get('CF-Connecting-IP') || 'unknown');
+    if (!rateOk) return json({ error: 'rate_limited' }, 429);
     const { email, password } = await request.json();
     if (!email || !password) return json({ error: 'missing_fields' }, 400);
     const user = await env.DB.prepare(
@@ -398,7 +431,7 @@ async function route(request, url, env) {
     }
     const company = await env.DB.prepare(`SELECT * FROM companies WHERE id = ?`).bind(user.company_id).first();
     if (!company || company.status !== 'active') return json({ error: 'company_inactive' }, 403);
-    const token = await signJWT({ sub: user.id, company_id: user.company_id, role: user.role }, env.JWT_SECRET, 3600 * 12);
+    const token = await signJWT({ sub: user.id, company_id: user.company_id, role: user.role, token_version: user.token_version || 0 }, env.JWT_SECRET, 3600 * 12);
     return json({
       token,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
@@ -414,15 +447,24 @@ async function route(request, url, env) {
     if (!auth) return json({ error: 'unauthorized' }, 401);
     const { current_password, new_password } = await request.json();
     if (!current_password || !new_password) return json({ error: 'missing_fields' }, 400);
-    if (new_password.length < 8) return json({ error: 'password_too_short' }, 400);
+    // Faz 5: minimum uzunluk ötesi gerçek bir parola politikası — en az 10
+    // karakter, en az bir harf VE bir rakam (yalnızca uzunluk kontrolü
+    // "aaaaaaaa" gibi zayıf parolaları da kabul ediyordu).
+    if (new_password.length < 10 || !/[a-zA-Z]/.test(new_password) || !/[0-9]/.test(new_password)) {
+      return json({ error: 'weak_password', requirement: 'min_10_chars_letter_and_digit' }, 400);
+    }
     const user = await env.DB.prepare(`SELECT * FROM users WHERE id = ?`).bind(auth.sub).first();
     if (!user || !(await verifyPassword(current_password, user.password_hash))) {
       return json({ error: 'invalid_credentials' }, 401);
     }
     const newHash = await hashPassword(new_password);
-    await env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).bind(newHash, user.id).run();
+    const nextTokenVersion = (user.token_version || 0) + 1;
+    await env.DB.prepare(`UPDATE users SET password_hash = ?, token_version = ? WHERE id = ?`).bind(newHash, nextTokenVersion, user.id).run();
     await writeAudit(env, { company_id: user.company_id, user_id: user.id, action: 'user.change_password', entity_type: 'user', entity_id: user.id, request });
-    return json({ ok: true });
+    // token_version arttığı için ARAYANIN kendi eski token'ı da artık
+    // geçersiz — devam edebilmesi için burada TAZE bir token dönülüyor.
+    const token = await signJWT({ sub: user.id, company_id: user.company_id, role: user.role, token_version: nextTokenVersion }, env.JWT_SECRET, 3600 * 12);
+    return json({ ok: true, token });
   }
 
   // ---- DEMO REQUESTS (Faz 4 — gerçek demo talebi akışı) ----------------
@@ -1311,9 +1353,25 @@ async function route(request, url, env) {
     return json({ answer });
   }
 
-  // Herkese açık, JWT gerektirmez — worker/D1 canlı mı diye Admin Panel
-  // "System Health" ekranının kontrol ettiği hafif uç.
+  // Herkese açık, JWT gerektirmez — bilinçli olarak MİNİMAL (Faz 5): worker
+  // adı, zaman damgası veya ham DB hata metni gibi bilgi vermez, yalnızca
+  // "ayakta mı" bilgisi. Ayrıntılı sağlık bilgisi için aşağıdaki admin-only
+  // /api/admin/health'e bakın.
   if (path === '/api/health' && method === 'GET') {
+    try {
+      await env.DB.prepare(`SELECT 1`).first();
+      return json({ ok: true });
+    } catch (e) {
+      return json({ ok: false }, 503);
+    }
+  }
+
+  // Faz 5: ayrıntılı sağlık bilgisi (worker adı, DB durumu, ham hata metni,
+  // zaman damgası) artık yalnızca kimliği doğrulanmış bir veraliq_admin'e
+  // açık — Admin Panel'in "System Health" ekranı buraya geçmeli.
+  if (path === '/api/admin/health' && method === 'GET') {
+    const auth = await requireAuth(request, env, ['veraliq_admin']);
+    if (!auth) return json({ error: 'unauthorized' }, 401);
     try {
       await env.DB.prepare(`SELECT 1`).first();
       return json({ ok: true, db: 'ok', worker: 'veraliq-portal-api', time: new Date().toISOString() });

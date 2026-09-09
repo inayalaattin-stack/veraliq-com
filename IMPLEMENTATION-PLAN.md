@@ -67,7 +67,15 @@ testleri (yeni bir test dosyası, `worker-portal/test/portal-worker.test.mjs`
 - Gerçek e-posta sağlayıcı/secret yoksa sahte "başarılı" gösterilmeyecek — kayıt
   yine de admin panelinde görünür olacak.
 
-## Faz 5 — Auth/session/API sertleştirme (P1)
+## Faz 5 — Auth/session/API sertleştirme (P1) — KISMEN TAMAMLANDI ⚠️
+
+Tamamlanan: login rate limiting, token_version/session-revocation, JWT
+iss/aud+claim tipi doğrulama, JWT_SECRET boşsa fail-closed, 500 yanıtlarında
+detail sızıntısı giderildi (correlation-id ile), health endpoint
+minimalleştirildi + admin-only detaylı health eklendi, parola politikası
+(min 10, harf+rakam). Ertelenen (bu turda yapılmadı, ayrı bir faz gerektirir):
+takım daveti "admin geçici parola belirler" modelinin güvenli tek-kullanımlık
+aktivasyon akışına dönüştürülmesi; export endpoint'i için pagination/streaming.
 
 Mevcut tenant/status/race düzeltmeleri korunarak:
 - Login rate limiting + backoff (hesap numaralandırmaya izin vermeden).

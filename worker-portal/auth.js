@@ -73,10 +73,32 @@ async function hmacKey(secret) {
   );
 }
 
+// Faz 5 (auth sertleştirme) — issuer/audience sabitleri: bir token'ın
+// GERÇEKTEN bu worker tarafından, bu amaç için üretildiğini doğrular (ör.
+// başka bir VERALIQ worker'ının kendi JWT_SECRET'ını PAYLAŞTIĞI ama farklı
+// bir amaç için imzaladığı bir token'ın burada yanlışlıkla kabul edilmesini
+// engeller).
+const JWT_ISSUER = 'veraliq-portal-api';
+const JWT_AUDIENCE = 'veraliq-portal';
+
+// GÜVENLİK DÜZELTMESİ (Faz 5): secret boş/undefined ise Web Crypto sessizce
+// BOŞ STRING'i anahtar olarak kullanırdı (TextEncoder().encode(undefined)
+// boş bir Uint8Array döner) — yani JWT_SECRET yapılandırılmamışsa (ör.
+// unutulmuş bir `wrangler secret put`), sistem KAPALI değil AÇIK
+// başarısız olur: herkes boş bir anahtarla kendi imzaladığı bir token'ı
+// geçerli olarak geçirebilirdi. Artık her ikisi de secret yoksa/boşsa
+// AÇIKÇA hata fırlatır/null döner.
+function requireSecret(secret) {
+  if (!secret || typeof secret !== 'string') {
+    throw new Error('jwt_secret_not_configured');
+  }
+}
+
 export async function signJWT(payload, secret, expiresInSeconds) {
+  requireSecret(secret);
   const header = { alg: 'HS256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
-  const body = { ...payload, iat: now, exp: now + (expiresInSeconds || 3600 * 12) };
+  const body = { ...payload, iss: JWT_ISSUER, aud: JWT_AUDIENCE, iat: now, exp: now + (expiresInSeconds || 3600 * 12) };
   const headerB64 = toBase64Url(new TextEncoder().encode(JSON.stringify(header)));
   const bodyB64 = toBase64Url(new TextEncoder().encode(JSON.stringify(body)));
   const signingInput = headerB64 + '.' + bodyB64;
@@ -87,6 +109,7 @@ export async function signJWT(payload, secret, expiresInSeconds) {
 }
 
 export async function verifyJWT(token, secret) {
+  if (!secret || typeof secret !== 'string') return null; // fail-closed, bkz. requireSecret üstündeki not
   if (!token || typeof token !== 'string') return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -109,7 +132,15 @@ export async function verifyJWT(token, secret) {
     );
     if (!valid) return null;
     const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(bodyB64)));
-    if (typeof payload.exp === 'number' && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    // Faz 5: claim tip/değer doğrulaması — bir imza geçerli olsa bile
+    // (ör. eski bir formatta imzalanmış, farklı bir amaç için üretilmiş bir
+    // token bu worker'la AYNI secret'ı paylaşıyorsa) payload'un GERÇEKTEN bu
+    // worker'ın beklediği şekle sahip olduğunu doğrular.
+    if (typeof payload.sub !== 'string' || !payload.sub) return null;
+    if (typeof payload.role !== 'string' || !payload.role) return null;
+    if (payload.company_id !== null && typeof payload.company_id !== 'string') return null;
+    if (payload.iss !== JWT_ISSUER || payload.aud !== JWT_AUDIENCE) return null;
+    if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch (e) {
     return null;

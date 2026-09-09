@@ -19,6 +19,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import worker, { PresentationLock } from '../portal-api-worker.js';
+import { signJWT, verifyJWT } from '../auth.js';
 
 // ---- D1 shim over node:sqlite ---------------------------------------------
 class BoundStmt {
@@ -103,6 +104,10 @@ const env = {
   // rate-limit'in KENDİSİNİ test eden bloklar `Object.assign({}, env, {...})`
   // ile bu binding'i geçici olarak reddedecek/kaldıracak şekilde override eder.
   DEMO_REQUEST_RATE_LIMITER: { limit: async () => ({ success: true }) },
+  // Faz 5: login rate limiting testleri de fail-closed davranışı ayrı ayrı
+  // doğruluyor; geri kalan TÜM testler (çoğu defalarca login çağırıyor) bu
+  // varsayılan "izin ver" mock'una güveniyor.
+  LOGIN_RATE_LIMITER: { limit: async () => ({ success: true }) },
 };
 
 function req(method, path, body, headers) {
@@ -129,11 +134,29 @@ const run = async () => {
   r = await worker.fetch(req('POST', '/api/auth/admin/login', { email: 'admin@veraliq.com', password: 'wrong' }), env);
   check('admin login wrong password rejected', r.status === 401);
 
+  // Faz 5: login rate limiting — reddeden VEYA hiç yapılandırılmamış bir
+  // binding, brute-force denemesini KAPALI başarısız olarak durdurmalı.
+  const loginDenyEnv = Object.assign({}, env, { LOGIN_RATE_LIMITER: { limit: async () => ({ success: false }) } });
+  r = await worker.fetch(req('POST', '/api/auth/admin/login', { email: 'admin@veraliq.com', password: 'Veraliq!Admin2026' }), loginDenyEnv);
+  check('Faz 5: admin login rate limiter reddederse 429 (doğru şifreyle bile)', r.status === 429);
+  const loginUnconfiguredEnv = Object.assign({}, env); delete loginUnconfiguredEnv.LOGIN_RATE_LIMITER;
+  r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'Abc12345!' }), loginUnconfiguredEnv);
+  check('Faz 5: login rate limiter binding HİÇ YAPILANDIRILMAMIŞSA da KAPALI başarısız olur (429)', r.status === 429);
+
+  // Faz 5: JWT_SECRET yapılandırılmamışsa (boş) imzalama/doğrulama AÇIK değil
+  // KAPALI başarısız olmalı — önceden Web Crypto sessizce boş string'i
+  // anahtar olarak kabul ediyordu.
+  let secretThrew = false;
+  try { await signJWT({ sub: 'x', company_id: null, role: 'veraliq_admin' }, ''); } catch (e) { secretThrew = true; }
+  check('Faz 5: JWT_SECRET boşsa signJWT hata fırlatır (fail-closed)', secretThrew === true);
+  const verifyWithEmptySecret = await verifyJWT('a.b.c', '');
+  check('Faz 5: JWT_SECRET boşsa verifyJWT null döner (fail-closed)', verifyWithEmptySecret === null);
+
   // 2. Company login (seeded ABC İnşaat)
   r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'Abc12345!' }), env);
   data = await r.json();
   check('company login succeeds', r.status === 200 && !!data.token && data.company.name === 'ABC İnşaat', data);
-  const ownerToken = data.token;
+  let ownerToken = data.token; // Faz 5: change-password sonrası TAZE token'a güncellenir (bkz. aşağıda)
 
   // 3. Tenant isolation: create a SECOND company via admin, verify its owner can't see ABC's projects
   r = await worker.fetch(req('POST', '/api/companies', {
@@ -319,14 +342,21 @@ const run = async () => {
   check('company_owner can remove a team member', r.status === 200);
 
   // 15. Self-service password change
+  const preChangeOwnerToken = ownerToken;
   r = await worker.fetch(req('POST', '/api/auth/change-password', { current_password: 'Abc12345!', new_password: 'NewPass123!' }, { Authorization: 'Bearer ' + ownerToken }), env);
-  check('user can change own password with correct current password', r.status === 200);
+  data = await r.json();
+  check('user can change own password with correct current password', r.status === 200 && !!data.token, data);
+  ownerToken = data.token; // Faz 5: token_version arttı, sunucunun döndürdüğü TAZE token'a geç
 
   r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'NewPass123!' }), env);
   check('login works with new password after change', r.status === 200);
 
   r = await worker.fetch(req('POST', '/api/auth/company/login', { email: 'abcinsaat@veraliq.com', password: 'Abc12345!' }), env);
   check('login rejected with OLD password after change', r.status === 401);
+
+  // Faz 5: token_version — parola değişmeden ÖNCEKİ token artık geçersiz.
+  r = await worker.fetch(req('GET', '/api/companies/me', null, { Authorization: 'Bearer ' + preChangeOwnerToken }), env);
+  check('Faz 5: token_version — parola değişmeden önceki ESKİ token artık reddedilir (401)', r.status === 401);
 
   // 16. Admin panel — cross-company platform views (madde 45)
   r = await worker.fetch(req('GET', '/api/admin/users', null, { Authorization: 'Bearer ' + adminToken }), env);
@@ -359,10 +389,21 @@ const run = async () => {
   r = await worker.fetch(req('POST', '/api/admin/assistant/query', { question: 'kaç şirket var?' }, { Authorization: 'Bearer ' + ownerToken }), env);
   check('SECURITY: company_owner cannot call /api/admin/assistant/query (401)', r.status === 401);
 
-  // 18. Public health check (no auth required)
+  // 18. Public health check (no auth required) — Faz 5: bilinçli olarak
+  // MİNİMAL (worker adı/zaman damgası/ham hata metni yok, bkz. aşağıdaki
+  // admin-only /api/admin/health testi).
   r = await worker.fetch(req('GET', '/api/health'), env);
   data = await r.json();
-  check('health check reports ok with no auth', r.status === 200 && data.ok === true && data.db === 'ok', data);
+  check('health check reports ok with no auth (minimal — no worker/time/detail)',
+    r.status === 200 && data.ok === true && data.db === undefined && data.worker === undefined, data);
+
+  r = await worker.fetch(req('GET', '/api/admin/health'), env); // Authorization yok
+  check('Faz 5: detaylı health (/api/admin/health) kimlik doğrulaması olmadan 401', r.status === 401);
+
+  r = await worker.fetch(req('GET', '/api/admin/health', null, { Authorization: 'Bearer ' + adminToken }), env);
+  data = await r.json();
+  check('Faz 5: veraliq_admin detaylı health bilgisini görebilir (worker/db/time)',
+    r.status === 200 && data.ok === true && data.db === 'ok' && data.worker === 'veraliq-portal-api' && !!data.time, data);
 
   // 19. Customer + Conversation Memory (provider-independent — madde 3-5, 38-39)
   r = await worker.fetch(req('POST', '/api/customers', { name: 'Mehmet Öz', phone: '5559998877', budget: 4500000, preferences: '2+1, yüksek kat' }, { Authorization: 'Bearer ' + ownerToken }), env);
