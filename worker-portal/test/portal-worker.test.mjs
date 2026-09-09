@@ -1429,6 +1429,24 @@ const run = async () => {
   const listedDoc = data.documents.find((d) => d.id === uploadedDocId);
   check('documents: yüklenen belge proje belge listesinde doğru ad/kategoriyle görünür', !!listedDoc && listedDoc.filename === 'fiyat-listesi.pdf' && listedDoc.category === 'price_list' && listedDoc.file_type === 'pdf', data);
 
+  // Güvenlik review bulgusu (LOW): dosya adının İÇİNDE (uzantı DEĞİL) bir
+  // bidi-override karakteri olması — enjeksiyon yolu DEĞİL (yalnızca
+  // görüntüleme aldatmacası riski: "rapor<RLO>_gizli.pdf" gibi bir ad
+  // tarayıcıda ters render edilebilir), ama depolanan/listelenen ad
+  // bundan ARINDIRILMIŞ olmalı. Geçerli bir .pdf uzantısı taşıdığı için
+  // extension allowlist'ini GEÇER — asıl test edilen, sanitizeDisplayName().
+  var bidiCstripRe = new RegExp('[\\x00-\\x1F\\x7F\\u200B\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]');
+  var trickyName = 'rapor' + String.fromCharCode(0x202E) + '_gizli.pdf';
+  var fdTricky = new FormData();
+  fdTricky.set('file', new Blob([pdfBytes], { type: 'application/pdf' }), trickyName);
+  r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fdTricky, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  check('documents: bidi-override karakterli ama geçerli uzantılı dosya yüklenir (201)', r.status === 201, data);
+  r = await worker.fetch(req('GET', `/api/projects/${projectId}/documents`, null, { Authorization: 'Bearer ' + ownerToken }), env);
+  data = await r.json();
+  var trickyDoc = data.documents.find((d) => d.filename.indexOf('rapor') === 0);
+  check('documents: depolanan dosya adında bidi-override karakteri YOK (görüntüleme aldatmacası temizlendi)', !!trickyDoc && !bidiCstripRe.test(trickyDoc.filename), data);
+
   var fd2 = new FormData();
   fd2.set('file', new Blob([pdfBytes], { type: 'application/x-msdownload' }), 'virus.exe');
   r = await worker.fetch(uploadReq(`/api/projects/${projectId}/documents`, fd2, { Authorization: 'Bearer ' + ownerToken }), env);

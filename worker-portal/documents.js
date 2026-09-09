@@ -34,10 +34,40 @@ function extOf(filename) {
   return m ? m[1].toLowerCase() : '';
 }
 
+// Güvenlik review bulgusu (LOW): D1'e yazılan/UI'da gösterilen/Content-
+// Disposition'a giden dosya adı, kontrol karakterleri veya Unicode bidi-
+// override karakterleri (RTL/LTR yön değiştirme) taşıyabilir — bunlar bir
+// enjeksiyon YOLU DEĞİL (Fetch API, \r\n içeren header değerlerinde zaten
+// TypeError fırlatır), ama bir bidi-override karakteri "rapor.pdf" gibi
+// görünen bir adın aslında "rapor.exe" olmasını SAĞLAYABİLİR (görüntüleme
+// aldatmacası). r2Key için kullanılan safeName'den AYRI — bu yalnızca
+// GÖRÜNTÜLENEN adı temizler. Tüm karakterler \u kaçış dizileriyle YAZILDI
+// (kodun kendi içine görünmez karakter GÖMÜLMEDİ — denetlenebilirlik için).
+const DISPLAY_NAME_STRIP_RE = new RegExp(
+  '[\\x00-\\x1F\\x7F\\u200B\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]',
+  'g'
+);
+function sanitizeDisplayName(name) {
+  return String(name || '').replace(DISPLAY_NAME_STRIP_RE, '');
+}
+
 /** POST /api/projects/:id/documents — multipart/form-data: file, category */
 export async function handleDocumentUpload(request, env, { json, writeAudit, auth, projectId }) {
   const project = await env.DB.prepare(`SELECT id FROM projects WHERE id = ? AND company_id = ?`).bind(projectId, auth.company_id).first();
   if (!project) return json({ error: 'not_found' }, 404);
+
+  // Güvenlik review bulgusu (MEDIUM): gerçek boyut kontrolü aşağıda GERÇEK
+  // okunan bayt sayısına göre yapılıyor (Content-Length'e güvenilmiyor —
+  // Faz 2/tts ile AYNI ilke), ama bu ERKEN kontrol olmadan kötü niyetli
+  // (ör. yüzlerce MB) bir istek TAMAMEN belleğe okunduktan SONRA
+  // reddediliyordu. Burada, gerçek kontrolden ÖNCE, açıkça kötü niyetli
+  // büyüklükteki istekleri erkenden (body hiç okunmadan) eleyerek gereksiz
+  // bellek baskısını azaltıyoruz — bu hâlâ TEK BAŞINA GÜVENİLİR bir kontrol
+  // DEĞİL (Content-Length yanlış/eksik olabilir), asıl kontrol hâlâ aşağıda.
+  const declaredLength = Number(request.headers.get('content-length') || 0);
+  if (declaredLength > MAX_UPLOAD_BYTES * 2) {
+    return json({ error: 'file_too_large', max_bytes: MAX_UPLOAD_BYTES }, 413);
+  }
 
   let form;
   try { form = await request.formData(); } catch (e) { return json({ error: 'invalid_form_data' }, 400); }
@@ -54,6 +84,7 @@ export async function handleDocumentUpload(request, env, { json, writeAudit, aut
 
   if (!env.DOCUMENTS_BUCKET) return json({ error: 'server_not_configured' }, 500);
 
+  const displayName = sanitizeDisplayName(file.name);
   const categoryRaw = form.get('category');
   const category = CATEGORIES.includes(categoryRaw) ? categoryRaw : 'other';
   const id = generateId('doc');
@@ -64,9 +95,9 @@ export async function handleDocumentUpload(request, env, { json, writeAudit, aut
   await env.DB.prepare(
     `INSERT INTO documents (id, company_id, project_id, filename, file_type, category, r2_key, uploaded_by, version, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))`
-  ).bind(id, auth.company_id, projectId, file.name, ALLOWED_EXTENSIONS[ext], category, r2Key, auth.sub).run();
+  ).bind(id, auth.company_id, projectId, displayName, ALLOWED_EXTENSIONS[ext], category, r2Key, auth.sub).run();
 
-  await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'document.upload', entity_type: 'document', entity_id: id, new_value: { filename: file.name, category, project_id: projectId }, request });
+  await writeAudit(env, { company_id: auth.company_id, user_id: auth.sub, action: 'document.upload', entity_type: 'document', entity_id: id, new_value: { filename: displayName, category, project_id: projectId }, request });
   return json({ id }, 201);
 }
 

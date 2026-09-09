@@ -410,11 +410,15 @@
   // ============================================================
   // NAV — madde 13/18: Company Portal Menü (tam liste, gruplu).
   // ============================================================
-  // Faz 8 (bilgi mimarisi): sıra artık "bekleyen onaylar en önemli"
-  // ilkesine göre — Onay Talepleri kendi grubunda, Satış&Müşteri'nin
-  // hemen üstünde. Henüz gerçek bir backend'i olmayan ekranlar (calendar,
-  // crm, integrations — bkz. bu ekranların kendi "gap notice" metinleri)
-  // artık dağınık değil, tek bir "Yol Haritası" grubunda, en altta.
+  // Faz 8 (bilgi mimarisi): sıra "bekleyen onaylar en önemli" ilkesine göre —
+  // Onay Talepleri kendi grubunda, Satış & Müşteri'nin hemen üstünde.
+  //
+  // 2026-09-10 (kurucu talebiyle ekran temizliği): "Yol Haritası" grubu
+  // KALDIRILDI. Takvim ve Entegrasyonlar ekranları (gerçek backend'i hiç
+  // olmayan, salt "henüz yok" notu gösteren ekranlardı) TAMAMEN silindi.
+  // CRM ekranı KORUNDU (gerçek D1 lead sayıları gösteriyor, yalnızca harici
+  // senkron notu vardı) — "Yol Haritası"ndan çıkarılıp Satış & Müşteri
+  // grubuna taşındı, çünkü artık orada YALNIZCA gerçek işlevli ekranlar var.
   var NAV = [
     { groupKey: 'nav.group.general', items: [
       { id: 'dashboard' },
